@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- =====================================================================
+  EDIT GUIDE — MIH AUTOMATION PRODUCT PAGE
+  =====================================================================
+  Most things you'll want to change live in just 3 places:
+  1. <head>   ... Page title, description, business info
+  2. :root    ... Brand colours (matches index.html)
+  3. <body>   ... Section-by-section content (labelled)
+
+  Phones, emails, package prices and copy can all be edited inline.
+  Search for "EDIT:" comments throughout the file for quick targets.
+===================================================================== -->
+
+<!-- EDIT: page title shown in browser tab and Google results -->
+<title>MIH Automation | Smart Home Automation Brisbane — Massive Integrated Homes</title>
+
+<!-- EDIT: meta description shown in Google search results (~155 chars) -->
+<meta name="description" content="MIH Automation by Massive Integrated Homes. One app, every brand. Brisbane smart home automation from $3,990 — no rebuild, no $100k rack. Free quotes.">
+<meta name="keywords" content="smart home brisbane, home automation brisbane, MIH automation, MiHub, smart home installation, home automation packages, Control4 alternative">
+<meta property="og:title" content="MIH Automation — Smart Home, Made Simple. Brisbane.">
+<meta property="og:description" content="One app for every brand. Brisbane smart home automation from $3,990 — no rebuild, no $100k server rack.">
+<meta property="og:url" content="https://massiveintegratedhomes.com.au/automation.html">
+<meta property="og:type" content="product">
+<meta property="og:locale" content="en_AU">
+<link rel="canonical" href="https://massiveintegratedhomes.com.au/automation.html">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  /* =====================================================================
+     COLOUR THEME — matches index.html (light purple/white)
+     ===================================================================== */
+  :root, body.theme-light {
+    --bg: #ffffff;
+    --bg-2: #faf7ff;
+    --card: #ffffff;
+    --card-hover: #faf7ff;
+    --text: #15152a;
+    --text-soft: #2d2d55;
+    --muted: #64748b;
+    --line: #eae4f5;
+    --line-strong: #d9cff0;
+    --primary: #7c3aed;
+    --primary-hover: #6d28d9;
+    --primary-soft: rgba(124, 58, 237, 0.08);
+    --accent: #a855f7;
+    --accent-hover: #9333ea;
+    --glow: rgba(124, 58, 237, 0.2);
+    --glow-strong: rgba(124, 58, 237, 0.35);
+    --hero-gradient: linear-gradient(135deg, #1a0f3a 0%, #4c1d95 45%, #7c3aed 100%);
+    --hero-overlay-1: radial-gradient(circle at 80% 20%, rgba(168, 85, 247, 0.35), transparent 55%);
+    --hero-overlay-2: radial-gradient(circle at 20% 80%, rgba(192, 132, 252, 0.25), transparent 60%);
+    --shadow: 0 10px 30px rgba(124, 58, 237, 0.08);
+    --shadow-lg: 0 20px 60px rgba(124, 58, 237, 0.15);
+    --shadow-card: 0 4px 12px rgba(15, 23, 42, 0.06);
+  }
+
+  body.theme-dark {
+    --bg: #0a0a14;
+    --bg-2: #13132a;
+    --card: #1a1a32;
+    --card-hover: #22224a;
+    --text: #ffffff;
+    --text-soft: #c4c4e0;
+    --muted: #8a8ab0;
+    --line: rgba(255,255,255,0.08);
+    --line-strong: rgba(255,255,255,0.15);
+    --primary: #a855f7;
+    --primary-hover: #c084fc;
+    --primary-soft: rgba(168, 85, 247, 0.15);
+    --accent: #c084fc;
+    --accent-hover: #d8b4fe;
+    --glow: rgba(168, 85, 247, 0.5);
+    --glow-strong: rgba(168, 85, 247, 0.8);
+    --hero-gradient: linear-gradient(135deg, #0a0a14 0%, #1a0f3a 45%, #2d1b5a 100%);
+    --shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 20px 70px rgba(168, 85, 247, 0.2);
+    --shadow-card: 0 4px 20px rgba(0,0,0,0.3);
+  }
+
+  /* ===================== BASE ===================== */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--text);
+    line-height: 1.6;
+    background: var(--bg);
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.3s, color 0.3s;
+  }
+  h1, h2, h3, h4 { font-family: 'Space Grotesk', sans-serif; letter-spacing: -0.02em; line-height: 1.15; color: var(--text); }
+  h1 { font-size: clamp(2.2rem, 5vw, 3.6rem); font-weight: 700; }
+  h2 { font-size: clamp(1.7rem, 3.5vw, 2.5rem); font-weight: 700; }
+  h3 { font-size: 1.2rem; font-weight: 600; }
+  p { color: var(--muted); }
+  a { color: inherit; text-decoration: none; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; }
+
+  /* ===================== THEME TOGGLE ===================== */
+  .theme-toggle {
+    position: fixed;
+    top: 1.2rem;
+    right: 1.2rem;
+    z-index: 200;
+    background: var(--card);
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    padding: 0.45rem;
+    display: flex;
+    gap: 0.25rem;
+    box-shadow: var(--shadow-card);
+    backdrop-filter: blur(10px);
+  }
+  .theme-toggle button {
+    background: transparent;
+    border: 0;
+    width: 34px; height: 34px;
+    border-radius: 999px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    transition: all 0.2s;
+  }
+  .theme-toggle button.active {
+    background: var(--primary);
+    color: #fff;
+    box-shadow: 0 0 15px var(--glow);
+  }
+  .theme-toggle button:hover:not(.active) { color: var(--text); background: var(--primary-soft); }
+
+  /* ===================== TOP BAR ===================== */
+  .top-bar { background: var(--bg-2); border-bottom: 1px solid var(--line); color: var(--muted); font-size: 0.85rem; padding: 0.55rem 0; }
+  .top-bar-inner { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; }
+  .top-bar a { color: var(--muted); }
+  .top-bar a:hover { color: var(--primary); }
+  .top-bar strong { color: var(--text-soft); font-weight: 500; }
+
+  /* ===================== HEADER ===================== */
+  header { background: var(--bg); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 100; }
+  .nav { display: flex; justify-content: space-between; align-items: center; padding: 1rem 0; }
+  .logo { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1.25rem; color: var(--text); display: flex; align-items: center; gap: 0.65rem; line-height: 1.1; }
+  .logo-mark { width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, var(--primary), var(--accent)); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px var(--glow); color: #fff; font-weight: 800; font-family: 'Space Grotesk', sans-serif; flex-shrink: 0; }
+  .logo-text { display: flex; flex-direction: column; }
+  .logo-text strong { font-weight: 700; font-size: 1.05rem; }
+  .logo-text span { font-size: 0.72rem; color: var(--muted); font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; }
+  .nav-links { display: flex; gap: 2rem; align-items: center; list-style: none; }
+  .nav-links a { font-weight: 500; color: var(--text-soft); transition: color 0.2s; }
+  .nav-links a:hover { color: var(--primary); }
+  .nav-cta { background: var(--primary); color: #fff !important; padding: 0.65rem 1.1rem; border-radius: 8px; font-weight: 600; box-shadow: 0 4px 15px var(--glow); }
+  .nav-cta:hover { background: var(--primary-hover); transform: translateY(-1px); }
+  .menu-btn { display: none; background: none; border: 0; cursor: pointer; padding: 0.5rem; color: var(--text); }
+  .menu-btn span { display: block; width: 24px; height: 2px; background: currentColor; margin: 5px 0; }
+
+  /* ===================== HERO ===================== */
+  .hero { background: var(--hero-gradient); color: #fff; padding: 5rem 0 6rem; position: relative; overflow: hidden; }
+  .hero::before { content: ''; position: absolute; inset: 0; background: var(--hero-overlay-1); pointer-events: none; }
+  .hero::after { content: ''; position: absolute; inset: 0; background: var(--hero-overlay-2); pointer-events: none; }
+  .hero-inner { position: relative; z-index: 1; max-width: 800px; }
+  .hero-eyebrow { display: inline-block; font-size: 0.78rem; letter-spacing: 0.15em; text-transform: uppercase; color: #d8b4fe; font-weight: 600; margin-bottom: 1.5rem; padding: 0.4rem 0.9rem; background: rgba(255,255,255,0.08); border-radius: 999px; border: 1px solid rgba(255,255,255,0.15); }
+  .hero h1 { color: #fff; margin-bottom: 1.4rem; }
+  .hero h1 .accent { background: linear-gradient(135deg, #c084fc 0%, #e9d5ff 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .hero-lead { font-size: 1.2rem; color: rgba(255,255,255,0.85); margin-bottom: 2rem; max-width: 560px; }
+  .hero-cta { display: flex; gap: 1rem; flex-wrap: wrap; }
+
+  /* Hero decorative blobs */
+  .hero-blob-1 { position: absolute; top: -100px; right: -100px; width: 400px; height: 400px; border-radius: 50%; background: radial-gradient(circle, rgba(192, 132, 252, 0.4) 0%, transparent 70%); pointer-events: none; }
+  .hero-blob-2 { position: absolute; bottom: -80px; right: 20%; width: 250px; height: 250px; border-radius: 50%; background: radial-gradient(circle, rgba(168, 85, 247, 0.3) 0%, transparent 70%); pointer-events: none; }
+
+  /* ===================== BUTTONS ===================== */
+  .btn { display: inline-flex; align-items: center; gap: 0.6rem; padding: 1rem 1.6rem; border-radius: 8px; font-weight: 600; font-size: 1rem; transition: all 0.2s; border: 0; cursor: pointer; font-family: inherit; }
+  .btn-primary { background: #fff; color: var(--primary); }
+  .btn-primary:hover { background: #f5f3ff; transform: translateY(-2px); box-shadow: 0 8px 25px rgba(255,255,255,0.25); }
+  .btn-secondary { background: transparent; color: #fff; border: 2px solid rgba(255,255,255,0.4); }
+  .btn-secondary:hover { background: rgba(255,255,255,0.08); border-color: #fff; }
+  .btn-dark { background: var(--primary); color: #fff; }
+  .btn-dark:hover { background: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 8px 25px var(--glow); }
+
+  /* ===================== SECTION LAYOUT ===================== */
+  section { padding: 5rem 0; }
+  .section-label { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--primary); font-weight: 700; margin-bottom: 1rem; }
+  .section-title { text-align: center; max-width: 720px; margin: 0 auto 3rem; }
+  .section-title h2 { margin-bottom: 1rem; position: relative; padding-bottom: 1.2rem; }
+  .section-title h2::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 60px; height: 3px; background: var(--primary); border-radius: 2px; }
+  .section-title p { font-size: 1.05rem; }
+
+  /* ===================== WHY (FEATURE CARDS) ===================== */
+  .feature-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-top: 2.5rem; }
+  .feature-card { background: var(--bg-2); border: 1px solid var(--line); border-radius: 12px; padding: 2rem 1.6rem; text-align: center; transition: all 0.3s; position: relative; overflow: hidden; }
+  .feature-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--primary), var(--accent)); }
+  .feature-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+  .feature-icon { width: 56px; height: 56px; border-radius: 12px; background: var(--primary-soft); display: flex; align-items: center; justify-content: center; margin: 0 auto 1.2rem; color: var(--primary); }
+  .feature-card h3 { margin-bottom: 0.6rem; color: var(--text); }
+  .feature-card p { font-size: 0.95rem; }
+
+  /* ===================== STEPS ===================== */
+  .steps-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; margin-top: 2.5rem; position: relative; }
+  .step-card { position: relative; padding: 0 0.5rem; }
+  .step-num { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 50%; background: var(--primary); color: #fff; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1.1rem; margin-bottom: 1.2rem; box-shadow: 0 6px 20px var(--glow); }
+  .step-card h3 { margin-bottom: 0.6rem; color: var(--text); }
+  .step-card p { font-size: 0.95rem; }
+  .step-card:not(:last-child)::after { content: ''; position: absolute; top: 24px; left: 60px; right: -20px; height: 2px; background: repeating-linear-gradient(90deg, var(--line-strong) 0 8px, transparent 8px 16px); }
+
+  /* ===================== BANNER STRIP ===================== */
+  .banner-strip { background: linear-gradient(135deg, var(--primary), var(--accent)); color: #fff; padding: 2.5rem 0; text-align: center; }
+  .banner-strip h3 { color: #fff; font-size: 1.3rem; font-weight: 600; margin-bottom: 0.4rem; }
+  .banner-strip p { color: rgba(255,255,255,0.85); font-size: 0.95rem; }
+
+  /* ===================== DIFFERENCE (CHECKLIST) ===================== */
+  .difference-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem 2rem; margin-top: 2rem; }
+  .difference-item { display: flex; gap: 0.9rem; align-items: flex-start; padding: 0.8rem 0; }
+  .check-circle { flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+  .difference-item p { color: var(--text-soft); font-size: 1rem; padding-top: 0.35rem; }
+
+  /* ===================== PACKAGES ===================== */
+  .packages-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-top: 2.5rem; align-items: stretch; }
+  .package-card { background: var(--card); border: 2px solid var(--line); border-radius: 16px; padding: 2.2rem 1.8rem; text-align: center; position: relative; transition: all 0.3s; display: flex; flex-direction: column; }
+  .package-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: var(--line-strong); }
+  .package-card.featured { background: linear-gradient(160deg, #4c1d95 0%, #2d1b5a 100%); color: #fff; border-color: var(--primary); transform: scale(1.03); box-shadow: 0 20px 60px var(--glow-strong); }
+  .package-card.featured h3, .package-card.featured .price { color: #fff; }
+  .package-card.featured .package-sub, .package-card.featured .price-suffix { color: rgba(255,255,255,0.75); }
+  .package-card.featured ul li { color: rgba(255,255,255,0.92); }
+  .package-card.featured ul li svg circle { fill: rgba(255,255,255,0.2); }
+  .package-card.featured ul li svg path { stroke: #fff; }
+  .package-card.featured .divider { background: rgba(255,255,255,0.15); }
+
+  .popular-badge { position: absolute; top: -14px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #fff; padding: 0.35rem 1rem; border-radius: 999px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; box-shadow: 0 4px 15px var(--glow); }
+  .package-card h3 { font-size: 1.5rem; margin-bottom: 0.3rem; }
+  .package-sub { font-size: 0.9rem; color: var(--muted); margin-bottom: 1.5rem; }
+  .price { font-family: 'Space Grotesk', sans-serif; font-size: 2.5rem; font-weight: 700; color: var(--primary); line-height: 1; }
+  .price-suffix { font-size: 0.85rem; color: var(--muted); margin-top: 0.3rem; margin-bottom: 1.5rem; }
+  .divider { height: 1px; background: var(--line); margin: 1.5rem 0; }
+  .package-card ul { list-style: none; text-align: left; margin-bottom: 1.5rem; flex-grow: 1; }
+  .package-card ul li { display: flex; gap: 0.7rem; align-items: flex-start; padding: 0.55rem 0; color: var(--text-soft); font-size: 0.95rem; }
+  .package-card ul li svg { flex-shrink: 0; margin-top: 2px; }
+
+  .price-note { text-align: center; color: var(--muted); font-size: 0.88rem; margin-top: 1.5rem; font-style: italic; }
+
+  /* ===================== COMPARE TABLE ===================== */
+  .compare-wrap { margin-top: 2.5rem; border-radius: 12px; overflow: hidden; box-shadow: var(--shadow); border: 1px solid var(--line); }
+  .compare-table { width: 100%; border-collapse: collapse; background: var(--card); }
+  .compare-table th { background: linear-gradient(135deg, #4c1d95, #7c3aed); color: #fff; padding: 1.2rem 1rem; text-align: left; font-weight: 600; font-size: 1rem; }
+  .compare-table th:first-child { background: transparent; color: var(--text); }
+  .compare-table td { padding: 1rem; border-bottom: 1px solid var(--line); color: var(--text-soft); font-size: 0.95rem; }
+  .compare-table tr:last-child td { border-bottom: 0; }
+  .compare-table td:first-child { font-weight: 600; color: var(--text); }
+  .compare-table .mih-cell { color: var(--primary); font-weight: 700; }
+
+  /* ===================== QUOTE SECTION ===================== */
+  .quote-section { background: var(--hero-gradient); color: #fff; padding: 5rem 0; position: relative; overflow: hidden; }
+  .quote-section::before { content: ''; position: absolute; top: -80px; left: -80px; width: 300px; height: 300px; border-radius: 50%; background: radial-gradient(circle, rgba(192, 132, 252, 0.4) 0%, transparent 70%); pointer-events: none; }
+  .quote-section::after { content: ''; position: absolute; bottom: -100px; right: -100px; width: 350px; height: 350px; border-radius: 50%; background: radial-gradient(circle, rgba(168, 85, 247, 0.3) 0%, transparent 70%); pointer-events: none; }
+  .quote-grid { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center; }
+  .quote-copy h2 { color: #fff; margin-bottom: 1rem; }
+  .quote-copy h2::after { display: none; }
+  .quote-copy p { color: rgba(255,255,255,0.85); font-size: 1.05rem; margin-bottom: 1.5rem; }
+  .quote-copy .phone-cta { display: inline-flex; align-items: center; gap: 0.6rem; font-size: 1.1rem; color: #fff; font-weight: 600; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); padding: 0.9rem 1.3rem; border-radius: 10px; transition: all 0.2s; }
+  .quote-copy .phone-cta:hover { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.4); }
+
+  .quote-card { background: var(--card); color: var(--text); border-radius: 16px; padding: 2.2rem; box-shadow: 0 25px 60px rgba(0,0,0,0.3); }
+  .quote-card h3 { color: var(--text); font-size: 1.35rem; margin-bottom: 1.4rem; display: flex; align-items: center; gap: 0.6rem; }
+  .quote-card h3 svg { color: var(--primary); }
+  .enquiry-form { display: flex; flex-direction: column; gap: 0.85rem; }
+  .enquiry-form input, .enquiry-form select, .enquiry-form textarea { font-family: inherit; font-size: 0.95rem; padding: 0.85rem 1rem; background: var(--bg); border: 1px solid var(--line-strong); border-radius: 8px; color: var(--text); transition: border-color 0.2s, box-shadow 0.2s; width: 100%; }
+  .enquiry-form input::placeholder, .enquiry-form textarea::placeholder { color: var(--muted); }
+  .enquiry-form select option { background: var(--card); color: var(--text); }
+  .enquiry-form input:focus, .enquiry-form select:focus, .enquiry-form textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
+  .enquiry-form textarea { resize: vertical; min-height: 90px; font-family: inherit; }
+  .enquiry-form select { cursor: pointer; }
+  .enquiry-form button { width: 100%; justify-content: center; margin-top: 0.4rem; }
+  .form-status { font-size: 0.9rem; margin-top: 0.5rem; min-height: 1.2rem; }
+
+  /* ===================== FOOTER ===================== */
+  footer { background: var(--bg-2); border-top: 1px solid var(--line); padding: 3rem 0 1.5rem; }
+  .footer-top { display: flex; justify-content: space-between; gap: 2rem; flex-wrap: wrap; margin-bottom: 2rem; }
+  .footer-brand h3 { font-size: 1.15rem; display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.6rem; }
+  .footer-brand p { font-size: 0.9rem; max-width: 360px; }
+  .footer-meta { font-size: 0.9rem; color: var(--muted); }
+  .footer-meta strong { color: var(--text-soft); }
+  .footer-meta a { color: var(--primary); }
+  .footer-bottom { border-top: 1px solid var(--line); padding-top: 1.5rem; display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; font-size: 0.85rem; color: var(--muted); }
+  .footer-bottom a { color: var(--muted); }
+  .footer-bottom a:hover { color: var(--primary); }
+
+  /* ===================== FADE-IN ===================== */
+  .fade-in { opacity: 0; transform: translateY(20px); transition: all 0.6s ease; }
+  .fade-in.visible { opacity: 1; transform: translateY(0); }
+
+  /* ===================== RESPONSIVE ===================== */
+  @media (max-width: 900px) {
+    .feature-grid, .steps-grid, .packages-grid, .quote-grid { grid-template-columns: 1fr; }
+    .package-card.featured { transform: none; }
+    .step-card:not(:last-child)::after { display: none; }
+    .difference-grid { grid-template-columns: 1fr; }
+    .nav-links { display: none; position: absolute; top: 100%; left: 0; right: 0; background: var(--bg); flex-direction: column; gap: 0; padding: 1rem 0; box-shadow: var(--shadow); border-bottom: 1px solid var(--line); }
+    .nav-links.open { display: flex; }
+    .nav-links li { width: 100%; }
+    .nav-links a { display: block; padding: 0.9rem 1.5rem; }
+    .menu-btn { display: block; }
+    .nav { position: relative; }
+    section { padding: 3.5rem 0; }
+    .hero { padding: 3.5rem 0 4rem; }
+  }
+  @media (max-width: 600px) {
+    .compare-table th, .compare-table td { padding: 0.7rem 0.6rem; font-size: 0.85rem; }
+    .top-bar-inner { justify-content: center; }
+  }
+</style>
+</head>
+<body class="theme-light">
+
+<!-- ===================== THEME TOGGLE ===================== -->
+<div class="theme-toggle" role="group" aria-label="Theme toggle">
+  <button id="themeLight" class="active" onclick="setTheme('light')" aria-label="Light theme" title="Light mode">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+  </button>
+  <button id="themeDark" onclick="setTheme('dark')" aria-label="Dark theme" title="Dark mode">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  </button>
+</div>
+
+<!-- ===================== TOP BAR ===================== -->
+<div class="top-bar">
+  <div class="container top-bar-inner">
+    <span>&#9203; Mon–Sat 7am–7pm &middot; South East QLD installs</span>
+    <span><strong>Call us</strong> <a href="tel:+61480568180">0480 568 180</a></span>
+  </div>
+</div>
+
+<!-- ===================== HEADER ===================== -->
+<header>
+  <div class="container nav">
+    <a href="index.html" class="logo">
+      <span class="logo-mark">M</span>
+      <span class="logo-text">
+        <strong>MIH Automation</strong>
+        <span>By Massive Integrated Homes</span>
+      </span>
+    </a>
+    <button class="menu-btn" aria-label="Menu" onclick="document.getElementById('navlinks').classList.toggle('open')">
+      <span></span><span></span><span></span>
+    </button>
+    <ul class="nav-links" id="navlinks">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="#how">How It Works</a></li>
+      <li><a href="#packages">Packages</a></li>
+      <li><a href="#compare">Compare</a></li>
+      <li><a href="#quote" class="nav-cta">Get a Free Quote</a></li>
+    </ul>
+  </div>
+</header>
+
+<!-- ===================== HERO ===================== -->
+<section class="hero">
+  <div class="hero-blob-1"></div>
+  <div class="hero-blob-2"></div>
+  <div class="container hero-inner">
+    <span class="hero-eyebrow">Brisbane's home automation specialists</span>
+    <h1>Make your home smart — <span class="accent">without making it expensive.</span></h1>
+    <p class="hero-lead">One app. Every brand. No rebuild, no $100k rack. MIH Automation connects everything you already own into one simple system you can actually use.</p>
+    <div class="hero-cta">
+      <a href="#quote" class="btn btn-primary">
+        Get a Free Quote
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+      <a href="#packages" class="btn btn-secondary">See Packages</a>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== WHY MIH ===================== -->
+<section id="why">
+  <div class="container">
+    <div class="section-title fade-in">
+      <span class="section-label">Why MIH</span>
+      <h2>Smart home, made simple</h2>
+      <p>Most homes already have smart devices — lights, cameras, speakers, a thermostat — all bought at different times, all stuck in different apps. MIH Automation connects everything you already own into one simple system, controlled from a single app. No knocking down walls. No expensive proprietary hardware. No dedicating a whole wardrobe to a server rack. Just your home, working together.</p>
+    </div>
+
+    <!-- EDIT: feature cards (3 reasons to choose MIH) -->
+    <div class="feature-grid">
+      <div class="feature-card fade-in">
+        <div class="feature-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+        </div>
+        <h3>One App, Every Brand</h3>
+        <p>Control Hue, Nest, Sonos, Ring and more from one dashboard.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        </div>
+        <h3>Low Cost to Start</h3>
+        <p>From $3,990 — a fraction of traditional systems that start at $25k+.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </div>
+        <h3>No Rebuild Needed</h3>
+        <p>Works with your existing devices. Add more as you upgrade.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== HOW IT WORKS ===================== -->
+<section id="how" style="background: var(--bg-2);">
+  <div class="container">
+    <div class="section-title fade-in">
+      <span class="section-label">How It Works</span>
+      <h2>Three simple steps</h2>
+    </div>
+
+    <!-- EDIT: the 3 steps -->
+    <div class="steps-grid">
+      <div class="step-card fade-in">
+        <div class="step-num">01</div>
+        <h3>We connect what you have</h3>
+        <p>Our compact MiHub links all your existing smart devices — regardless of brand — into one unified system.</p>
+      </div>
+      <div class="step-card fade-in">
+        <div class="step-num">02</div>
+        <h3>You see everything in one place</h3>
+        <p>Lights, climate, security and audio all on one clean app. Control your home from anywhere.</p>
+      </div>
+      <div class="step-card fade-in">
+        <div class="step-num">03</div>
+        <h3>Your home gets smarter over time</h3>
+        <p>Add new automations and devices whenever you like. Your system grows with your home.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== BANNER STRIP ===================== -->
+<div class="banner-strip">
+  <div class="container">
+    <h3>Everything you love about a high-end smart home — without the high-end price tag.</h3>
+    <p>Brisbane homeowners, renovators &amp; new builds — from $3,990</p>
+  </div>
+</div>
+
+<!-- ===================== DIFFERENCE ===================== -->
+<section id="difference">
+  <div class="container">
+    <div class="section-title fade-in">
+      <span class="section-label">The Difference</span>
+      <h2>Why homeowners choose MIH</h2>
+    </div>
+
+    <!-- EDIT: 6 difference points -->
+    <div class="difference-grid">
+      <div class="difference-item fade-in">
+        <div class="check-circle">&#10003;</div>
+        <p>Low barrier to entry &mdash; start smart from under $4,000</p>
+      </div>
+      <div class="difference-item fade-in">
+        <div class="check-circle">&#10003;</div>
+        <p>Full connectivity to everything, without building a new home</p>
+      </div>
+      <div class="difference-item fade-in">
+        <div class="check-circle">&#10003;</div>
+        <p>See and control every device in one app, regardless of brand</p>
+      </div>
+      <div class="difference-item fade-in">
+        <div class="check-circle">&#10003;</div>
+        <p>No need to dedicate a wardrobe to a $100k server rack</p>
+      </div>
+      <div class="difference-item fade-in">
+        <div class="check-circle">&#10003;</div>
+        <p>Upgrade and add new automations on the go as your home evolves</p>
+      </div>
+      <div class="difference-item fade-in">
+        <div class="check-circle">&#10003;</div>
+        <p>No vendor lock-in &mdash; you're never tied to one dealer for changes</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== PACKAGES ===================== -->
+<section id="packages" style="background: var(--bg-2);">
+  <div class="container">
+    <div class="section-title fade-in">
+      <span class="section-label">Packages</span>
+      <h2>Choose your level</h2>
+      <p>Three straightforward packages. Start small and upgrade any time &mdash; your MiHub grows with you.</p>
+    </div>
+
+    <!-- EDIT: pricing tiers — change titles, prices, features below -->
+    <div class="packages-grid">
+
+      <!-- Package 1: Essentials -->
+      <div class="package-card fade-in">
+        <h3>Essentials</h3>
+        <div class="package-sub">MiHub</div>
+        <div class="price">$3,990</div>
+        <div class="price-suffix">once-off</div>
+        <div class="divider"></div>
+        <ul>
+          <li>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="var(--primary-soft)"/><path d="M8 12l3 3 5-6" stroke="var(--primary)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Up to 10 devices (multi-brand)</span>
+          </li>
+          <li>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="var(--primary-soft)"/><path d="M8 12l3 3 5-6" stroke="var(--primary)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>1 automation included</span>
+          </li>
+          <li>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="var(--primary-soft)"/><path d="M8 12l3 3 5-6" stroke="var(--primary)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Single-app control dashboard</span>
+          </li>
+          <li>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="var(--primary-soft)"/><path d="M8 12l3 3 5-6" stroke="var(--primary)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>30-day setup support</span>
+          </li>
+          <li>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="var(--primary-soft)"/><path d="M8 12l3 3 5-6" stroke="var(--primary)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Free quote &amp; site visit</span>
+          </li>
+        </ul>
+        <a href="#quote" class="btn btn-dark" style="width:100%; justify-content:center;">Get Started</a>
+      </div>
+
+      <!-- Package 2: Connected (FEATURED) -->
+      <div class="package-card featured fade-in">
+        <span class="popular-badge">Most Popular</span>
+        <h3>Connected</h3>
+        <div class="package-sub">MiHub</div>
+        <div class="price">$8,990</div>
+        <div class="price-suffix">once-off</div>
+        <div class="divider"></div>
+        <ul>
+          <li>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Up to 25 devices (multi-brand)</span>
+          </li>
+          <li>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>10 automations included</span>
+          </li>
+          <li>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Single-app control dashboard</span>
+          </li>
+          <li>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>6 months support included</span>
+          </li>
+          <li>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Free quote &amp; site visit</span>
+          </li>
+        </ul>
+        <a href="#quote" class="btn btn-primary" style="width:100%; justify-content:center;">Get Connected</a>
+      </div>
+
+      <!-- Package 3: Intelligent -->
+      <div class="package-card fade-in">
+        <h3>Intelligent</h3>
+        <div class="package-sub">MiHub Pro</div>
+        <div class="price">$8,990</div>
+        <div class="price-suffix">+ $39/month</div>
+        <div class="divider"></div>
+        <ul>
+          <li>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="var(--primary-soft)"/><path d="M8 12l3 3 5-6" stroke="var(--primary)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Unlimited devices</span>
+          </li>
+          <li>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="var(--primary-soft)"/><path d="M8 12l3 3 5-6" stroke="var(--primary)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Unlimited automations &mdash; ongoing</span>
+          </li>
+          <li>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="var(--primary-soft)"/><path d="M8 12l3 3 5-6" stroke="var(--primary)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>App + AI voice (Alexa / Gemini)</span>
+          </li>
+          <li>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="var(--primary-soft)"/><path d="M8 12l3 3 5-6" stroke="var(--primary)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Ongoing remote support &amp; updates</span>
+          </li>
+          <li>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="var(--primary-soft)"/><path d="M8 12l3 3 5-6" stroke="var(--primary)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Free quote &amp; site visit</span>
+          </li>
+        </ul>
+        <a href="#quote" class="btn btn-dark" style="width:100%; justify-content:center;">Go Intelligent</a>
+      </div>
+
+    </div>
+    <p class="price-note">All prices in AUD. Installation and integration included. Custom quotes available for larger homes or commercial projects.</p>
+  </div>
+</section>
+
+<!-- ===================== HOW WE COMPARE ===================== -->
+<section id="compare">
+  <div class="container">
+    <div class="section-title fade-in">
+      <span class="section-label">How We Compare</span>
+      <h2>MIH vs traditional systems</h2>
+    </div>
+
+    <div class="compare-wrap fade-in">
+      <!-- EDIT: comparison table rows -->
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th></th>
+            <th>MIH Automation</th>
+            <th>Traditional (e.g. Control4)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Starting price</td>
+            <td class="mih-cell">From $3,990</td>
+            <td>$25,000+</td>
+          </tr>
+          <tr>
+            <td>Uses existing devices</td>
+            <td class="mih-cell">Yes</td>
+            <td>Often replaced</td>
+          </tr>
+          <tr>
+            <td>Hardware footprint</td>
+            <td class="mih-cell">One small hub</td>
+            <td>Large rack / cabinet</td>
+          </tr>
+          <tr>
+            <td>Add automations</td>
+            <td class="mih-cell">Yourself, anytime</td>
+            <td>Dealer call-out required</td>
+          </tr>
+          <tr>
+            <td>Vendor lock-in</td>
+            <td class="mih-cell">None</td>
+            <td>Tied to one dealer</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== QUOTE SECTION ===================== -->
+<!-- EDIT: form posts to Formspree (ID: maqagaoz) — to change, update the action URL below -->
+<section id="quote" class="quote-section">
+  <div class="container quote-grid">
+    <div class="quote-copy fade-in">
+      <h2>Ready to bring your home together?</h2>
+      <p>Book a free, no-obligation quote today. Tell us a bit about your place and we'll get back the same day during business hours.</p>
+      <p>South East QLD installs &mdash; from $3,990. No pressure, no obligation.</p>
+      <a href="tel:+61480568180" class="phone-cta">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        Or call Nate &mdash; 0480 568 180
+      </a>
+    </div>
+
+    <div class="quote-card fade-in">
+      <h3>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4 14h7l-2 8 9-12h-7l2-8z"/></svg>
+        Request a free quote
+      </h3>
+      <form class="enquiry-form" action="https://formspree.io/f/maqagaoz" method="POST">
+        <input type="text" name="name" placeholder="Your name" required>
+        <input type="tel" name="phone" placeholder="Phone number" required>
+        <input type="email" name="email" placeholder="Email (optional)">
+        <input type="text" name="suburb" placeholder="Suburb (e.g. Greenslopes)">
+        <select name="package" required>
+          <option value="" disabled selected>Which package interests you?</option>
+          <option>Essentials &mdash; $3,990</option>
+          <option>Connected &mdash; $8,990</option>
+          <option>Intelligent &mdash; From $4,990 + $39/mo</option>
+          <option>Not sure &mdash; I'd like advice</option>
+        </select>
+        <textarea name="message" rows="3" placeholder="Tell us about your home (number of devices, what you'd like automated, anything else)"></textarea>
+        <input type="hidden" name="_subject" value="New MIH Automation quote request">
+        <input type="text" name="_gotcha" style="display:none" tabindex="-1" autocomplete="off">
+        <button type="submit" class="btn btn-dark">
+          Send Enquiry
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+        <p class="form-status" aria-live="polite"></p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== FOOTER ===================== -->
+<footer>
+  <div class="container">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <h3>
+          <span class="logo-mark">M</span>
+          MIH Automation
+        </h3>
+        <p>Smart home automation by Massive Integrated Homes. Brisbane Southside &mdash; one app, every brand, no rebuild.</p>
+      </div>
+      <div class="footer-meta">
+        <p><strong>Brisbane, QLD</strong></p>
+        <p><a href="mailto:nate@massiveintegratedhomes.com.au">nate@massiveintegratedhomes.com.au</a></p>
+        <p><a href="tel:+61480568180">0480 568 180</a></p>
+        <p style="margin-top: 0.6rem;">Smart Home &middot; AV Integration &middot; Security &amp; Automation</p>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div>&copy; <span id="year">2026</span> Massive Integrated Homes. All rights reserved.</div>
+      <div><a href="index.html">Back to main site</a></div>
+    </div>
+  </div>
+</footer>
+
+<!-- ===================== JS ===================== -->
+<script>
+  // Theme toggle — saves preference to localStorage (shared key 'mih-theme' so it persists across all pages)
+  function setTheme(mode) {
+    document.body.classList.remove('theme-light', 'theme-dark');
+    document.body.classList.add('theme-' + mode);
+    document.getElementById('themeLight').classList.toggle('active', mode === 'light');
+    document.getElementById('themeDark').classList.toggle('active', mode === 'dark');
+    try { localStorage.setItem('mih-theme', mode); } catch (e) {}
+  }
+  // Restore saved theme on load (default = light)
+  (function() {
+    try {
+      var saved = localStorage.getItem('mih-theme');
+      if (saved === 'dark' || saved === 'light') setTheme(saved);
+    } catch (e) {}
+  })();
+
+  // Auto-update copyright year
+  document.getElementById('year').textContent = new Date().getFullYear();
+
+  // Fade-in on scroll
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function(entries) {
+      entries.forEach(function(e) {
+        if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); }
+      });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.fade-in').forEach(function(el) { io.observe(el); });
+  } else {
+    document.querySelectorAll('.fade-in').forEach(function(el) { el.classList.add('visible'); });
+  }
+
+  // Close mobile menu after link tap
+  document.querySelectorAll('.nav-links a').forEach(function(a) {
+    a.addEventListener('click', function() {
+      document.getElementById('navlinks').classList.remove('open');
+    });
+  });
+
+  // ===================== ENQUIRY FORM HANDLER (Formspree) =====================
+  // Submits the form in the background so the visitor stays on the page.
+  document.querySelectorAll('form.enquiry-form').forEach(function(form) {
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      var status = form.querySelector('.form-status');
+      var btn = form.querySelector('button[type="submit"]');
+      var originalBtnText = btn ? btn.innerHTML : '';
+      if (btn) { btn.disabled = true; btn.innerHTML = 'Sending…'; }
+      if (status) { status.textContent = ''; status.style.color = ''; }
+
+      var data = new FormData(form);
+      fetch(form.action, {
+        method: 'POST',
+        body: data,
+        headers: { 'Accept': 'application/json' }
+      }).then(function(response) {
+        if (response.ok) {
+          form.reset();
+          if (status) {
+            status.textContent = 'Thanks! Your enquiry has been sent — we’ll be in touch shortly.';
+            status.style.color = '#10b981';
+          }
+        } else {
+          response.json().then(function(d) {
+            if (status) {
+              status.textContent = (d && d.errors && d.errors.map(function(x){return x.message;}).join(', ')) || 'Sorry, something went wrong. Please call us instead.';
+              status.style.color = '#ef4444';
+            }
+          }).catch(function() {
+            if (status) {
+              status.textContent = 'Sorry, something went wrong. Please call us instead.';
+              status.style.color = '#ef4444';
+            }
+          });
+        }
+      }).catch(function() {
+        if (status) {
+          status.textContent = 'Network error — please check your connection or call us instead.';
+          status.style.color = '#ef4444';
+        }
+      }).finally(function() {
+        if (btn) { btn.disabled = false; btn.innerHTML = originalBtnText; }
+      });
+    });
+  });
+</script>
+
+</body>
+</html>
