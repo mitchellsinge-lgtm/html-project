@@ -5,63 +5,39 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <!-- =====================================================================
-  EDIT GUIDE  (most things you'll want to change live in just 3 places)
+  EDIT GUIDE — MIH AUTOMATION PRODUCT PAGE
   =====================================================================
-  1. <head>  ........  Page title, description, business info, schema
-  2. :root   ........  Brand colours (light = default, dark = optional)
-  3. <body>  ........  Section-by-section content (each section is labelled)
+  Most things you'll want to change live in just 3 places:
+  1. <head>   ... Page title, description, business info
+  2. :root    ... Brand colours (matches index.html)
+  3. <body>   ... Section-by-section content (labelled)
 
-  Phones, emails, suburbs, services and copy can all be edited inline.
+  Phones, emails, package prices and copy can all be edited inline.
   Search for "EDIT:" comments throughout the file for quick targets.
 ===================================================================== -->
 
 <!-- EDIT: page title shown in browser tab and Google results -->
-<title>Massive Integrated Homes | Electrician, Smart Home & Home Theatre — Brisbane Southside</title>
+<title>MIH Automation | Smart Home Automation Brisbane — Massive Integrated Homes</title>
 
 <!-- EDIT: meta description shown in Google search results (~155 chars) -->
-<meta name="description" content="Massive Integrated Homes — Mitch & Nate. Licensed Brisbane Southside electrician and home theatre fitout experts. Electrical, smart home, CCTV, home theatre, Starlink. Free quotes.">
-<meta name="keywords" content="massive integrated homes, electrician brisbane southside, smart home brisbane, cctv installer brisbane, starlink installation brisbane, home theatre brisbane, home theatre fitout brisbane">
-<meta property="og:title" content="Massive Integrated Homes — Brisbane Southside Electrician & Home Theatre Fitouts">
-<meta property="og:description" content="Licensed electrical contractor with home theatre fitout expertise. Electrical, smart home, CCTV, home theatre, Starlink, and fit-outs across Brisbane's southside.">
-<meta property="og:url" content="https://massiveintegratedhomes.com.au">
-<meta property="og:type" content="website">
+<meta name="description" content="MIH Automation by Massive Integrated Homes. One app, every brand. Brisbane smart home automation from $3,990 — no rebuild, no $100k rack. Free quotes.">
+<meta name="keywords" content="smart home brisbane, home automation brisbane, MIH automation, MiHub, smart home installation, home automation packages, Control4 alternative">
+<meta property="og:title" content="MIH Automation — Smart Home, Made Simple. Brisbane.">
+<meta property="og:description" content="One app for every brand. Brisbane smart home automation from $3,990 — no rebuild, no $100k server rack.">
+<meta property="og:url" content="https://massiveintegratedhomes.com.au/automation.html">
+<meta property="og:type" content="product">
 <meta property="og:locale" content="en_AU">
-<link rel="canonical" href="https://massiveintegratedhomes.com.au">
+<link rel="canonical" href="https://massiveintegratedhomes.com.au/automation.html">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 
-<!-- EDIT: Google business schema — update name, phones, suburbs as needed -->
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "ElectricalContractor",
-  "name": "Massive Integrated Homes",
-  "alternateName": "Mitch & Nate",
-  "url": "https://massiveintegratedhomes.com.au",
-  "telephone": ["+61488882192", "+61451993930"],
-  "email": "hello@massiveintegratedhomes.com.au",
-  "address": {
-    "@type": "PostalAddress",
-    "addressLocality": "Brisbane",
-    "addressRegion": "QLD",
-    "addressCountry": "AU"
-  },
-  "areaServed": ["Greenslopes", "Holland Park", "Carindale", "Mt Gravatt", "Springfield", "Springwood", "Sunnybank", "Coorparoo", "Mansfield"],
-  "serviceType": ["Electrician", "Smart Home Installation", "CCTV Installation", "Home Theatre Installation", "Home Theatre Fitout", "Starlink Installation", "Fit-outs and Handyman"]
-}
-</script>
-
 <style>
   /* =====================================================================
-     COLOUR THEMES  —  edit hex values here to recolour the whole site.
-     Default = LIGHT (white + purple). Dark mode is optional via toggle.
+     COLOUR THEME — matches index.html (light purple/white)
      ===================================================================== */
-
-  /* LIGHT THEME (default) — white background with purple accents */
-  :root,
-  body.theme-light {
+  :root, body.theme-light {
     --bg: #ffffff;
     --bg-2: #faf7ff;
     --card: #ffffff;
@@ -71,10 +47,10 @@
     --muted: #64748b;
     --line: #eae4f5;
     --line-strong: #d9cff0;
-    --primary: #7c3aed;            /* main purple */
+    --primary: #7c3aed;
     --primary-hover: #6d28d9;
     --primary-soft: rgba(124, 58, 237, 0.08);
-    --accent: #a855f7;             /* lighter purple accent */
+    --accent: #a855f7;
     --accent-hover: #9333ea;
     --glow: rgba(124, 58, 237, 0.2);
     --glow-strong: rgba(124, 58, 237, 0.35);
@@ -84,17 +60,8 @@
     --shadow: 0 10px 30px rgba(124, 58, 237, 0.08);
     --shadow-lg: 0 20px 60px rgba(124, 58, 237, 0.15);
     --shadow-card: 0 4px 12px rgba(15, 23, 42, 0.06);
-    --form-bg: #ffffff;
-    --form-border: #eae4f5;
-    --form-focus: rgba(124, 58, 237, 0.1);
-    --placeholder-note-bg: rgba(124, 58, 237, 0.06);
-    --placeholder-note-border: rgba(124, 58, 237, 0.3);
-    --placeholder-note-text: #6d28d9;
-    --accent-badge-bg: rgba(124, 58, 237, 0.1);
-    --accent-badge-text: #6d28d9;
   }
 
-  /* DARK THEME (optional) — kept available via toggle */
   body.theme-dark {
     --bg: #0a0a14;
     --bg-2: #13132a;
@@ -113,24 +80,13 @@
     --glow: rgba(168, 85, 247, 0.5);
     --glow-strong: rgba(168, 85, 247, 0.8);
     --hero-gradient: linear-gradient(135deg, #0a0a14 0%, #1a0f3a 45%, #2d1b5a 100%);
-    --hero-overlay-1: radial-gradient(circle at 80% 20%, rgba(168, 85, 247, 0.35), transparent 55%);
-    --hero-overlay-2: radial-gradient(circle at 20% 80%, rgba(192, 132, 252, 0.25), transparent 60%);
     --shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
     --shadow-lg: 0 20px 70px rgba(168, 85, 247, 0.2);
     --shadow-card: 0 4px 20px rgba(0,0,0,0.3);
-    --form-bg: rgba(255,255,255,0.05);
-    --form-border: rgba(255,255,255,0.12);
-    --form-focus: rgba(168, 85, 247, 0.15);
-    --placeholder-note-bg: rgba(168, 85, 247, 0.08);
-    --placeholder-note-border: rgba(168, 85, 247, 0.3);
-    --placeholder-note-text: #c084fc;
-    --accent-badge-bg: rgba(168, 85, 247, 0.15);
-    --accent-badge-text: #d8b4fe;
   }
 
   /* ===================== BASE ===================== */
   * { box-sizing: border-box; margin: 0; padding: 0; }
-
   html { scroll-behavior: smooth; }
   body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -140,14 +96,12 @@
     -webkit-font-smoothing: antialiased;
     transition: background 0.3s, color 0.3s;
   }
-
   h1, h2, h3, h4 { font-family: 'Space Grotesk', sans-serif; letter-spacing: -0.02em; line-height: 1.15; color: var(--text); }
-  h1 { font-size: clamp(2.2rem, 5vw, 3.8rem); font-weight: 700; }
+  h1 { font-size: clamp(2.2rem, 5vw, 3.6rem); font-weight: 700; }
   h2 { font-size: clamp(1.7rem, 3.5vw, 2.5rem); font-weight: 700; }
   h3 { font-size: 1.2rem; font-weight: 600; }
   p { color: var(--muted); }
   a { color: inherit; text-decoration: none; }
-
   .container { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; }
 
   /* ===================== THEME TOGGLE ===================== */
@@ -185,665 +139,183 @@
   .theme-toggle button:hover:not(.active) { color: var(--text); background: var(--primary-soft); }
 
   /* ===================== TOP BAR ===================== */
-  .top-bar {
-    background: var(--bg-2);
-    border-bottom: 1px solid var(--line);
-    color: var(--muted);
-    font-size: 0.85rem;
-    padding: 0.55rem 0;
-    transition: all 0.3s;
-  }
+  .top-bar { background: var(--bg-2); border-bottom: 1px solid var(--line); color: var(--muted); font-size: 0.85rem; padding: 0.55rem 0; }
   .top-bar-inner { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; }
-  .top-bar a { color: var(--muted); transition: color 0.2s; }
+  .top-bar a { color: var(--muted); }
   .top-bar a:hover { color: var(--primary); }
   .top-bar strong { color: var(--text-soft); font-weight: 500; }
 
   /* ===================== HEADER ===================== */
-  header {
-    background: var(--bg);
-    border-bottom: 1px solid var(--line);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    transition: background 0.3s, border-color 0.3s;
-  }
-  .nav { display: flex; justify-content: space-between; align-items: center; padding: 1rem 0; padding-right: 6rem; }
-  .logo {
-    font-family: 'Space Grotesk', sans-serif;
-    font-weight: 700;
-    font-size: 1.25rem;
-    color: var(--text);
-    display: flex;
-    align-items: center;
-    gap: 0.65rem;
-    line-height: 1.1;
-  }
-  .logo-mark {
-    width: 40px; height: 40px;
-    border-radius: 10px;
-    background: linear-gradient(135deg, var(--primary), var(--accent));
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 15px var(--glow);
-    color: #fff;
-    font-weight: 800;
-    font-family: 'Space Grotesk', sans-serif;
-    flex-shrink: 0;
-  }
+  header { background: var(--bg); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 100; }
+  .nav { display: flex; justify-content: space-between; align-items: center; padding: 1rem 0; }
+  .logo { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1.25rem; color: var(--text); display: flex; align-items: center; gap: 0.65rem; line-height: 1.1; }
+  .logo-mark { width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, var(--primary), var(--accent)); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px var(--glow); color: #fff; font-weight: 800; font-family: 'Space Grotesk', sans-serif; flex-shrink: 0; }
   .logo-text { display: flex; flex-direction: column; }
-  .logo-text strong { font-weight: 700; font-size: 1.05rem; color: var(--text); }
+  .logo-text strong { font-weight: 700; font-size: 1.05rem; }
   .logo-text span { font-size: 0.72rem; color: var(--muted); font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; }
-
   .nav-links { display: flex; gap: 2rem; align-items: center; list-style: none; }
   .nav-links a { font-weight: 500; color: var(--text-soft); transition: color 0.2s; }
   .nav-links a:hover { color: var(--primary); }
-
-  .nav-cta {
-    background: var(--primary);
-    color: #fff !important;
-    padding: 0.65rem 1.1rem;
-    border-radius: 8px;
-    font-weight: 600;
-    transition: all 0.2s;
-    box-shadow: 0 4px 15px var(--glow);
-  }
-  .nav-cta:hover { background: var(--primary-hover); transform: translateY(-1px); box-shadow: 0 6px 20px var(--glow-strong); }
-
+  .nav-cta { background: var(--primary); color: #fff !important; padding: 0.65rem 1.1rem; border-radius: 8px; font-weight: 600; box-shadow: 0 4px 15px var(--glow); }
+  .nav-cta:hover { background: var(--primary-hover); transform: translateY(-1px); }
   .menu-btn { display: none; background: none; border: 0; cursor: pointer; padding: 0.5rem; color: var(--text); }
-  .menu-btn span { display: block; width: 24px; height: 2px; background: currentColor; margin: 5px 0; transition: all .2s; }
+  .menu-btn span { display: block; width: 24px; height: 2px; background: currentColor; margin: 5px 0; }
 
   /* ===================== HERO ===================== */
-  .hero {
-    background: var(--hero-gradient);
-    color: #fff;
-    padding: 5rem 0 6rem;
-    position: relative;
-    overflow: hidden;
-  }
-  .hero::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: var(--hero-overlay-1);
-    pointer-events: none;
-  }
-  .hero::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: var(--hero-overlay-2);
-    pointer-events: none;
-  }
-  .hero-inner { position: relative; z-index: 1; display: grid; grid-template-columns: 1.2fr 1fr; gap: 3rem; align-items: center; }
-  .hero h1 { color: #fff; margin-bottom: 1.2rem; }
-  .hero h1 .accent {
-    background: linear-gradient(135deg, #c084fc 0%, #e9d5ff 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-  .hero-lead { font-size: 1.15rem; color: rgba(255,255,255,0.85); margin-bottom: 2rem; max-width: 560px; }
+  .hero { background: var(--hero-gradient); color: #fff; padding: 5rem 0 6rem; position: relative; overflow: hidden; }
+  .hero::before { content: ''; position: absolute; inset: 0; background: var(--hero-overlay-1); pointer-events: none; }
+  .hero::after { content: ''; position: absolute; inset: 0; background: var(--hero-overlay-2); pointer-events: none; }
+  .hero-inner { position: relative; z-index: 1; max-width: 800px; }
+  .hero-eyebrow { display: inline-block; font-size: 0.78rem; letter-spacing: 0.15em; text-transform: uppercase; color: #d8b4fe; font-weight: 600; margin-bottom: 1.5rem; padding: 0.4rem 0.9rem; background: rgba(255,255,255,0.08); border-radius: 999px; border: 1px solid rgba(255,255,255,0.15); }
+  .hero h1 { color: #fff; margin-bottom: 1.4rem; }
+  .hero h1 .accent { background: linear-gradient(135deg, #c084fc 0%, #e9d5ff 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .hero-lead { font-size: 1.2rem; color: rgba(255,255,255,0.85); margin-bottom: 2rem; max-width: 560px; }
   .hero-cta { display: flex; gap: 1rem; flex-wrap: wrap; }
 
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.6rem;
-    padding: 1rem 1.6rem;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 1rem;
-    transition: all 0.2s;
-    border: 0;
-    cursor: pointer;
-    font-family: inherit;
-  }
-  .btn-primary {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
-    color: #fff;
-    box-shadow: 0 8px 25px var(--glow);
-  }
-  .btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 30px var(--glow-strong);
-    filter: brightness(1.1);
-  }
-  .btn-secondary {
-    background: rgba(255,255,255,0.1);
-    color: #fff;
-    border: 1px solid rgba(255,255,255,0.25);
-    backdrop-filter: blur(10px);
-  }
-  .btn-secondary:hover { background: rgba(255,255,255,0.18); border-color: rgba(255,255,255,0.4); }
+  /* Hero decorative blobs */
+  .hero-blob-1 { position: absolute; top: -100px; right: -100px; width: 400px; height: 400px; border-radius: 50%; background: radial-gradient(circle, rgba(192, 132, 252, 0.4) 0%, transparent 70%); pointer-events: none; }
+  .hero-blob-2 { position: absolute; bottom: -80px; right: 20%; width: 250px; height: 250px; border-radius: 50%; background: radial-gradient(circle, rgba(168, 85, 247, 0.3) 0%, transparent 70%); pointer-events: none; }
 
-  .hero-badges { margin-top: 2.5rem; display: flex; gap: 2rem; flex-wrap: wrap; }
-  .hero-badge { display: flex; align-items: center; gap: 0.6rem; color: rgba(255,255,255,0.9); font-size: 0.95rem; }
-  .hero-badge svg { color: #c084fc; flex-shrink: 0; filter: drop-shadow(0 0 8px rgba(192, 132, 252, 0.5)); }
+  /* ===================== BUTTONS ===================== */
+  .btn { display: inline-flex; align-items: center; gap: 0.6rem; padding: 1rem 1.6rem; border-radius: 8px; font-weight: 600; font-size: 1rem; transition: all 0.2s; border: 0; cursor: pointer; font-family: inherit; }
+  .btn-primary { background: #fff; color: var(--primary); }
+  .btn-primary:hover { background: #f5f3ff; transform: translateY(-2px); box-shadow: 0 8px 25px rgba(255,255,255,0.25); }
+  .btn-secondary { background: transparent; color: #fff; border: 2px solid rgba(255,255,255,0.4); }
+  .btn-secondary:hover { background: rgba(255,255,255,0.08); border-color: #fff; }
+  .btn-dark { background: var(--primary); color: #fff; }
+  .btn-dark:hover { background: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 8px 25px var(--glow); }
 
-  .hero-card {
-    background: rgba(255,255,255,0.07);
-    backdrop-filter: blur(16px);
-    border: 1px solid rgba(255,255,255,0.15);
-    border-radius: 16px;
-    padding: 2rem;
-    box-shadow: 0 25px 60px rgba(0,0,0,0.35);
-    position: relative;
-  }
-  .hero-card::before {
-    content: '';
-    position: absolute;
-    inset: -1px;
-    border-radius: 16px;
-    padding: 1px;
-    background: linear-gradient(135deg, rgba(168, 85, 247, 0.5), transparent, rgba(192, 132, 252, 0.4));
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-            mask-composite: exclude;
-    pointer-events: none;
-  }
-  .hero-card h3 { color: #fff; margin-bottom: 1.2rem; display: flex; align-items: center; gap: 0.5rem; }
-  .hero-card h3 svg { color: #c084fc; }
-  .hero-form { display: flex; flex-direction: column; gap: 0.9rem; }
-  .hero-form input, .hero-form select, .hero-form textarea {
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.15);
-    padding: 0.85rem 1rem;
-    border-radius: 8px;
-    color: #fff;
-    font-family: inherit;
-    font-size: 0.95rem;
-    transition: all 0.2s;
-  }
-  .hero-form input::placeholder, .hero-form textarea::placeholder { color: rgba(255,255,255,0.55); }
-  .hero-form input:focus, .hero-form select:focus, .hero-form textarea:focus {
-    outline: none;
-    border-color: #c084fc;
-    background: rgba(255,255,255,0.12);
-    box-shadow: 0 0 0 3px rgba(192, 132, 252, 0.2);
-  }
-  .hero-form option { background: #1a0f3a; color: #fff; }
-  .form-status { margin: 0.4rem 0 0; font-size: 0.9rem; min-height: 1.2em; }
-  .form-status:empty { display: none; }
+  /* ===================== SECTION LAYOUT ===================== */
+  section { padding: 5rem 0; }
+  .section-label { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--primary); font-weight: 700; margin-bottom: 1rem; }
+  .section-title { text-align: center; max-width: 720px; margin: 0 auto 3rem; }
+  .section-title h2 { margin-bottom: 1rem; position: relative; padding-bottom: 1.2rem; }
+  .section-title h2::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 60px; height: 3px; background: var(--primary); border-radius: 2px; }
+  .section-title p { font-size: 1.05rem; }
 
-  /* ===================== SECTIONS ===================== */
-  section { padding: 5rem 0; transition: background 0.3s; }
-  .section-title { text-align: center; margin-bottom: 3rem; }
-  .section-label {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    color: var(--primary);
-    background: var(--accent-badge-bg);
-    padding: 0.4rem 0.9rem;
-    border-radius: 999px;
-    font-weight: 600;
-    font-size: 0.8rem;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    margin-bottom: 1rem;
-  }
-  .section-title h2 { margin-bottom: 0.8rem; }
-  .section-title p { max-width: 640px; margin: 0 auto; font-size: 1.05rem; }
+  /* ===================== WHY (FEATURE CARDS) ===================== */
+  .feature-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-top: 2.5rem; }
+  .feature-card { background: var(--bg-2); border: 1px solid var(--line); border-radius: 12px; padding: 2rem 1.6rem; text-align: center; transition: all 0.3s; position: relative; overflow: hidden; }
+  .feature-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--primary), var(--accent)); }
+  .feature-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+  .feature-icon { width: 56px; height: 56px; border-radius: 12px; background: var(--primary-soft); display: flex; align-items: center; justify-content: center; margin: 0 auto 1.2rem; color: var(--primary); }
+  .feature-card h3 { margin-bottom: 0.6rem; color: var(--text); }
+  .feature-card p { font-size: 0.95rem; }
 
-  /* ===================== SERVICES ===================== */
-  .services { background: var(--bg); }
-  .services-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 1.5rem;
-  }
-  .service-card {
-    background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    padding: 2rem;
-    transition: all 0.3s;
-    position: relative;
-    overflow: hidden;
-  }
-  .service-card::before {
-    content: '';
-    position: absolute;
-    inset: 0 0 auto 0;
-    height: 3px;
-    background: linear-gradient(90deg, var(--primary), var(--accent));
-    transform: scaleX(0);
-    transform-origin: left;
-    transition: transform 0.3s;
-  }
-  .service-card:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-lg);
-    border-color: var(--primary-soft);
-    background: var(--card-hover);
-  }
-  .service-card:hover::before { transform: scaleX(1); }
-  .service-icon {
-    width: 52px;
-    height: 52px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, var(--primary), var(--accent));
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 1.2rem;
-    box-shadow: 0 4px 15px var(--glow);
-  }
-  .service-card h3 { margin-bottom: 0.6rem; }
-  .service-card p { font-size: 0.95rem; margin-bottom: 1rem; color: var(--muted); }
-  .service-card ul { list-style: none; }
-  .service-card li { font-size: 0.9rem; color: var(--text-soft); padding: 0.25rem 0 0.25rem 1.4rem; position: relative; }
-  .service-card li::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0.65rem;
-    width: 6px;
-    height: 6px;
-    background: var(--primary);
-    border-radius: 50%;
-    box-shadow: 0 0 6px var(--glow);
-  }
+  /* ===================== STEPS ===================== */
+  .steps-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; margin-top: 2.5rem; position: relative; }
+  .step-card { position: relative; padding: 0 0.5rem; }
+  .step-num { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 50%; background: var(--primary); color: #fff; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1.1rem; margin-bottom: 1.2rem; box-shadow: 0 6px 20px var(--glow); }
+  .step-card h3 { margin-bottom: 0.6rem; color: var(--text); }
+  .step-card p { font-size: 0.95rem; }
+  .step-card:not(:last-child)::after { content: ''; position: absolute; top: 24px; left: 60px; right: -20px; height: 2px; background: repeating-linear-gradient(90deg, var(--line-strong) 0 8px, transparent 8px 16px); }
 
-  /* ===================== ABOUT ===================== */
-  .about { background: var(--bg-2); }
-  .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center; }
-  .about-img {
-    aspect-ratio: 4/5;
-    background: linear-gradient(135deg, #1a0f3a, #4c1d95, #7c3aed);
-    border-radius: 16px;
-    display: flex; align-items: center; justify-content: center;
-    color: rgba(255,255,255,0.7);
-    font-size: 0.9rem;
-    position: relative;
-    overflow: hidden;
-    box-shadow: var(--shadow-lg);
-  }
-  .about-img::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(circle at 30% 30%, rgba(192, 132, 252, 0.35), transparent 60%);
-  }
-  .about-img::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(circle at 70% 70%, rgba(168, 85, 247, 0.35), transparent 60%);
-  }
-  .about-img-placeholder {
-    position: relative;
-    z-index: 1;
-    text-align: center;
-    padding: 2rem;
-  }
-  .about-img-placeholder .label-mark {
-    display: inline-block;
-    padding: 0.3rem 0.8rem;
-    background: rgba(255,255,255,0.15);
-    backdrop-filter: blur(10px);
-    border-radius: 999px;
-    font-size: 0.75rem;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    margin-bottom: 1rem;
-    color: #fff;
-  }
-  .about-img-placeholder strong {
-    display: block;
-    color: #fff;
-    font-size: 1.8rem;
-    font-family: 'Space Grotesk', sans-serif;
-    margin-bottom: 0.5rem;
-    font-weight: 700;
-  }
-  .about-img-placeholder span { color: rgba(255,255,255,0.8); font-size: 0.9rem; }
+  /* ===================== BANNER STRIP ===================== */
+  .banner-strip { background: linear-gradient(135deg, var(--primary), var(--accent)); color: #fff; padding: 2.5rem 0; text-align: center; }
+  .banner-strip h3 { color: #fff; font-size: 1.3rem; font-weight: 600; margin-bottom: 0.4rem; }
+  .banner-strip p { color: rgba(255,255,255,0.85); font-size: 0.95rem; }
 
-  .about-content .section-label { display: inline-flex; }
-  .about-content h2 { margin: 0.5rem 0 1.2rem; }
-  .about-content p { margin-bottom: 1rem; font-size: 1rem; line-height: 1.7; color: var(--text-soft); }
+  /* ===================== DIFFERENCE (CHECKLIST) ===================== */
+  .difference-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem 2rem; margin-top: 2rem; }
+  .difference-item { display: flex; gap: 0.9rem; align-items: flex-start; padding: 0.8rem 0; }
+  .check-circle { flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+  .difference-item p { color: var(--text-soft); font-size: 1rem; padding-top: 0.35rem; }
 
-  .about-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--line); }
-  .stat-num {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 2.2rem;
-    font-weight: 700;
-    display: block;
-    background: linear-gradient(135deg, var(--primary), var(--accent));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-  .stat-label { font-size: 0.85rem; color: var(--muted); }
+  /* ===================== PACKAGES ===================== */
+  .packages-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-top: 2.5rem; align-items: stretch; }
+  .package-card { background: var(--card); border: 2px solid var(--line); border-radius: 16px; padding: 2.2rem 1.8rem; text-align: center; position: relative; transition: all 0.3s; display: flex; flex-direction: column; }
+  .package-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: var(--line-strong); }
+  .package-card.featured { background: linear-gradient(160deg, #4c1d95 0%, #2d1b5a 100%); color: #fff; border-color: var(--primary); transform: scale(1.03); box-shadow: 0 20px 60px var(--glow-strong); }
+  .package-card.featured h3, .package-card.featured .price { color: #fff; }
+  .package-card.featured .package-sub, .package-card.featured .price-suffix { color: rgba(255,255,255,0.75); }
+  .package-card.featured ul li { color: rgba(255,255,255,0.92); }
+  .package-card.featured ul li svg circle { fill: rgba(255,255,255,0.2); }
+  .package-card.featured ul li svg path { stroke: #fff; }
+  .package-card.featured .divider { background: rgba(255,255,255,0.15); }
 
-  /* ===================== WHY ===================== */
-  .why { background: var(--bg); }
-  .why-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; }
-  .why-card {
-    text-align: center;
-    padding: 2rem 1.5rem;
-    background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    transition: all 0.3s;
-  }
-  .why-card:hover {
-    border-color: var(--primary-soft);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-card);
-  }
-  .why-icon {
-    width: 64px; height: 64px;
-    margin: 0 auto 1.2rem;
-    background: linear-gradient(135deg, var(--primary), var(--accent));
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    color: #fff;
-    box-shadow: 0 8px 25px var(--glow);
-    position: relative;
-  }
-  .why-icon::after {
-    content: '';
-    position: absolute;
-    inset: -4px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--primary), var(--accent));
-    opacity: 0.2;
-    filter: blur(8px);
-    z-index: -1;
-  }
-  .why-card h3 { margin-bottom: 0.5rem; color: var(--text); }
-  .why-card p { font-size: 0.95rem; color: var(--muted); }
+  .popular-badge { position: absolute; top: -14px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #fff; padding: 0.35rem 1rem; border-radius: 999px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; box-shadow: 0 4px 15px var(--glow); }
+  .package-card h3 { font-size: 1.5rem; margin-bottom: 0.3rem; }
+  .package-sub { font-size: 0.9rem; color: var(--muted); margin-bottom: 1.5rem; }
+  .price { font-family: 'Space Grotesk', sans-serif; font-size: 2.5rem; font-weight: 700; color: var(--primary); line-height: 1; }
+  .price-suffix { font-size: 0.85rem; color: var(--muted); margin-top: 0.3rem; margin-bottom: 1.5rem; }
+  .divider { height: 1px; background: var(--line); margin: 1.5rem 0; }
+  .package-card ul { list-style: none; text-align: left; margin-bottom: 1.5rem; flex-grow: 1; }
+  .package-card ul li { display: flex; gap: 0.7rem; align-items: flex-start; padding: 0.55rem 0; color: var(--text-soft); font-size: 0.95rem; }
+  .package-card ul li svg { flex-shrink: 0; margin-top: 2px; }
 
-  /* ===================== SERVICE AREA ===================== */
-  .service-area {
-    background: var(--hero-gradient);
-    color: #fff;
-    position: relative;
-    overflow: hidden;
-  }
-  .service-area::before {
-    content: '';
-    position: absolute;
-    top: 10%; right: -5%;
-    width: 500px; height: 500px;
-    background: radial-gradient(circle, rgba(168, 85, 247, 0.25), transparent 70%);
-    pointer-events: none;
-  }
-  .service-area::after {
-    content: '';
-    position: absolute;
-    bottom: -10%; left: -5%;
-    width: 400px; height: 400px;
-    background: radial-gradient(circle, rgba(192, 132, 252, 0.18), transparent 70%);
-    pointer-events: none;
-  }
-  .service-area .section-label {
-    background: rgba(192, 132, 252, 0.2);
-    color: #e9d5ff;
-  }
-  .service-area h2 { color: #fff; }
-  .service-area .section-title p { color: rgba(255,255,255,0.8); }
+  .price-note { text-align: center; color: var(--muted); font-size: 0.88rem; margin-top: 1.5rem; font-style: italic; }
 
-  .area-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 1rem;
-    margin-top: 2rem;
-    position: relative;
-    z-index: 1;
-  }
-  .area-pill {
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.12);
-    padding: 1.2rem 1.4rem;
-    border-radius: 12px;
-    transition: all 0.2s;
-    backdrop-filter: blur(8px);
-  }
-  .area-pill:hover {
-    background: rgba(255,255,255,0.1);
-    border-color: var(--accent);
-    transform: translateY(-2px);
-  }
-  .area-pill strong { display: block; color: #fff; font-weight: 600; margin-bottom: 0.3rem; font-size: 1.02rem; }
-  .area-pill span { color: rgba(255,255,255,0.7); font-size: 0.85rem; }
+  /* ===================== COMPARE TABLE ===================== */
+  .compare-wrap { margin-top: 2.5rem; border-radius: 12px; overflow: hidden; box-shadow: var(--shadow); border: 1px solid var(--line); }
+  .compare-table { width: 100%; border-collapse: collapse; background: var(--card); }
+  .compare-table th { background: linear-gradient(135deg, #4c1d95, #7c3aed); color: #fff; padding: 1.2rem 1rem; text-align: left; font-weight: 600; font-size: 1rem; }
+  .compare-table th:first-child { background: transparent; color: var(--text); }
+  .compare-table td { padding: 1rem; border-bottom: 1px solid var(--line); color: var(--text-soft); font-size: 0.95rem; }
+  .compare-table tr:last-child td { border-bottom: 0; }
+  .compare-table td:first-child { font-weight: 600; color: var(--text); }
+  .compare-table .mih-cell { color: var(--primary); font-weight: 700; }
 
-  /* ===================== TESTIMONIALS ===================== */
-  .testimonials { background: var(--bg-2); }
-  .testimonial-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; }
-  .testimonial {
-    background: var(--card);
-    padding: 2rem;
-    border-radius: 14px;
-    border: 1px solid var(--line);
-    position: relative;
-    transition: all 0.25s;
-  }
-  .testimonial:hover {
-    border-color: var(--primary-soft);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-card);
-  }
-  .stars { color: #f59e0b; margin-bottom: 1rem; font-size: 1.1rem; letter-spacing: 2px; }
-  .testimonial p { color: var(--text-soft); font-size: 0.98rem; margin-bottom: 1.2rem; line-height: 1.7; }
-  .testimonial-author { display: flex; align-items: center; gap: 0.8rem; }
-  .avatar {
-    width: 42px; height: 42px; border-radius: 50%;
-    background: linear-gradient(135deg, var(--primary), var(--accent));
-    color: #fff; display: flex; align-items: center; justify-content: center;
-    font-weight: 600; font-size: 0.95rem;
-    box-shadow: 0 4px 12px var(--glow);
-  }
-  .author-name strong { display: block; color: var(--text); font-size: 0.95rem; }
-  .author-name span { font-size: 0.85rem; color: var(--muted); }
-  .placeholder-note {
-    text-align: center;
-    margin-top: 2rem;
-    padding: 1rem 1.5rem;
-    background: var(--placeholder-note-bg);
-    border: 1px dashed var(--placeholder-note-border);
-    border-radius: 10px;
-    font-size: 0.9rem;
-    color: var(--placeholder-note-text);
-  }
+  /* ===================== QUOTE SECTION ===================== */
+  .quote-section { background: var(--hero-gradient); color: #fff; padding: 5rem 0; position: relative; overflow: hidden; }
+  .quote-section::before { content: ''; position: absolute; top: -80px; left: -80px; width: 300px; height: 300px; border-radius: 50%; background: radial-gradient(circle, rgba(192, 132, 252, 0.4) 0%, transparent 70%); pointer-events: none; }
+  .quote-section::after { content: ''; position: absolute; bottom: -100px; right: -100px; width: 350px; height: 350px; border-radius: 50%; background: radial-gradient(circle, rgba(168, 85, 247, 0.3) 0%, transparent 70%); pointer-events: none; }
+  .quote-grid { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center; }
+  .quote-copy h2 { color: #fff; margin-bottom: 1rem; }
+  .quote-copy h2::after { display: none; }
+  .quote-copy p { color: rgba(255,255,255,0.85); font-size: 1.05rem; margin-bottom: 1.5rem; }
+  .quote-copy .phone-cta { display: inline-flex; align-items: center; gap: 0.6rem; font-size: 1.1rem; color: #fff; font-weight: 600; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); padding: 0.9rem 1.3rem; border-radius: 10px; transition: all 0.2s; }
+  .quote-copy .phone-cta:hover { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.4); }
 
-  /* ===================== CONTACT ===================== */
-  .contact { background: var(--bg); }
-  .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: start; }
-  .contact-info h3 { margin-bottom: 0.5rem; color: var(--text); }
-  .contact-info > p { margin-bottom: 2rem; color: var(--muted); }
-
-  .contact-people {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-    margin-bottom: 2rem;
-  }
-  .person-card {
-    background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    padding: 1.5rem;
-    text-align: center;
-    transition: all 0.25s;
-    position: relative;
-    overflow: hidden;
-  }
-  .person-card::before {
-    content: '';
-    position: absolute;
-    inset: 0 0 auto 0;
-    height: 3px;
-    background: linear-gradient(90deg, var(--primary), var(--accent));
-  }
-  .person-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-card); border-color: var(--primary-soft); }
-  .person-avatar {
-    width: 64px; height: 64px;
-    margin: 0 auto 1rem;
-    background: linear-gradient(135deg, var(--primary), var(--accent));
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    color: #fff;
-    font-family: 'Space Grotesk', sans-serif;
-    font-weight: 700;
-    font-size: 1.5rem;
-    box-shadow: 0 6px 20px var(--glow);
-  }
-  .person-card .name {
-    font-family: 'Space Grotesk', sans-serif;
-    font-weight: 600;
-    font-size: 1.1rem;
-    color: var(--text);
-    margin-bottom: 0.15rem;
-  }
-  .person-card .role { font-size: 0.85rem; color: var(--muted); margin-bottom: 0.8rem; }
-  .person-card a {
-    display: block;
-    color: var(--primary);
-    font-weight: 600;
-    font-size: 0.95rem;
-    padding: 0.3rem 0;
-    transition: color 0.2s;
-  }
-  .person-card a:hover { color: var(--accent); }
-  .person-card .email-link { font-size: 0.82rem; color: var(--muted); font-weight: 500; }
-  .person-card .email-link:hover { color: var(--primary); }
-
-  .contact-item { display: flex; gap: 1rem; margin-bottom: 1.2rem; }
-  .contact-item .icon {
-    width: 44px; height: 44px;
-    background: var(--primary-soft);
-    color: var(--primary);
-    border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-  }
-  .contact-item strong { display: block; color: var(--text); margin-bottom: 0.2rem; font-weight: 600; }
-  .contact-item span, .contact-item a { color: var(--muted); font-size: 0.95rem; }
-  .contact-item a:hover { color: var(--primary); }
-
-  .contact-form {
-    background: var(--card);
-    padding: 2rem;
-    border-radius: 16px;
-    box-shadow: var(--shadow);
-    border: 1px solid var(--line);
-  }
-  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
-  .form-group { margin-bottom: 1rem; }
-  .form-group label { display: block; font-size: 0.9rem; font-weight: 500; color: var(--text); margin-bottom: 0.4rem; }
-  .form-group input, .form-group select, .form-group textarea {
-    width: 100%;
-    padding: 0.8rem 0.95rem;
-    border: 1px solid var(--form-border);
-    background: var(--form-bg);
-    color: var(--text);
-    border-radius: 8px;
-    font-family: inherit;
-    font-size: 0.95rem;
-    transition: all 0.2s;
-  }
-  .form-group input::placeholder, .form-group textarea::placeholder { color: var(--muted); }
-  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
-    outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px var(--form-focus);
-  }
-  .form-group textarea { resize: vertical; min-height: 110px; }
-  .contact-form .btn { width: 100%; justify-content: center; }
+  .quote-card { background: var(--card); color: var(--text); border-radius: 16px; padding: 2.2rem; box-shadow: 0 25px 60px rgba(0,0,0,0.3); }
+  .quote-card h3 { color: var(--text); font-size: 1.35rem; margin-bottom: 1.4rem; display: flex; align-items: center; gap: 0.6rem; }
+  .quote-card h3 svg { color: var(--primary); }
+  .enquiry-form { display: flex; flex-direction: column; gap: 0.85rem; }
+  .enquiry-form input, .enquiry-form select, .enquiry-form textarea { font-family: inherit; font-size: 0.95rem; padding: 0.85rem 1rem; background: var(--bg); border: 1px solid var(--line-strong); border-radius: 8px; color: var(--text); transition: border-color 0.2s, box-shadow 0.2s; width: 100%; }
+  .enquiry-form input::placeholder, .enquiry-form textarea::placeholder { color: var(--muted); }
+  .enquiry-form select option { background: var(--card); color: var(--text); }
+  .enquiry-form input:focus, .enquiry-form select:focus, .enquiry-form textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
+  .enquiry-form textarea { resize: vertical; min-height: 90px; font-family: inherit; }
+  .enquiry-form select { cursor: pointer; }
+  .enquiry-form button { width: 100%; justify-content: center; margin-top: 0.4rem; }
+  .form-status { font-size: 0.9rem; margin-top: 0.5rem; min-height: 1.2rem; }
 
   /* ===================== FOOTER ===================== */
-  footer {
-    background: #0a0a14;
-    color: rgba(255,255,255,0.7);
-    padding: 4rem 0 1.5rem;
-  }
-  .footer-grid {
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr 1fr;
-    gap: 3rem;
-    margin-bottom: 3rem;
-  }
-  .footer-brand h3 { color: #fff; margin-bottom: 1rem; font-family: 'Space Grotesk', sans-serif; display: flex; align-items: center; gap: 0.5rem; }
-  .footer-brand .logo-mark { width: 36px; height: 36px; border-radius: 8px; }
-  .footer-brand p { color: rgba(255,255,255,0.65); font-size: 0.95rem; margin-bottom: 1.5rem; max-width: 360px; }
-  .footer-social { display: flex; gap: 0.6rem; }
-  .social-icon {
-    width: 38px; height: 38px;
-    background: rgba(255,255,255,0.08);
-    border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    transition: all 0.2s;
-    color: rgba(255,255,255,0.8);
-  }
-  .social-icon:hover {
-    background: linear-gradient(135deg, #a855f7, #c084fc);
-    color: #fff;
-    transform: translateY(-2px);
-  }
+  footer { background: var(--bg-2); border-top: 1px solid var(--line); padding: 3rem 0 1.5rem; }
+  .footer-top { display: flex; justify-content: space-between; gap: 2rem; flex-wrap: wrap; margin-bottom: 2rem; }
+  .footer-brand h3 { font-size: 1.15rem; display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.6rem; }
+  .footer-brand p { font-size: 0.9rem; max-width: 360px; }
+  .footer-meta { font-size: 0.9rem; color: var(--muted); }
+  .footer-meta strong { color: var(--text-soft); }
+  .footer-meta a { color: var(--primary); }
+  .footer-bottom { border-top: 1px solid var(--line); padding-top: 1.5rem; display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; font-size: 0.85rem; color: var(--muted); }
+  .footer-bottom a { color: var(--muted); }
+  .footer-bottom a:hover { color: var(--primary); }
 
-  footer h4 { color: #fff; font-size: 0.95rem; margin-bottom: 1.2rem; font-family: 'Inter', sans-serif; font-weight: 600; letter-spacing: 0.02em; }
-  footer ul { list-style: none; }
-  footer li { margin-bottom: 0.6rem; font-size: 0.9rem; }
-  footer li a { color: rgba(255,255,255,0.7); transition: color .2s; }
-  footer li a:hover { color: #c084fc; }
-
-  .footer-bottom {
-    border-top: 1px solid rgba(255,255,255,0.1);
-    padding-top: 1.5rem;
-    display: flex;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 1rem;
-    font-size: 0.85rem;
-    color: rgba(255,255,255,0.55);
-  }
-  .licence { font-size: 0.8rem; color: rgba(255,255,255,0.45); }
+  /* ===================== FADE-IN ===================== */
+  .fade-in { opacity: 0; transform: translateY(20px); transition: all 0.6s ease; }
+  .fade-in.visible { opacity: 1; transform: translateY(0); }
 
   /* ===================== RESPONSIVE ===================== */
   @media (max-width: 900px) {
-    .hero-inner, .about-grid, .contact-grid, .footer-grid { grid-template-columns: 1fr; }
-    .hero { padding: 3rem 0 4rem; }
-    .footer-grid { gap: 2rem; }
-    .about-img { aspect-ratio: 3/2; }
-    .form-row { grid-template-columns: 1fr; }
-    .nav { padding-right: 5rem; }
-  }
-  @media (max-width: 700px) {
-    .nav-links { display: none; }
+    .feature-grid, .steps-grid, .packages-grid, .quote-grid { grid-template-columns: 1fr; }
+    .package-card.featured { transform: none; }
+    .step-card:not(:last-child)::after { display: none; }
+    .difference-grid { grid-template-columns: 1fr; }
+    .nav-links { display: none; position: absolute; top: 100%; left: 0; right: 0; background: var(--bg); flex-direction: column; gap: 0; padding: 1rem 0; box-shadow: var(--shadow); border-bottom: 1px solid var(--line); }
+    .nav-links.open { display: flex; }
+    .nav-links li { width: 100%; }
+    .nav-links a { display: block; padding: 0.9rem 1.5rem; }
     .menu-btn { display: block; }
-    .nav-links.open {
-      display: flex;
-      position: absolute;
-      top: 100%;
-      left: 0;
-      right: 0;
-      background: var(--bg);
-      flex-direction: column;
-      padding: 1rem 1.5rem;
-      border-bottom: 1px solid var(--line);
-      gap: 1rem;
-      align-items: flex-start;
-    }
-    .top-bar { font-size: 0.78rem; }
-    .hero-badges { flex-direction: column; gap: 0.8rem; }
-    .about-stats { grid-template-columns: repeat(3, 1fr); }
-    .stat-num { font-size: 1.6rem; }
-    .contact-people { grid-template-columns: 1fr; }
-    .theme-toggle { top: auto; bottom: 1rem; right: 1rem; }
-    .logo-text span { display: none; }
+    .nav { position: relative; }
+    section { padding: 3.5rem 0; }
+    .hero { padding: 3.5rem 0 4rem; }
   }
-
-  /* ===================== SCROLL ANIMATIONS ===================== */
-  .fade-in { opacity: 0; transform: translateY(20px); transition: opacity 0.6s, transform 0.6s; }
-  .fade-in.visible { opacity: 1; transform: none; }
+  @media (max-width: 600px) {
+    .compare-table th, .compare-table td { padding: 0.7rem 0.6rem; font-size: 0.85rem; }
+    .top-bar-inner { justify-content: center; }
+  }
 </style>
 </head>
-
-<!-- DEFAULT THEME = LIGHT (white + purple). Toggle in top-right adds .theme-dark -->
 <body class="theme-light">
 
 <!-- ===================== THEME TOGGLE ===================== -->
@@ -857,480 +329,364 @@
 </div>
 
 <!-- ===================== TOP BAR ===================== -->
-<!-- EDIT: hours, phone numbers -->
 <div class="top-bar">
   <div class="container top-bar-inner">
-    <span>&#9203; Mon–Sat 7am–7pm &middot; After-hours emergency available</span>
-    <span><strong>Mitch</strong> <a href="tel:+61488882192">0488 882 192</a> &middot; <strong>Nate</strong> <a href="tel:+61451993930">0451 993 930</a></span>
+    <span>&#9203; Mon–Sat 7am–7pm &middot; South East QLD installs</span>
+    <span><strong>Call us</strong> <a href="tel:+61480568180">0480 568 180</a></span>
   </div>
 </div>
 
-<!-- ===================== HEADER / NAV ===================== -->
-<!-- EDIT: brand name in .logo-text, menu items in .nav-links -->
+<!-- ===================== HEADER ===================== -->
 <header>
   <div class="container nav">
-    <a href="#" class="logo">
+    <a href="index.html" class="logo">
       <span class="logo-mark">M</span>
       <span class="logo-text">
-        <strong>Massive Integrated Homes</strong>
-        <span>by Mitch &amp; Nate</span>
+        <strong>MIH Automation</strong>
+        <span>By Massive Integrated Homes</span>
       </span>
     </a>
     <button class="menu-btn" aria-label="Menu" onclick="document.getElementById('navlinks').classList.toggle('open')">
       <span></span><span></span><span></span>
     </button>
     <ul class="nav-links" id="navlinks">
-      <li><a href="#services">Services</a></li>
-      <li><a href="#about">About</a></li>
-      <li><a href="#area">Service Area</a></li>
-      <li><a href="#reviews">Reviews</a></li>
-      <li><a href="#contact" class="nav-cta">Get a Quote</a></li>
+      <li><a href="index.html">Home</a></li>
+      <li><a href="#how">How It Works</a></li>
+      <li><a href="#packages">Packages</a></li>
+      <li><a href="#compare">Compare</a></li>
+      <li><a href="#quote" class="nav-cta">Get a Free Quote</a></li>
     </ul>
   </div>
 </header>
 
 <!-- ===================== HERO ===================== -->
-<!-- EDIT: headline, sub-text, CTA buttons, badges -->
 <section class="hero">
+  <div class="hero-blob-1"></div>
+  <div class="hero-blob-2"></div>
   <div class="container hero-inner">
-    <div>
-      <h1>Your home. <span class="accent">Done properly.</span></h1>
-      <p class="hero-lead">Massive Integrated Homes brings electrical, smart home, security, home theatre and fit-out work together under one trusted team — Mitch &amp; Nate, serving Brisbane's southside from Greenslopes to Springfield and everywhere in between.</p>
-      <div class="hero-cta">
-        <a href="#contact" class="btn btn-primary">
-          Get a Free Quote
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-        </a>
-        <a href="tel:+61488882192" class="btn btn-secondary">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-          Call Mitch — 0488 882 192
-        </a>
-        <a href="tel:+61451993930" class="btn btn-secondary">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-          Call Nate — 0451 993 930
-        </a>
-      </div>
-      <div class="hero-badges">
-        <div class="hero-badge">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-          QBCC Licensed
-        </div>
-        <div class="hero-badge">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-          Fully Insured
-        </div>
-        <div class="hero-badge">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-          Free Quotes
-        </div>
-      </div>
-    </div>
-
-    <!-- Hero quote form -->
-    <div class="hero-card">
-      <h3>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4 14h7l-2 8 9-12h-7l2-8z"/></svg>
-        Request a free quote
-      </h3>
-      <!-- EDIT: replace YOUR_FORMSPREE_ID below with the ID from your Formspree dashboard -->
-      <form class="hero-form enquiry-form" action="https://formspree.io/f/maqagaoz" method="POST">
-        <input type="text" name="name" placeholder="Your name" required>
-        <input type="tel" name="phone" placeholder="Phone number" required>
-        <select name="service" required>
-          <option value="" disabled selected>What do you need?</option>
-          <option>Electrical work</option>
-          <option>Smart home / automation</option>
-          <option>CCTV / security</option>
-          <option>Home theatre / AV</option>
-          <option>Starlink installation</option>
-          <option>Fit-out / handyman</option>
-          <option>Not sure — I need advice</option>
-        </select>
-        <textarea name="message" rows="3" placeholder="Brief details (suburb, timing, anything else)"></textarea>
-        <input type="hidden" name="_subject" value="New quote request (hero form) — Massive Integrated Homes">
-        <input type="text" name="_gotcha" style="display:none" tabindex="-1" autocomplete="off">
-        <button type="submit" class="btn btn-primary">Send Enquiry</button>
-        <p class="form-status" aria-live="polite"></p>
-      </form>
+    <span class="hero-eyebrow">Brisbane's home automation specialists</span>
+    <h1>Make your home smart — <span class="accent">without making it expensive.</span></h1>
+    <p class="hero-lead">One app. Every brand. No rebuild, no $100k rack. MIH Automation connects everything you already own into one simple system you can actually use.</p>
+    <div class="hero-cta">
+      <a href="#quote" class="btn btn-primary">
+        Get a Free Quote
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+      <a href="#packages" class="btn btn-secondary">See Packages</a>
     </div>
   </div>
 </section>
 
-<!-- ===================== SERVICES ===================== -->
-<!-- EDIT: each .service-card is one service. Copy a card to add another. -->
-<section id="services" class="services">
+<!-- ===================== WHY MIH ===================== -->
+<section id="why">
   <div class="container">
     <div class="section-title fade-in">
-      <span class="section-label">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4 14h7l-2 8 9-12h-7l2-8z"/></svg>
-        What we do
-      </span>
-      <h2>Everything for your home, under one roof</h2>
-      <p>Two specialists, one team. A licensed electrical contractor plus a home theatre fit-out expert — so you don't need to juggle four different tradies to get your project done right.</p>
+      <span class="section-label">Why MIH</span>
+      <h2>Smart home, made simple</h2>
+      <p>Most homes already have smart devices — lights, cameras, speakers, a thermostat — all bought at different times, all stuck in different apps. MIH Automation connects everything you already own into one simple system, controlled from a single app. No knocking down walls. No expensive proprietary hardware. No dedicating a whole wardrobe to a server rack. Just your home, working together.</p>
     </div>
-    <div class="services-grid">
 
-      <!-- Service 1: Electrical -->
-      <div class="service-card fade-in">
-        <div class="service-icon">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4 14h7l-2 8 9-12h-7l2-8z"/></svg>
+    <!-- EDIT: feature cards (3 reasons to choose MIH) -->
+    <div class="feature-grid">
+      <div class="feature-card fade-in">
+        <div class="feature-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
         </div>
-        <h3>Electrical</h3>
-        <p>Full residential and commercial electrical work by a licensed Queensland contractor.</p>
-        <ul>
-          <li>Powerpoints, lighting, switchboards</li>
-          <li>Safety switches &amp; rewiring</li>
-          <li>Ceiling fans &amp; exhaust fans</li>
-          <li>Emergency fault-finding</li>
-        </ul>
+        <h3>One App, Every Brand</h3>
+        <p>Control Hue, Nest, Sonos, Ring and more from one dashboard.</p>
       </div>
-
-      <!-- Service 2: Smart Home -->
-      <div class="service-card fade-in">
-        <div class="service-icon">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3"/></svg>
-        </div>
-        <h3>Smart Home &amp; Automation</h3>
-        <p>From smart lighting to whole-home automation integrated with your devices.</p>
-        <ul>
-          <li>Smart lighting &amp; switches</li>
-          <li>Voice control (Alexa, Google, Apple)</li>
-          <li>Automated blinds &amp; scenes</li>
-          <li>Integrated smart locks &amp; intercoms</li>
-        </ul>
-      </div>
-
-      <!-- Service 3: Security / CCTV -->
-      <div class="service-card fade-in">
-        <div class="service-icon">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
-        </div>
-        <h3>Security &amp; CCTV</h3>
-        <p>Protect what matters with clean, reliable CCTV and alarm installs.</p>
-        <ul>
-          <li>4K CCTV systems (Hikvision, Dahua, Reolink)</li>
-          <li>Remote monitoring on your phone</li>
-          <li>Alarm systems &amp; sensors</li>
-          <li>Video doorbells &amp; intercoms</li>
-        </ul>
-      </div>
-
-      <!-- Service 4: Home Theatre -->
-      <div class="service-card fade-in">
-        <div class="service-icon">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"/><polyline points="17 2 12 7 7 2"/></svg>
-        </div>
-        <h3>Home Theatre &amp; AV</h3>
-        <p>Professional home theatre and distributed audio setups that just work.</p>
-        <ul>
-          <li>TV wall mounting &amp; cable concealment</li>
-          <li>Surround sound &amp; projector setups</li>
-          <li>Whole-home audio zones</li>
-          <li>Media room design &amp; build</li>
-        </ul>
-      </div>
-
-      <!-- Service 5: Starlink -->
-      <div class="service-card fade-in">
-        <div class="service-icon">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
-        </div>
-        <h3>Starlink &amp; Connectivity</h3>
-        <p>Reliable internet anywhere — plus Wi-Fi and data cabling done properly.</p>
-        <ul>
-          <li>Starlink mounting &amp; configuration</li>
-          <li>Whole-home mesh Wi-Fi</li>
-          <li>Data &amp; network cabling</li>
-          <li>NBN troubleshooting</li>
-        </ul>
-      </div>
-
-      <!-- Service 6: Fit-outs & Handyman -->
-      <div class="service-card fade-in">
-        <div class="service-icon">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 22v-5a2 2 0 0 1 2-2h4v-4a2 2 0 0 1 2-2h4V5a2 2 0 0 1 2-2h4v16"/><path d="M2 22h20"/></svg>
-        </div>
-        <h3>Fit-outs &amp; Handyman</h3>
-        <p>Hands-on fit-outs, media room builds, and the finishing work most sparkies can't touch.</p>
-        <ul>
-          <li>Media room &amp; home theatre fit-outs</li>
-          <li>Cabinetry, mounting &amp; carpentry</li>
-          <li>Door, window &amp; frame repairs</li>
-          <li>General handyman work</li>
-        </ul>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-<!-- ===================== ABOUT ===================== -->
-<!-- EDIT: photo placeholder, story copy, stat numbers -->
-<section id="about" class="about">
-  <div class="container about-grid">
-    <div class="about-img fade-in">
-      <div class="about-img-placeholder">
-        <span class="label-mark">Team photo coming soon</span>
-        <strong>Mitch &amp; Nate</strong>
-        <span>We'll shoot a proper team photo before launch</span>
-      </div>
-    </div>
-    <div class="about-content fade-in">
-      <span class="section-label">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4 14h7l-2 8 9-12h-7l2-8z"/></svg>
-        Meet the team
-      </span>
-      <h2>Two local tradies. One trusted team.</h2>
-      <p>Mitch is a licensed Queensland electrical contractor from Greenslopes. Nate's a home theatre fit-out specialist based in Springfield with years of hands-on experience installing media rooms, mounting AV gear, and finishing off the work that ties a job together. We've both spent years on the tools working jobs all over Brisbane's southside — and we started Massive Integrated Homes because the best home projects happen when electrical and fit-out work are handled together, not pieced together by strangers who've never met.</p>
-      <p>We turn up when we say we will, we explain things in plain English, and we leave your place cleaner than we found it. Whether it's a new powerpoint, a full smart home rollout, or a media room fit-out that ties it all together — you get the same two mates working the job from start to finish.</p>
-      <div class="about-stats">
-        <div>
-          <span class="stat-num">10+</span>
-          <span class="stat-label">Years on the tools</span>
-        </div>
-        <div>
-          <span class="stat-num">2</span>
-          <span class="stat-label">Trades, one team</span>
-        </div>
-        <div>
-          <span class="stat-num">1hr</span>
-          <span class="stat-label">Service radius</span>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ===================== WHY US ===================== -->
-<section class="why">
-  <div class="container">
-    <div class="section-title fade-in">
-      <span class="section-label">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4 14h7l-2 8 9-12h-7l2-8z"/></svg>
-        Why choose us
-      </span>
-      <h2>No fluff. Just good work, done once.</h2>
-    </div>
-    <div class="why-grid">
-      <div class="why-card fade-in">
-        <div class="why-icon">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-        </div>
-        <h3>Fully Licensed</h3>
-        <p>QBCC-licensed electrical contractor. Fully insured to $20M public liability.</p>
-      </div>
-      <div class="why-card fade-in">
-        <div class="why-icon">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        </div>
-        <h3>On Time</h3>
-        <p>We show up when we say we will. If we can't, we call ahead — not after.</p>
-      </div>
-      <div class="why-card fade-in">
-        <div class="why-icon">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-        </div>
-        <h3>Quality First</h3>
-        <p>Done right the first time, tidy finish, and we stand behind our work.</p>
-      </div>
-      <div class="why-card fade-in">
-        <div class="why-icon">
+      <div class="feature-card fade-in">
+        <div class="feature-icon">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
         </div>
-        <h3>Fair Pricing</h3>
-        <p>Clear quotes upfront, no hidden extras. What we quote is what you pay.</p>
+        <h3>Low Cost to Start</h3>
+        <p>From $3,990 — a fraction of traditional systems that start at $25k+.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </div>
+        <h3>No Rebuild Needed</h3>
+        <p>Works with your existing devices. Add more as you upgrade.</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ===================== SERVICE AREA ===================== -->
-<!-- EDIT: add or remove .area-pill blocks for the suburbs you cover -->
-<section id="area" class="service-area">
+<!-- ===================== HOW IT WORKS ===================== -->
+<section id="how" style="background: var(--bg-2);">
   <div class="container">
     <div class="section-title fade-in">
-      <span class="section-label">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4 14h7l-2 8 9-12h-7l2-8z"/></svg>
-        Where we work
-      </span>
-      <h2>Brisbane's southside — and a bit beyond</h2>
-      <p>Based between Greenslopes and Springfield. Happy to travel anywhere within an hour for the right job.</p>
+      <span class="section-label">How It Works</span>
+      <h2>Three simple steps</h2>
     </div>
-    <div class="area-grid">
-      <div class="area-pill"><strong>Greenslopes</strong><span>HQ &amp; surrounds</span></div>
-      <div class="area-pill"><strong>Holland Park</strong><span>Mins away</span></div>
-      <div class="area-pill"><strong>Coorparoo</strong><span>Same-day calls</span></div>
-      <div class="area-pill"><strong>Carindale</strong><span>Regular jobs</span></div>
-      <div class="area-pill"><strong>Mt Gravatt</strong><span>Same-day calls</span></div>
-      <div class="area-pill"><strong>Mansfield</strong><span>Regular jobs</span></div>
-      <div class="area-pill"><strong>Sunnybank</strong><span>Regular jobs</span></div>
-      <div class="area-pill"><strong>Springwood</strong><span>Regular jobs</span></div>
-      <div class="area-pill"><strong>Springfield</strong><span>Nate's HQ</span></div>
-      <div class="area-pill"><strong>Logan &amp; Ipswich</strong><span>By arrangement</span></div>
-      <div class="area-pill"><strong>Brisbane CBD</strong><span>By arrangement</span></div>
-      <div class="area-pill"><strong>Not listed?</strong><span>Just ask &mdash; we travel</span></div>
+
+    <!-- EDIT: the 3 steps -->
+    <div class="steps-grid">
+      <div class="step-card fade-in">
+        <div class="step-num">01</div>
+        <h3>We connect what you have</h3>
+        <p>Our compact MiHub links all your existing smart devices — regardless of brand — into one unified system.</p>
+      </div>
+      <div class="step-card fade-in">
+        <div class="step-num">02</div>
+        <h3>You see everything in one place</h3>
+        <p>Lights, climate, security and audio all on one clean app. Control your home from anywhere.</p>
+      </div>
+      <div class="step-card fade-in">
+        <div class="step-num">03</div>
+        <h3>Your home gets smarter over time</h3>
+        <p>Add new automations and devices whenever you like. Your system grows with your home.</p>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- ===================== TESTIMONIALS ===================== -->
-<!-- EDIT: replace placeholder reviews with real ones from Google/clients -->
-<section id="reviews" class="testimonials">
+<!-- ===================== BANNER STRIP ===================== -->
+<div class="banner-strip">
+  <div class="container">
+    <h3>Everything you love about a high-end smart home — without the high-end price tag.</h3>
+    <p>Brisbane homeowners, renovators &amp; new builds — from $3,990</p>
+  </div>
+</div>
+
+<!-- ===================== DIFFERENCE ===================== -->
+<section id="difference">
   <div class="container">
     <div class="section-title fade-in">
-      <span class="section-label">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4 14h7l-2 8 9-12h-7l2-8z"/></svg>
-        What clients say
-      </span>
-      <h2>Don't just take our word for it</h2>
-      <p>A few kind words from neighbours we've helped on the southside.</p>
+      <span class="section-label">The Difference</span>
+      <h2>Why homeowners choose MIH</h2>
     </div>
-    <div class="testimonial-grid">
-      <div class="testimonial fade-in">
-        <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
-        <p>"Mitch sorted out our switchboard and added new powerpoints in the kitchen. Tidy work, sensible price, and explained everything as he went. Won't be calling anyone else."</p>
-        <div class="testimonial-author">
-          <div class="avatar">SK</div>
-          <div class="author-name">
-            <strong>Sarah K.</strong>
-            <span>Greenslopes</span>
-          </div>
-        </div>
+
+    <!-- EDIT: 6 difference points -->
+    <div class="difference-grid">
+      <div class="difference-item fade-in">
+        <div class="check-circle">&#10003;</div>
+        <p>Low barrier to entry &mdash; start smart from under $4,000</p>
       </div>
-      <div class="testimonial fade-in">
-        <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
-        <p>"Got Nate and Mitch in for a full media room — TV mounting, surround sound, smart lighting and the lot. Came in on quote, finished on time, and the missus is still showing it off."</p>
-        <div class="testimonial-author">
-          <div class="avatar">DM</div>
-          <div class="author-name">
-            <strong>Dan M.</strong>
-            <span>Carindale</span>
-          </div>
-        </div>
+      <div class="difference-item fade-in">
+        <div class="check-circle">&#10003;</div>
+        <p>Full connectivity to everything, without building a new home</p>
       </div>
-      <div class="testimonial fade-in">
-        <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
-        <p>"Starlink up and running, mesh Wi-Fi through the whole house, CCTV done. One team, one invoice, no fuss. Easiest tradie experience we've had."</p>
-        <div class="testimonial-author">
-          <div class="avatar">PJ</div>
-          <div class="author-name">
-            <strong>Priya J.</strong>
-            <span>Springfield</span>
-          </div>
-        </div>
+      <div class="difference-item fade-in">
+        <div class="check-circle">&#10003;</div>
+        <p>See and control every device in one app, regardless of brand</p>
       </div>
-    </div>
-    <div class="placeholder-note">
-      Placeholder reviews shown above — we'll swap these for real Google reviews before launch.
+      <div class="difference-item fade-in">
+        <div class="check-circle">&#10003;</div>
+        <p>No need to dedicate a wardrobe to a $100k server rack</p>
+      </div>
+      <div class="difference-item fade-in">
+        <div class="check-circle">&#10003;</div>
+        <p>Upgrade and add new automations on the go as your home evolves</p>
+      </div>
+      <div class="difference-item fade-in">
+        <div class="check-circle">&#10003;</div>
+        <p>No vendor lock-in &mdash; you're never tied to one dealer for changes</p>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- ===================== CONTACT ===================== -->
-<!-- EDIT: phones, emails, address, hours -->
-<section id="contact" class="contact">
+<!-- ===================== PACKAGES ===================== -->
+<section id="packages" style="background: var(--bg-2);">
   <div class="container">
     <div class="section-title fade-in">
-      <span class="section-label">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4 14h7l-2 8 9-12h-7l2-8z"/></svg>
-        Get in touch
-      </span>
-      <h2>Free quote, no pressure</h2>
-      <p>Call, text, or fill in the form — whichever's easier. We'll get back the same day during business hours.</p>
+      <span class="section-label">Packages</span>
+      <h2>Choose your level</h2>
+      <p>Three straightforward packages. Start small and upgrade any time &mdash; your MiHub grows with you.</p>
     </div>
 
-    <div class="contact-grid">
-      <div class="contact-info fade-in">
+    <!-- EDIT: pricing tiers — change titles, prices, features below -->
+    <div class="packages-grid">
 
-        <!-- Mitch + Nate cards -->
-        <div class="contact-people">
-          <div class="person-card">
-            <div class="person-avatar">M</div>
-            <div class="name">Mitch</div>
-            <div class="role">Electrical &amp; Smart Home</div>
-            <a href="tel:+61488882192">0488 882 192</a>
-            <a href="mailto:mitch@massiveintegratedhomes.com.au" class="email-link">mitch@massive&shy;integratedhomes.com.au</a>
-          </div>
-          <div class="person-card">
-            <div class="person-avatar">N</div>
-            <div class="name">Nate</div>
-            <div class="role">Home Theatre Fit-out Expert</div>
-            <a href="tel:+61451993930">0451 993 930</a>
-            <a href="mailto:nate@massiveintegratedhomes.com.au" class="email-link">nate@massive&shy;integratedhomes.com.au</a>
-          </div>
-        </div>
-
-        <!-- General contact info -->
-        <div class="contact-item">
-          <div class="icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-          </div>
-          <div>
-            <strong>General enquiries</strong>
-            <a href="mailto:hello@massiveintegratedhomes.com.au">hello@massiveintegratedhomes.com.au</a>
-          </div>
-        </div>
-        <div class="contact-item">
-          <div class="icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-          </div>
-          <div>
-            <strong>Service area</strong>
-            <span>Brisbane southside &mdash; Greenslopes, Springfield &amp; everywhere in between</span>
-          </div>
-        </div>
-        <div class="contact-item">
-          <div class="icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          </div>
-          <div>
-            <strong>Hours</strong>
-            <span>Mon&ndash;Sat 7am&ndash;7pm &middot; After-hours emergency available</span>
-          </div>
-        </div>
+      <!-- Package 1: Essentials -->
+      <div class="package-card fade-in">
+        <h3>Essentials</h3>
+        <div class="package-sub">MiHub</div>
+        <div class="price">$3,990</div>
+        <div class="price-suffix">once-off</div>
+        <div class="divider"></div>
+        <ul>
+          <li>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="var(--primary-soft)"/><path d="M8 12l3 3 5-6" stroke="var(--primary)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Up to 10 devices (multi-brand)</span>
+          </li>
+          <li>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="var(--primary-soft)"/><path d="M8 12l3 3 5-6" stroke="var(--primary)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>1 automation included</span>
+          </li>
+          <li>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="var(--primary-soft)"/><path d="M8 12l3 3 5-6" stroke="var(--primary)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Single-app control dashboard</span>
+          </li>
+          <li>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="var(--primary-soft)"/><path d="M8 12l3 3 5-6" stroke="var(--primary)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>30-day setup support</span>
+          </li>
+          <li>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="var(--primary-soft)"/><path d="M8 12l3 3 5-6" stroke="var(--primary)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Free quote &amp; site visit</span>
+          </li>
+        </ul>
+        <a href="#quote" class="btn btn-dark" style="width:100%; justify-content:center;">Get Started</a>
       </div>
 
-      <!-- Contact form -->
-      <!-- EDIT: replace YOUR_FORMSPREE_ID below with the ID from your Formspree dashboard -->
-      <form class="contact-form enquiry-form fade-in" action="https://formspree.io/f/maqagaoz" method="POST">
-        <div class="form-row">
-          <div class="form-group">
-            <label for="cf-name">Name</label>
-            <input id="cf-name" name="name" type="text" placeholder="Your name" required>
-          </div>
-          <div class="form-group">
-            <label for="cf-phone">Phone</label>
-            <input id="cf-phone" name="phone" type="tel" placeholder="0400 000 000" required>
-          </div>
-        </div>
-        <div class="form-group">
-          <label for="cf-email">Email</label>
-          <input id="cf-email" name="email" type="email" placeholder="you@example.com">
-        </div>
-        <div class="form-group">
-          <label for="cf-suburb">Suburb</label>
-          <input id="cf-suburb" name="suburb" type="text" placeholder="e.g. Greenslopes">
-        </div>
-        <div class="form-group">
-          <label for="cf-service">Service needed</label>
-          <select id="cf-service" name="service" required>
-            <option value="" disabled selected>Choose one&hellip;</option>
-            <option>Electrical work</option>
-            <option>Smart home / automation</option>
-            <option>CCTV / security</option>
-            <option>Home theatre / AV</option>
-            <option>Starlink installation</option>
-            <option>Fit-out / handyman</option>
-            <option>Not sure &mdash; I need advice</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="cf-msg">Tell us about the job</label>
-          <textarea id="cf-msg" name="message" placeholder="What needs doing? Any timing constraints? Photos welcome &mdash; just mention and we'll reply with an upload link."></textarea>
-        </div>
-        <input type="hidden" name="_subject" value="New enquiry (contact form) — Massive Integrated Homes">
+      <!-- Package 2: Connected (FEATURED) -->
+      <div class="package-card featured fade-in">
+        <span class="popular-badge">Most Popular</span>
+        <h3>Connected</h3>
+        <div class="package-sub">MiHub</div>
+        <div class="price">$8,990</div>
+        <div class="price-suffix">once-off</div>
+        <div class="divider"></div>
+        <ul>
+          <li>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Up to 25 devices (multi-brand)</span>
+          </li>
+          <li>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>10 automations included</span>
+          </li>
+          <li>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Single-app control dashboard</span>
+          </li>
+          <li>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>6 months support included</span>
+          </li>
+          <li>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Free quote &amp; site visit</span>
+          </li>
+        </ul>
+        <a href="#quote" class="btn btn-primary" style="width:100%; justify-content:center;">Get Connected</a>
+      </div>
+
+      <!-- Package 3: Intelligent -->
+      <div class="package-card fade-in">
+        <h3>Intelligent</h3>
+        <div class="package-sub">MiHub Pro</div>
+        <div class="price">$8,990</div>
+        <div class="price-suffix">+ $39/month</div>
+        <div class="divider"></div>
+        <ul>
+          <li>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="var(--primary-soft)"/><path d="M8 12l3 3 5-6" stroke="var(--primary)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Unlimited devices</span>
+          </li>
+          <li>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="var(--primary-soft)"/><path d="M8 12l3 3 5-6" stroke="var(--primary)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Unlimited automations &mdash; ongoing</span>
+          </li>
+          <li>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="var(--primary-soft)"/><path d="M8 12l3 3 5-6" stroke="var(--primary)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>App + AI voice (Alexa / Gemini)</span>
+          </li>
+          <li>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="var(--primary-soft)"/><path d="M8 12l3 3 5-6" stroke="var(--primary)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Ongoing remote support &amp; updates</span>
+          </li>
+          <li>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="var(--primary-soft)"/><path d="M8 12l3 3 5-6" stroke="var(--primary)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Free quote &amp; site visit</span>
+          </li>
+        </ul>
+        <a href="#quote" class="btn btn-dark" style="width:100%; justify-content:center;">Go Intelligent</a>
+      </div>
+
+    </div>
+    <p class="price-note">All prices in AUD. Installation and integration included. Custom quotes available for larger homes or commercial projects.</p>
+  </div>
+</section>
+
+<!-- ===================== HOW WE COMPARE ===================== -->
+<section id="compare">
+  <div class="container">
+    <div class="section-title fade-in">
+      <span class="section-label">How We Compare</span>
+      <h2>MIH vs traditional systems</h2>
+    </div>
+
+    <div class="compare-wrap fade-in">
+      <!-- EDIT: comparison table rows -->
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th></th>
+            <th>MIH Automation</th>
+            <th>Traditional (e.g. Control4)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Starting price</td>
+            <td class="mih-cell">From $3,990</td>
+            <td>$25,000+</td>
+          </tr>
+          <tr>
+            <td>Uses existing devices</td>
+            <td class="mih-cell">Yes</td>
+            <td>Often replaced</td>
+          </tr>
+          <tr>
+            <td>Hardware footprint</td>
+            <td class="mih-cell">One small hub</td>
+            <td>Large rack / cabinet</td>
+          </tr>
+          <tr>
+            <td>Add automations</td>
+            <td class="mih-cell">Yourself, anytime</td>
+            <td>Dealer call-out required</td>
+          </tr>
+          <tr>
+            <td>Vendor lock-in</td>
+            <td class="mih-cell">None</td>
+            <td>Tied to one dealer</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== QUOTE SECTION ===================== -->
+<!-- EDIT: form posts to Formspree (ID: maqagaoz) — to change, update the action URL below -->
+<section id="quote" class="quote-section">
+  <div class="container quote-grid">
+    <div class="quote-copy fade-in">
+      <h2>Ready to bring your home together?</h2>
+      <p>Book a free, no-obligation quote today. Tell us a bit about your place and we'll get back the same day during business hours.</p>
+      <p>South East QLD installs &mdash; from $3,990. No pressure, no obligation.</p>
+      <a href="tel:+61480568180" class="phone-cta">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        Or call Nate &mdash; 0480 568 180
+      </a>
+    </div>
+
+    <div class="quote-card fade-in">
+      <h3>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4 14h7l-2 8 9-12h-7l2-8z"/></svg>
+        Request a free quote
+      </h3>
+      <form class="enquiry-form" action="https://formspree.io/f/maqagaoz" method="POST">
+        <input type="text" name="name" placeholder="Your name" required>
+        <input type="tel" name="phone" placeholder="Phone number" required>
+        <input type="email" name="email" placeholder="Email (optional)">
+        <input type="text" name="suburb" placeholder="Suburb (e.g. Greenslopes)">
+        <select name="package" required>
+          <option value="" disabled selected>Which package interests you?</option>
+          <option>Essentials &mdash; $3,990</option>
+          <option>Connected &mdash; $8,990</option>
+          <option>Intelligent &mdash; From $4,990 + $39/mo</option>
+          <option>Not sure &mdash; I'd like advice</option>
+        </select>
+        <textarea name="message" rows="3" placeholder="Tell us about your home (number of devices, what you'd like automated, anything else)"></textarea>
+        <input type="hidden" name="_subject" value="New MIH Automation quote request">
         <input type="text" name="_gotcha" style="display:none" tabindex="-1" autocomplete="off">
-        <button type="submit" class="btn btn-primary">
+        <button type="submit" class="btn btn-dark">
           Send Enquiry
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
         </button>
@@ -1341,80 +697,33 @@
 </section>
 
 <!-- ===================== FOOTER ===================== -->
-<!-- EDIT: business name, tagline, links, licence numbers -->
 <footer>
   <div class="container">
-    <div class="footer-grid">
+    <div class="footer-top">
       <div class="footer-brand">
         <h3>
           <span class="logo-mark">M</span>
-          Massive Integrated Homes
+          MIH Automation
         </h3>
-        <p>Licensed electrician and home theatre fit-out experts bringing your home together &mdash; one trusted team, end to end. Brisbane's southside, by Mitch &amp; Nate.</p>
-        <div class="footer-social">
-          <a href="#" class="social-icon" aria-label="Facebook">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M22 12a10 10 0 1 0-11.56 9.88v-6.99H7.9V12h2.54V9.8c0-2.51 1.49-3.9 3.78-3.9 1.1 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.78l-.44 2.89h-2.34v6.99A10 10 0 0 0 22 12z"/></svg>
-          </a>
-          <a href="#" class="social-icon" aria-label="Instagram">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-          </a>
-          <a href="#" class="social-icon" aria-label="Google Reviews">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-          </a>
-        </div>
+        <p>Smart home automation by Massive Integrated Homes. Brisbane Southside &mdash; one app, every brand, no rebuild.</p>
       </div>
-
-      <div>
-        <h4>Services</h4>
-        <ul>
-          <li><a href="#services">Electrical</a></li>
-          <li><a href="#services">Smart Home</a></li>
-          <li><a href="#services">Security &amp; CCTV</a></li>
-          <li><a href="#services">Home Theatre</a></li>
-          <li><a href="#services">Starlink</a></li>
-          <li><a href="#services">Fit-outs &amp; Handyman</a></li>
-        </ul>
-      </div>
-
-      <div>
-        <h4>Service Area</h4>
-        <ul>
-          <li><a href="#area">Greenslopes</a></li>
-          <li><a href="#area">Carindale</a></li>
-          <li><a href="#area">Mt Gravatt</a></li>
-          <li><a href="#area">Springfield</a></li>
-          <li><a href="#area">Sunnybank</a></li>
-          <li><a href="#area">All suburbs</a></li>
-        </ul>
-      </div>
-
-      <div>
-        <h4>Contact</h4>
-        <ul>
-          <li><a href="tel:+61488882192">Mitch &mdash; 0488 882 192</a></li>
-          <li><a href="tel:+61451993930">Nate &mdash; 0451 993 930</a></li>
-          <li><a href="mailto:hello@massiveintegratedhomes.com.au">hello@massive&shy;integratedhomes.com.au</a></li>
-          <li><a href="#contact">Get a Quote</a></li>
-        </ul>
+      <div class="footer-meta">
+        <p><strong>Brisbane, QLD</strong></p>
+        <p><a href="mailto:nate@massiveintegratedhomes.com.au">nate@massiveintegratedhomes.com.au</a></p>
+        <p><a href="tel:+61480568180">0480 568 180</a></p>
+        <p style="margin-top: 0.6rem;">Smart Home &middot; AV Integration &middot; Security &amp; Automation</p>
       </div>
     </div>
-
     <div class="footer-bottom">
-      <div>
-        &copy; <span id="year">2026</span> Massive Integrated Homes. All rights reserved.
-        <span class="licence">&middot; QBCC Licence #XXXXXX &middot; ABN XX XXX XXX XXX</span>
-      </div>
-      <div>
-        <a href="#" style="margin-right:1rem;">Privacy</a>
-        <a href="#">Terms</a>
-      </div>
+      <div>&copy; <span id="year">2026</span> Massive Integrated Homes. All rights reserved.</div>
+      <div><a href="index.html">Back to main site</a></div>
     </div>
   </div>
 </footer>
 
 <!-- ===================== JS ===================== -->
 <script>
-  // Theme toggle — saves preference to localStorage
+  // Theme toggle — saves preference to localStorage (shared key 'mih-theme' so it persists across all pages)
   function setTheme(mode) {
     document.body.classList.remove('theme-light', 'theme-dark');
     document.body.classList.add('theme-' + mode);
@@ -1454,7 +763,6 @@
 
   // ===================== ENQUIRY FORM HANDLER (Formspree) =====================
   // Submits the form in the background so the visitor stays on the page.
-  // Shows an inline thank-you message on success.
   document.querySelectorAll('form.enquiry-form').forEach(function(form) {
     form.addEventListener('submit', function(e) {
       e.preventDefault();
