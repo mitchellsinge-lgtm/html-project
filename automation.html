@@ -33,6 +33,15 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 
+<!-- Google Ads conversion tracking (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=AW-18208823853"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'AW-18208823853');
+</script>
+
 <style>
   /* =====================================================================
      COLOUR THEME — matches index.html (light purple/white)
@@ -709,7 +718,7 @@
       </div>
       <div class="footer-meta">
         <p><strong>Brisbane, QLD</strong></p>
-        <p><a href="mailto:nate@massiveintegratedhomes.com.au">nate@massiveintegratedhomes.com.au</a></p>
+        <p><a href="mailto:nathaniel@massiveintegratedhomes.com.au">nathaniel@massiveintegratedhomes.com.au</a></p>
         <p><a href="tel:+61480568180">0480 568 180</a></p>
         <p style="margin-top: 0.6rem;">Smart Home &middot; AV Integration &middot; Security &amp; Automation</p>
       </div>
@@ -783,6 +792,12 @@
           if (status) {
             status.textContent = 'Thanks! Your enquiry has been sent — we’ll be in touch shortly.';
             status.style.color = '#10b981';
+          }
+          // Google Ads conversion tracking — enquiry form submit
+          if (typeof gtag === 'function') {
+            gtag('event', 'conversion', {
+              'send_to': 'AW-18208823853/LmkvCMv__7ocEK200upD'
+            });
           }
         } else {
           response.json().then(function(d) {
