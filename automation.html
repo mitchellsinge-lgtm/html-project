@@ -29,6 +29,13 @@
 <meta property="og:locale" content="en_AU">
 <link rel="canonical" href="https://massiveintegratedhomes.com.au/automation.html">
 
+<!-- Favicon & social share image -->
+<link rel="icon" type="image/png" href="milogo.png">
+<link rel="apple-touch-icon" href="milogo.png">
+<meta property="og:image" content="https://massiveintegratedhomes.com.au/milogo.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://massiveintegratedhomes.com.au/milogo.png">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
@@ -158,7 +165,7 @@
   header { background: var(--bg); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 100; }
   .nav { display: flex; justify-content: space-between; align-items: center; padding: 1rem 0; }
   .logo { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1.25rem; color: var(--text); display: flex; align-items: center; gap: 0.65rem; line-height: 1.1; }
-  .logo-mark { width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, var(--primary), var(--accent)); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px var(--glow); color: #fff; font-weight: 800; font-family: 'Space Grotesk', sans-serif; flex-shrink: 0; }
+  .logo-mark { width: 44px; height: 44px; border-radius: 50%; background: #000 url('milogo.png') center/cover no-repeat; box-shadow: 0 4px 15px var(--glow); flex-shrink: 0; overflow: hidden; text-indent: -9999px; }
   .logo-text { display: flex; flex-direction: column; }
   .logo-text strong { font-weight: 700; font-size: 1.05rem; }
   .logo-text span { font-size: 0.72rem; color: var(--muted); font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; }
@@ -349,7 +356,7 @@
 <header>
   <div class="container nav">
     <a href="index.html" class="logo">
-      <span class="logo-mark">M</span>
+      <span class="logo-mark" role="img" aria-label="MIH logo"></span>
       <span class="logo-text">
         <strong>MIH Automation</strong>
         <span>By Massive Integrated Homes</span>
@@ -711,7 +718,7 @@
     <div class="footer-top">
       <div class="footer-brand">
         <h3>
-          <span class="logo-mark">M</span>
+          <span class="logo-mark" role="img" aria-label="MIH logo"></span>
           MIH Automation
         </h3>
         <p>Smart home automation by Massive Integrated Homes. Brisbane Southside &mdash; one app, every brand, no rebuild.</p>
