@@ -19,14 +19,21 @@
 <title>Massive Integrated Homes | Electrician, Smart Home & Home Theatre — Brisbane Southside</title>
 
 <!-- EDIT: meta description shown in Google search results (~155 chars) -->
-<meta name="description" content="Massive Integrated Homes — licensed Brisbane Southside electricians, home theatre fitouts, smart home automation, CCTV and Starlink. Free quotes, one trusted team.">
-<meta name="keywords" content="massive integrated homes, electrician brisbane southside, smart home brisbane, cctv installer brisbane, starlink installation brisbane, home theatre brisbane, home theatre fitout brisbane">
+<meta name="description" content="Massive Integrated Homes — licensed Brisbane Southside electricians, TV wall mounting, floating cabinet installs, home theatre fitouts, smart home automation, CCTV and Starlink. Free quotes, one trusted team.">
+<meta name="keywords" content="massive integrated homes, electrician brisbane southside, tv wall mounting brisbane, tv wall mounting springfield lakes, floating cabinet install brisbane, floating tv unit install, smart home brisbane, cctv installer brisbane, starlink installation brisbane, home theatre brisbane, home theatre fitout brisbane">
 <meta property="og:title" content="Massive Integrated Homes — Brisbane Southside Electrician & Home Theatre Fitouts">
-<meta property="og:description" content="Licensed electrical contractor with home theatre fitout expertise. Electrical, smart home, CCTV, home theatre, Starlink, and fit-outs across Brisbane's southside.">
+<meta property="og:description" content="Licensed electrical contractor with home theatre fitout expertise. Electrical, smart home, CCTV, home theatre, TV wall mounting, floating cabinet installs, Starlink and fit-outs across Brisbane's southside.">
 <meta property="og:url" content="https://massiveintegratedhomes.com.au">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="en_AU">
 <link rel="canonical" href="https://massiveintegratedhomes.com.au">
+
+<!-- Favicon & social share image -->
+<link rel="icon" type="image/png" href="milogo.png">
+<link rel="apple-touch-icon" href="milogo.png">
+<meta property="og:image" content="https://massiveintegratedhomes.com.au/milogo.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://massiveintegratedhomes.com.au/milogo.png">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -57,7 +64,7 @@
     "addressCountry": "AU"
   },
   "areaServed": ["Greenslopes", "Holland Park", "Carindale", "Mt Gravatt", "Springfield", "Springwood", "Sunnybank", "Coorparoo", "Mansfield"],
-  "serviceType": ["Electrician", "Smart Home Installation", "CCTV Installation", "Home Theatre Installation", "Home Theatre Fitout", "Starlink Installation", "Fit-outs and Handyman"]
+  "serviceType": ["Electrician", "Smart Home Installation", "CCTV Installation", "Home Theatre Installation", "Home Theatre Fitout", "TV Wall Mounting", "Floating Cabinet Installation", "Starlink Installation", "Custom Fit-outs"]
 }
 </script>
 
@@ -227,17 +234,16 @@
     line-height: 1.1;
   }
   .logo-mark {
-    width: 40px; height: 40px;
-    border-radius: 10px;
-    background: linear-gradient(135deg, var(--primary), var(--accent));
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: #000;
+    background-image: url('milogo.png');
+    background-size: cover;
+    background-position: center;
     box-shadow: 0 4px 15px var(--glow);
-    color: #fff;
-    font-weight: 800;
-    font-family: 'Space Grotesk', sans-serif;
     flex-shrink: 0;
+    overflow: hidden;
+    text-indent: -9999px;
   }
   .logo-text { display: flex; flex-direction: column; }
   .logo-text strong { font-weight: 700; font-size: 1.05rem; color: var(--text); }
@@ -776,7 +782,7 @@
     margin-bottom: 3rem;
   }
   .footer-brand h3 { color: #fff; margin-bottom: 1rem; font-family: 'Space Grotesk', sans-serif; display: flex; align-items: center; gap: 0.5rem; }
-  .footer-brand .logo-mark { width: 36px; height: 36px; border-radius: 8px; }
+  .footer-brand .logo-mark { width: 40px; height: 40px; border-radius: 50%; }
   .footer-brand p { color: rgba(255,255,255,0.65); font-size: 0.95rem; margin-bottom: 1.5rem; max-width: 360px; }
   .footer-social { display: flex; gap: 0.6rem; }
   .social-icon {
@@ -848,6 +854,175 @@
   /* ===================== SCROLL ANIMATIONS ===================== */
   .fade-in { opacity: 0; transform: translateY(20px); transition: opacity 0.6s, transform 0.6s; }
   .fade-in.visible { opacity: 1; transform: none; }
+
+  /* ===================== TRUSTINDEX REVIEWS WIDGET ===================== */
+  .reviews-widget { margin: 1rem 0 2rem; min-height: 200px; }
+  .reviews-cta {
+    display: flex; gap: 0.8rem; justify-content: center; flex-wrap: wrap;
+    margin-top: 2rem;
+  }
+  @media (max-width: 600px) {
+    .reviews-cta { flex-direction: column; align-items: stretch; }
+    .reviews-cta .btn { justify-content: center; }
+  }
+
+  /* ===================== HERO SLIDESHOW ===================== */
+  .hero { position: relative; overflow: hidden; }
+  .hero-slideshow { position: absolute; inset: 0; z-index: 0; overflow: hidden; }
+  .hero-slide {
+    position: absolute; inset: 0;
+    background-size: cover;
+    background-position: center;
+    opacity: 0;
+    transition: opacity 1.4s ease-in-out;
+    will-change: opacity;
+  }
+  .hero-slide.is-active { opacity: 1; }
+  .hero-slideshow::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(26,15,58,0.82) 0%, rgba(76,29,149,0.7) 45%, rgba(124,58,237,0.55) 100%);
+    z-index: 1;
+  }
+  .hero-inner { position: relative; z-index: 2; }
+  .hero h1, .hero-lead { text-shadow: 0 2px 18px rgba(0,0,0,0.35); }
+
+  /* Hexagon hint pattern behind slideshow overlay */
+  .hero-slideshow::before {
+    content: ""; position: absolute; inset: 0;
+    background-image:
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='104' viewBox='0 0 120 104'><polygon points='60,4 116,32 116,72 60,100 4,72 4,32' fill='none' stroke='%23a855f7' stroke-opacity='0.13' stroke-width='1.5'/></svg>");
+    background-size: 120px 104px;
+    z-index: 2;
+    pointer-events: none;
+    opacity: 0.55;
+  }
+
+  /* ===================== GALLERY ===================== */
+  .gallery-section {
+    padding: 5rem 0;
+    background: var(--bg-2);
+    position: relative;
+    overflow: hidden;
+  }
+  .gallery-section::before {
+    content: ""; position: absolute; inset: 0;
+    background-image:
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='156' viewBox='0 0 180 156'><polygon points='90,6 174,48 174,108 90,150 6,108 6,48' fill='none' stroke='%237c3aed' stroke-opacity='0.07' stroke-width='1.5'/></svg>");
+    background-size: 180px 156px;
+    pointer-events: none;
+  }
+  .gallery-tabs { display: flex; gap: 0.6rem; justify-content: center; margin: 1.5rem 0 2.5rem; flex-wrap: wrap; position: relative; z-index: 1; }
+  .gallery-tab {
+    background: var(--card); border: 1px solid var(--line); color: var(--muted);
+    padding: 0.6rem 1.3rem; border-radius: 999px; font-weight: 600; cursor: pointer;
+    transition: all 0.2s; font-family: inherit; font-size: 0.92rem;
+  }
+  .gallery-tab:hover { color: var(--text); border-color: var(--primary); }
+  .gallery-tab.is-active {
+    background: var(--primary); color: #fff; border-color: var(--primary);
+    box-shadow: 0 6px 18px var(--glow);
+  }
+  .gallery-tab .count { opacity: 0.7; font-weight: 500; margin-left: 0.4rem; }
+
+  .gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 0.6rem;
+    position: relative; z-index: 1;
+  }
+  .gallery-item {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    border-radius: 14px;
+    cursor: pointer;
+    background: #0a0a14;
+    transition: transform 0.3s, box-shadow 0.3s;
+  }
+  .gallery-item img {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+    transition: transform 0.5s;
+  }
+  .gallery-item::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(180deg, transparent 50%, rgba(124,58,237,0.6) 100%);
+    opacity: 0; transition: opacity 0.25s;
+  }
+  .gallery-item:hover { transform: translateY(-4px); box-shadow: 0 14px 36px var(--glow-strong); }
+  .gallery-item:hover img { transform: scale(1.05); }
+  .gallery-item:hover::after { opacity: 1; }
+
+  .gallery-pool { display: none; }
+  .gallery-pool.is-active { display: block; }
+
+  .gallery-loadmore {
+    display: block; margin: 2.5rem auto 0;
+    background: transparent; color: var(--primary);
+    border: 2px solid var(--primary);
+    padding: 0.8rem 2rem; border-radius: 999px;
+    font-weight: 600; cursor: pointer; font-family: inherit;
+    transition: all 0.2s;
+  }
+  .gallery-loadmore:hover { background: var(--primary); color: #fff; }
+
+  /* ===================== LIGHTBOX ===================== */
+  .lightbox {
+    position: fixed; inset: 0; z-index: 9999;
+    background: rgba(8, 4, 22, 0.96);
+    display: none; align-items: center; justify-content: center;
+    padding: 2rem;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .lightbox.is-open { display: flex; }
+  .lightbox img {
+    max-width: 100%; max-height: 90vh;
+    border-radius: 10px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    user-select: none;
+  }
+  .lightbox-close, .lightbox-prev, .lightbox-next {
+    position: absolute; background: rgba(255,255,255,0.1); color: #fff;
+    border: 1px solid rgba(255,255,255,0.2);
+    width: 48px; height: 48px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: background 0.2s;
+  }
+  .lightbox-close:hover, .lightbox-prev:hover, .lightbox-next:hover { background: rgba(255,255,255,0.22); }
+  .lightbox-close { top: 1.5rem; right: 1.5rem; }
+  .lightbox-prev { left: 1.5rem; top: 50%; transform: translateY(-50%); }
+  .lightbox-next { right: 1.5rem; top: 50%; transform: translateY(-50%); }
+  .lightbox-counter { position: absolute; bottom: 1.5rem; left: 50%; transform: translateX(-50%); color: rgba(255,255,255,0.7); font-size: 0.9rem; }
+
+  /* ===================== STICKY CTAs ===================== */
+  .sticky-cta {
+    position: fixed; bottom: 1.4rem; right: 1.4rem; z-index: 1000;
+    display: flex; flex-direction: column; gap: 0.7rem;
+    transition: opacity 0.25s, transform 0.25s;
+  }
+  .sticky-cta.is-hidden { opacity: 0; pointer-events: none; transform: translateY(20px); }
+  .sticky-btn {
+    display: flex; align-items: center; gap: 0.55rem;
+    padding: 0.85rem 1.3rem; border-radius: 999px;
+    font-weight: 700; font-size: 0.95rem;
+    text-decoration: none;
+    color: #fff;
+    box-shadow: 0 8px 24px rgba(124,58,237,0.45);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .sticky-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(124,58,237,0.6); }
+  .sticky-btn.quote { background: linear-gradient(135deg, var(--primary), var(--accent)); }
+  .sticky-btn.call { background: #10b981; box-shadow: 0 8px 24px rgba(16,185,129,0.45); }
+  .sticky-btn.call:hover { box-shadow: 0 12px 32px rgba(16,185,129,0.6); }
+
+  @media (max-width: 700px) {
+    .sticky-cta { bottom: 1rem; right: 1rem; gap: 0.5rem; flex-direction: row; }
+    .sticky-btn { padding: 0.7rem 1rem; font-size: 0.85rem; }
+    .sticky-btn .sticky-label { display: none; }
+    .sticky-btn { width: 50px; height: 50px; border-radius: 50%; padding: 0; justify-content: center; }
+    .gallery-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 0.4rem; }
+    .lightbox-prev { left: 0.6rem; }
+    .lightbox-next { right: 0.6rem; }
+  }
 </style>
 </head>
 
@@ -884,7 +1059,7 @@
 <header>
   <div class="container nav">
     <a href="#" class="logo">
-      <span class="logo-mark">M</span>
+      <span class="logo-mark" role="img" aria-label="MIH logo"></span>
       <span class="logo-text">
         <strong>Massive Integrated Homes</strong>
         <span>Smart Home &middot; AV &middot; Electrical</span>
@@ -895,6 +1070,7 @@
     </button>
     <ul class="nav-links" id="navlinks">
       <li><a href="#services">Services</a></li>
+      <li><a href="#gallery">Our Work</a></li>
       <li><a href="automation.html">MIH Automation</a></li>
       <li><a href="#about">About</a></li>
       <li><a href="#area">Service Area</a></li>
@@ -907,10 +1083,21 @@
 <!-- ===================== HERO ===================== -->
 <!-- EDIT: headline, sub-text, CTA buttons, badges -->
 <section class="hero">
+  <!-- Auto-rotating full-width slideshow background. Add/remove .hero-slide divs to change images. -->
+  <div class="hero-slideshow" aria-hidden="true">
+    <div class="hero-slide is-active" style="background-image: url('website%20photos/tv-mounts/web/20250628_135008.jpg');"></div>
+    <div class="hero-slide" style="background-image: url('website%20photos/tv-mounts/web/20250724_193230.jpg');"></div>
+    <div class="hero-slide" style="background-image: url('website%20photos/tv-mounts/web/20250808_160052.jpg');"></div>
+    <div class="hero-slide" style="background-image: url('website%20photos/tv-mounts/web/20250908_184843.jpg');"></div>
+    <div class="hero-slide" style="background-image: url('website%20photos/tv-mounts/web/20250920_140313.jpg');"></div>
+    <div class="hero-slide" style="background-image: url('website%20photos/tv-mounts/web/20251218_154601.jpg');"></div>
+    <div class="hero-slide" style="background-image: url('website%20photos/tv-mounts/web/20260108_180645.jpg');"></div>
+    <div class="hero-slide" style="background-image: url('website%20photos/tv-mounts/web/20260520_171411.jpg');"></div>
+  </div>
   <div class="container hero-inner">
     <div>
       <h1>Your home. <span class="accent">Done properly.</span></h1>
-      <p class="hero-lead">Massive Integrated Homes brings electrical, smart home automation, security, home theatre and fit-out work together under one trusted team. Based in Brisbane &mdash; serving South East Queensland from the Gold Coast to the Sunshine Coast.</p>
+      <p class="hero-lead">Massive Integrated Homes brings electrical, smart home automation, security, home theatre and fit-out work together under one trusted team. Based in Brisbane &mdash; serving Brisbane and the Gold Coast.</p>
       <div class="hero-cta">
         <a href="#contact" class="btn btn-primary">
           Get a Free Quote
@@ -954,7 +1141,7 @@
           <option>CCTV / security</option>
           <option>Home theatre / AV</option>
           <option>Starlink installation</option>
-          <option>Fit-out / handyman</option>
+          <option>Fit-out / TV wall &amp; floating cabinet install</option>
           <option>Not sure — I need advice</option>
         </select>
         <textarea name="message" rows="3" placeholder="Brief details (suburb, timing, anything else)"></textarea>
@@ -1056,24 +1243,588 @@
         </ul>
       </div>
 
-      <!-- Service 6: Fit-outs & Handyman -->
+      <!-- Service 6: Fit-outs, TV Wall & Floating Cabinet Installs -->
       <div class="service-card fade-in">
         <div class="service-icon">
           <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 22v-5a2 2 0 0 1 2-2h4v-4a2 2 0 0 1 2-2h4V5a2 2 0 0 1 2-2h4v16"/><path d="M2 22h20"/></svg>
         </div>
-        <h3>Fit-outs &amp; Handyman</h3>
-        <p>Hands-on fit-outs, media room builds, and the finishing work most sparkies can't touch.</p>
+        <h3>Custom Fit-outs</h3>
+        <p>TV wall mounting, floating cabinet installs, media room builds and the finishing work most sparkies can't touch.</p>
         <ul>
+          <li>TV wall mounting &amp; cable concealment</li>
+          <li>Floating cabinet &amp; entertainment unit installs</li>
           <li>Media room &amp; home theatre fit-outs</li>
           <li>Cabinetry, mounting &amp; carpentry</li>
-          <li>Door, window &amp; frame repairs</li>
-          <li>General handyman work</li>
         </ul>
       </div>
 
     </div>
   </div>
 </section>
+
+<!-- ===================== GALLERY ===================== -->
+<!-- EDIT: photos are pulled from website%20photos/<category>/web/. Drop new images in those folders to add them. -->
+<section id="gallery" class="gallery-section">
+  <div class="container">
+    <div class="section-title fade-in">
+      <span class="eyebrow">Our Work</span>
+      <h2>Recent jobs across <span class="accent">Brisbane &amp; the Gold Coast</span></h2>
+      <p>From clean TV wall mounts and floating cabinet installs to rooftop antenna repairs &mdash; here's what we've been up to.</p>
+    </div>
+
+    <div class="gallery-tabs">
+      <button class="gallery-tab is-active" data-cat="tv-mounts">TV Mounts &amp; Home Theatre<span class="count">134</span></button>
+      <button class="gallery-tab" data-cat="reception-repairs">Antenna &amp; Reception<span class="count">39</span></button>
+    </div>
+
+    <div class="gallery-pool is-active" data-cat="tv-mounts">
+      <div class="gallery-grid" data-initial="24">
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250616_164910.jpg" data-cat="tv-mounts">
+          <img src="website%20photos/tv-mounts/web/20250616_164910.jpg" alt="TV Mounts #1" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250616_164915.jpg" data-cat="tv-mounts">
+          <img src="website%20photos/tv-mounts/web/20250616_164915.jpg" alt="TV Mounts #2" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250618_112920.jpg" data-cat="tv-mounts">
+          <img src="website%20photos/tv-mounts/web/20250618_112920.jpg" alt="TV Mounts #3" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250618_112929.jpg" data-cat="tv-mounts">
+          <img src="website%20photos/tv-mounts/web/20250618_112929.jpg" alt="TV Mounts #4" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250623_152023.jpg" data-cat="tv-mounts">
+          <img src="website%20photos/tv-mounts/web/20250623_152023.jpg" alt="TV Mounts #5" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250625_120921.jpg" data-cat="tv-mounts">
+          <img src="website%20photos/tv-mounts/web/20250625_120921.jpg" alt="TV Mounts #6" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250625_125201.jpg" data-cat="tv-mounts">
+          <img src="website%20photos/tv-mounts/web/20250625_125201.jpg" alt="TV Mounts #7" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250625_125238.jpg" data-cat="tv-mounts">
+          <img src="website%20photos/tv-mounts/web/20250625_125238.jpg" alt="TV Mounts #8" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250625_145519.jpg" data-cat="tv-mounts">
+          <img src="website%20photos/tv-mounts/web/20250625_145519.jpg" alt="TV Mounts #9" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250625_145641.jpg" data-cat="tv-mounts">
+          <img src="website%20photos/tv-mounts/web/20250625_145641.jpg" alt="TV Mounts #10" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250628_135008.jpg" data-cat="tv-mounts">
+          <img src="website%20photos/tv-mounts/web/20250628_135008.jpg" alt="TV Mounts #11" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250629_170551.jpg" data-cat="tv-mounts">
+          <img src="website%20photos/tv-mounts/web/20250629_170551.jpg" alt="TV Mounts #12" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250716_162706.jpg" data-cat="tv-mounts">
+          <img src="website%20photos/tv-mounts/web/20250716_162706.jpg" alt="TV Mounts #13" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250716_162711.jpg" data-cat="tv-mounts">
+          <img src="website%20photos/tv-mounts/web/20250716_162711.jpg" alt="TV Mounts #14" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250722_151948.jpg" data-cat="tv-mounts">
+          <img src="website%20photos/tv-mounts/web/20250722_151948.jpg" alt="TV Mounts #15" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250722_151955.jpg" data-cat="tv-mounts">
+          <img src="website%20photos/tv-mounts/web/20250722_151955.jpg" alt="TV Mounts #16" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250724_193217.jpg" data-cat="tv-mounts">
+          <img src="website%20photos/tv-mounts/web/20250724_193217.jpg" alt="TV Mounts #17" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250724_193230.jpg" data-cat="tv-mounts">
+          <img src="website%20photos/tv-mounts/web/20250724_193230.jpg" alt="TV Mounts #18" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250724_193231.jpg" data-cat="tv-mounts">
+          <img src="website%20photos/tv-mounts/web/20250724_193231.jpg" alt="TV Mounts #19" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250806_120022.jpg" data-cat="tv-mounts">
+          <img src="website%20photos/tv-mounts/web/20250806_120022.jpg" alt="TV Mounts #20" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250806_120025.jpg" data-cat="tv-mounts">
+          <img src="website%20photos/tv-mounts/web/20250806_120025.jpg" alt="TV Mounts #21" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250806_120026.jpg" data-cat="tv-mounts">
+          <img src="website%20photos/tv-mounts/web/20250806_120026.jpg" alt="TV Mounts #22" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250806_120031.jpg" data-cat="tv-mounts">
+          <img src="website%20photos/tv-mounts/web/20250806_120031.jpg" alt="TV Mounts #23" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250806_121648.jpg" data-cat="tv-mounts">
+          <img src="website%20photos/tv-mounts/web/20250806_121648.jpg" alt="TV Mounts #24" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250806_121703.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20250806_121703.jpg" alt="TV Mounts #25" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250806_121704.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20250806_121704.jpg" alt="TV Mounts #26" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250806_192630.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20250806_192630.jpg" alt="TV Mounts #27" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250806_192635.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20250806_192635.jpg" alt="TV Mounts #28" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250807_123146.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20250807_123146.jpg" alt="TV Mounts #29" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250807_123150.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20250807_123150.jpg" alt="TV Mounts #30" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250808_160052.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20250808_160052.jpg" alt="TV Mounts #31" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250808_160054.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20250808_160054.jpg" alt="TV Mounts #32" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250808_160056.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20250808_160056.jpg" alt="TV Mounts #33" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250808_170550.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20250808_170550.jpg" alt="TV Mounts #34" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250808_170552.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20250808_170552.jpg" alt="TV Mounts #35" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250808_170813.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20250808_170813.jpg" alt="TV Mounts #36" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250808_170821.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20250808_170821.jpg" alt="TV Mounts #37" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250817_132056.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20250817_132056.jpg" alt="TV Mounts #38" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250821_120650.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20250821_120650.jpg" alt="TV Mounts #39" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250821_120654.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20250821_120654.jpg" alt="TV Mounts #40" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250908_184816.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20250908_184816.jpg" alt="TV Mounts #41" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250908_184827.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20250908_184827.jpg" alt="TV Mounts #42" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250908_184831.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20250908_184831.jpg" alt="TV Mounts #43" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250908_184843.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20250908_184843.jpg" alt="TV Mounts #44" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250908_184844.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20250908_184844.jpg" alt="TV Mounts #45" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250909_174235.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20250909_174235.jpg" alt="TV Mounts #46" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250909_174237.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20250909_174237.jpg" alt="TV Mounts #47" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250909_174239.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20250909_174239.jpg" alt="TV Mounts #48" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250912_132027.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20250912_132027.jpg" alt="TV Mounts #49" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250912_132028.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20250912_132028.jpg" alt="TV Mounts #50" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250917_135304.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20250917_135304.jpg" alt="TV Mounts #51" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250917_135306.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20250917_135306.jpg" alt="TV Mounts #52" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250917_135405.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20250917_135405.jpg" alt="TV Mounts #53" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250917_135412.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20250917_135412.jpg" alt="TV Mounts #54" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250917_135413.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20250917_135413.jpg" alt="TV Mounts #55" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250920_133150.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20250920_133150.jpg" alt="TV Mounts #56" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250920_133157.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20250920_133157.jpg" alt="TV Mounts #57" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250920_133159.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20250920_133159.jpg" alt="TV Mounts #58" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250920_133258.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20250920_133258.jpg" alt="TV Mounts #59" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250920_133300.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20250920_133300.jpg" alt="TV Mounts #60" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250920_133305.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20250920_133305.jpg" alt="TV Mounts #61" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250920_140313.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20250920_140313.jpg" alt="TV Mounts #62" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250920_140315.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20250920_140315.jpg" alt="TV Mounts #63" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250920_140328.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20250920_140328.jpg" alt="TV Mounts #64" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250920_140329.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20250920_140329.jpg" alt="TV Mounts #65" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250927_115449.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20250927_115449.jpg" alt="TV Mounts #66" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20250927_115454.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20250927_115454.jpg" alt="TV Mounts #67" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20251010_123820.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20251010_123820.jpg" alt="TV Mounts #68" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20251010_130000.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20251010_130000.jpg" alt="TV Mounts #69" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20251010_130008.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20251010_130008.jpg" alt="TV Mounts #70" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20251011_112909.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20251011_112909.jpg" alt="TV Mounts #71" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20251011_112919.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20251011_112919.jpg" alt="TV Mounts #72" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20251013_135056.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20251013_135056.jpg" alt="TV Mounts #73" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20251015_145241.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20251015_145241.jpg" alt="TV Mounts #74" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20251015_145244.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20251015_145244.jpg" alt="TV Mounts #75" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20251016_230740.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20251016_230740.jpg" alt="TV Mounts #76" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20251030_114806.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20251030_114806.jpg" alt="TV Mounts #77" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20251030_114810.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20251030_114810.jpg" alt="TV Mounts #78" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20251030_134157.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20251030_134157.jpg" alt="TV Mounts #79" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20251104_154342.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20251104_154342.jpg" alt="TV Mounts #80" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20251104_210649.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20251104_210649.jpg" alt="TV Mounts #81" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20251106_133519.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20251106_133519.jpg" alt="TV Mounts #82" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20251121_201120.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20251121_201120.jpg" alt="TV Mounts #83" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20251121_201130.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20251121_201130.jpg" alt="TV Mounts #84" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20251202_165802.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20251202_165802.jpg" alt="TV Mounts #85" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20251202_170010(0).jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20251202_170010(0).jpg" alt="TV Mounts #86" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20251206_103620.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20251206_103620.jpg" alt="TV Mounts #87" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20251215_200609.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20251215_200609.jpg" alt="TV Mounts #88" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20251218_154601.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20251218_154601.jpg" alt="TV Mounts #89" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20251223_102938.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20251223_102938.jpg" alt="TV Mounts #90" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20251223_143202.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20251223_143202.jpg" alt="TV Mounts #91" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20251223_143203.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20251223_143203.jpg" alt="TV Mounts #92" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20251223_154825.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20251223_154825.jpg" alt="TV Mounts #93" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20251223_154836.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20251223_154836.jpg" alt="TV Mounts #94" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20251223_154845.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20251223_154845.jpg" alt="TV Mounts #95" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20251229_154445.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20251229_154445.jpg" alt="TV Mounts #96" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20251229_154507.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20251229_154507.jpg" alt="TV Mounts #97" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20260108_180645.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20260108_180645.jpg" alt="TV Mounts #98" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20260108_203837.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20260108_203837.jpg" alt="TV Mounts #99" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20260108_203843.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20260108_203843.jpg" alt="TV Mounts #100" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20260108_204817.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20260108_204817.jpg" alt="TV Mounts #101" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20260109_182929.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20260109_182929.jpg" alt="TV Mounts #102" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20260112_120236.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20260112_120236.jpg" alt="TV Mounts #103" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20260112_120455.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20260112_120455.jpg" alt="TV Mounts #104" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20260513_131120.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20260513_131120.jpg" alt="TV Mounts #105" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20260513_131126.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20260513_131126.jpg" alt="TV Mounts #106" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20260518_125849.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20260518_125849.jpg" alt="TV Mounts #107" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20260520_093206.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20260520_093206.jpg" alt="TV Mounts #108" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20260520_121851.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20260520_121851.jpg" alt="TV Mounts #109" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20260520_171323.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20260520_171323.jpg" alt="TV Mounts #110" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20260520_171354.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20260520_171354.jpg" alt="TV Mounts #111" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20260520_171411.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20260520_171411.jpg" alt="TV Mounts #112" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20260520_171419.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20260520_171419.jpg" alt="TV Mounts #113" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20260520_175250.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20260520_175250.jpg" alt="TV Mounts #114" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20260520_175303.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20260520_175303.jpg" alt="TV Mounts #115" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20260520_175309.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20260520_175309.jpg" alt="TV Mounts #116" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20260520_175314.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20260520_175314.jpg" alt="TV Mounts #117" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20260521_092334.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20260521_092334.jpg" alt="TV Mounts #118" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20260521_092340.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20260521_092340.jpg" alt="TV Mounts #119" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20260521_101730.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20260521_101730.jpg" alt="TV Mounts #120" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20260521_101748.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20260521_101748.jpg" alt="TV Mounts #121" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20260521_101750(0).jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20260521_101750(0).jpg" alt="TV Mounts #122" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20260521_114950.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20260521_114950.jpg" alt="TV Mounts #123" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20260521_162811.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20260521_162811.jpg" alt="TV Mounts #124" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20260521_162832.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20260521_162832.jpg" alt="TV Mounts #125" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20260522_151704.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20260522_151704.jpg" alt="TV Mounts #126" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20260522_151706.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20260522_151706.jpg" alt="TV Mounts #127" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20260526_102902(0).jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20260526_102902(0).jpg" alt="TV Mounts #128" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20260526_125813.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20260526_125813.jpg" alt="TV Mounts #129" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20260526_125821.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20260526_125821.jpg" alt="TV Mounts #130" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/20260526_130613.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/20260526_130613.jpg" alt="TV Mounts #131" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/IMG_20251104_205947.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/IMG_20251104_205947.jpg" alt="TV Mounts #132" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/IMG_20251104_213751.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/IMG_20251104_213751.jpg" alt="TV Mounts #133" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/tv-mounts/web/lv_0_20260520190329.jpg" data-cat="tv-mounts" style="display:none;">
+          <img src="website%20photos/tv-mounts/web/lv_0_20260520190329.jpg" alt="TV Mounts #134" loading="lazy" decoding="async">
+        </div>
+      </div>
+      <button class="gallery-loadmore" data-cat="tv-mounts">Show all 134 photos</button>
+    </div>
+
+    <div class="gallery-pool " data-cat="reception-repairs">
+      <div class="gallery-grid" data-initial="24">
+        <div class="gallery-item" data-src="website%20photos/reception-repairs/web/20250626_112138.jpg" data-cat="reception-repairs">
+          <img src="website%20photos/reception-repairs/web/20250626_112138.jpg" alt="Reception #1" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/reception-repairs/web/20250703_131412.jpg" data-cat="reception-repairs">
+          <img src="website%20photos/reception-repairs/web/20250703_131412.jpg" alt="Reception #2" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/reception-repairs/web/20250703_131420.jpg" data-cat="reception-repairs">
+          <img src="website%20photos/reception-repairs/web/20250703_131420.jpg" alt="Reception #3" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/reception-repairs/web/20250724_122850.jpg" data-cat="reception-repairs">
+          <img src="website%20photos/reception-repairs/web/20250724_122850.jpg" alt="Reception #4" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/reception-repairs/web/20250725_142615.jpg" data-cat="reception-repairs">
+          <img src="website%20photos/reception-repairs/web/20250725_142615.jpg" alt="Reception #5" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/reception-repairs/web/20250811_103542.jpg" data-cat="reception-repairs">
+          <img src="website%20photos/reception-repairs/web/20250811_103542.jpg" alt="Reception #6" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/reception-repairs/web/20250811_103652.jpg" data-cat="reception-repairs">
+          <img src="website%20photos/reception-repairs/web/20250811_103652.jpg" alt="Reception #7" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/reception-repairs/web/20250811_113955.jpg" data-cat="reception-repairs">
+          <img src="website%20photos/reception-repairs/web/20250811_113955.jpg" alt="Reception #8" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/reception-repairs/web/20250811_114316.jpg" data-cat="reception-repairs">
+          <img src="website%20photos/reception-repairs/web/20250811_114316.jpg" alt="Reception #9" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/reception-repairs/web/20250811_163256.jpg" data-cat="reception-repairs">
+          <img src="website%20photos/reception-repairs/web/20250811_163256.jpg" alt="Reception #10" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/reception-repairs/web/20250812_173211.jpg" data-cat="reception-repairs">
+          <img src="website%20photos/reception-repairs/web/20250812_173211.jpg" alt="Reception #11" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/reception-repairs/web/20250812_173224.jpg" data-cat="reception-repairs">
+          <img src="website%20photos/reception-repairs/web/20250812_173224.jpg" alt="Reception #12" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/reception-repairs/web/20250822_120552.jpg" data-cat="reception-repairs">
+          <img src="website%20photos/reception-repairs/web/20250822_120552.jpg" alt="Reception #13" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/reception-repairs/web/20250822_120603.jpg" data-cat="reception-repairs">
+          <img src="website%20photos/reception-repairs/web/20250822_120603.jpg" alt="Reception #14" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/reception-repairs/web/20250822_130514(0).jpg" data-cat="reception-repairs">
+          <img src="website%20photos/reception-repairs/web/20250822_130514(0).jpg" alt="Reception #15" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/reception-repairs/web/20250822_130514.jpg" data-cat="reception-repairs">
+          <img src="website%20photos/reception-repairs/web/20250822_130514.jpg" alt="Reception #16" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/reception-repairs/web/20250826_132905.jpg" data-cat="reception-repairs">
+          <img src="website%20photos/reception-repairs/web/20250826_132905.jpg" alt="Reception #17" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/reception-repairs/web/20250903_141529.jpg" data-cat="reception-repairs">
+          <img src="website%20photos/reception-repairs/web/20250903_141529.jpg" alt="Reception #18" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/reception-repairs/web/20250903_141540.jpg" data-cat="reception-repairs">
+          <img src="website%20photos/reception-repairs/web/20250903_141540.jpg" alt="Reception #19" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/reception-repairs/web/20250903_141541.jpg" data-cat="reception-repairs">
+          <img src="website%20photos/reception-repairs/web/20250903_141541.jpg" alt="Reception #20" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/reception-repairs/web/20250922_152718.jpg" data-cat="reception-repairs">
+          <img src="website%20photos/reception-repairs/web/20250922_152718.jpg" alt="Reception #21" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/reception-repairs/web/20250922_153538.jpg" data-cat="reception-repairs">
+          <img src="website%20photos/reception-repairs/web/20250922_153538.jpg" alt="Reception #22" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/reception-repairs/web/20250930_102035.jpg" data-cat="reception-repairs">
+          <img src="website%20photos/reception-repairs/web/20250930_102035.jpg" alt="Reception #23" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/reception-repairs/web/20250930_103714.jpg" data-cat="reception-repairs">
+          <img src="website%20photos/reception-repairs/web/20250930_103714.jpg" alt="Reception #24" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/reception-repairs/web/20250930_141110 (1).jpg" data-cat="reception-repairs" style="display:none;">
+          <img src="website%20photos/reception-repairs/web/20250930_141110 (1).jpg" alt="Reception #25" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/reception-repairs/web/20250930_141110.jpg" data-cat="reception-repairs" style="display:none;">
+          <img src="website%20photos/reception-repairs/web/20250930_141110.jpg" alt="Reception #26" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/reception-repairs/web/20251011_135932.jpg" data-cat="reception-repairs" style="display:none;">
+          <img src="website%20photos/reception-repairs/web/20251011_135932.jpg" alt="Reception #27" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/reception-repairs/web/20251025_112902.jpg" data-cat="reception-repairs" style="display:none;">
+          <img src="website%20photos/reception-repairs/web/20251025_112902.jpg" alt="Reception #28" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/reception-repairs/web/20251025_112913.jpg" data-cat="reception-repairs" style="display:none;">
+          <img src="website%20photos/reception-repairs/web/20251025_112913.jpg" alt="Reception #29" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/reception-repairs/web/20251202_140532.jpg" data-cat="reception-repairs" style="display:none;">
+          <img src="website%20photos/reception-repairs/web/20251202_140532.jpg" alt="Reception #30" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/reception-repairs/web/20251202_140555.jpg" data-cat="reception-repairs" style="display:none;">
+          <img src="website%20photos/reception-repairs/web/20251202_140555.jpg" alt="Reception #31" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/reception-repairs/web/20251205_102532.jpg" data-cat="reception-repairs" style="display:none;">
+          <img src="website%20photos/reception-repairs/web/20251205_102532.jpg" alt="Reception #32" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/reception-repairs/web/20251205_102649.jpg" data-cat="reception-repairs" style="display:none;">
+          <img src="website%20photos/reception-repairs/web/20251205_102649.jpg" alt="Reception #33" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/reception-repairs/web/20260127_080954.jpg" data-cat="reception-repairs" style="display:none;">
+          <img src="website%20photos/reception-repairs/web/20260127_080954.jpg" alt="Reception #34" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/reception-repairs/web/20260127_101731.jpg" data-cat="reception-repairs" style="display:none;">
+          <img src="website%20photos/reception-repairs/web/20260127_101731.jpg" alt="Reception #35" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/reception-repairs/web/20260520_125745.jpg" data-cat="reception-repairs" style="display:none;">
+          <img src="website%20photos/reception-repairs/web/20260520_125745.jpg" alt="Reception #36" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/reception-repairs/web/20260525_125310.jpg" data-cat="reception-repairs" style="display:none;">
+          <img src="website%20photos/reception-repairs/web/20260525_125310.jpg" alt="Reception #37" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/reception-repairs/web/20260525_125420.jpg" data-cat="reception-repairs" style="display:none;">
+          <img src="website%20photos/reception-repairs/web/20260525_125420.jpg" alt="Reception #38" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="website%20photos/reception-repairs/web/20260525_131003.jpg" data-cat="reception-repairs" style="display:none;">
+          <img src="website%20photos/reception-repairs/web/20260525_131003.jpg" alt="Reception #39" loading="lazy" decoding="async">
+        </div>
+      </div>
+      <button class="gallery-loadmore" data-cat="reception-repairs">Show all 39 photos</button>
+    </div>
+
+  </div>
+</section>
+
+<!-- Lightbox (used by gallery) -->
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Gallery viewer">
+  <button class="lightbox-close" aria-label="Close">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+  </button>
+  <button class="lightbox-prev" aria-label="Previous">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+  </button>
+  <button class="lightbox-next" aria-label="Next">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+  </button>
+  <img alt="">
+  <div class="lightbox-counter"></div>
+</div>
 
 <!-- ===================== ABOUT ===================== -->
 <!-- EDIT: photo placeholder, story copy, stat numbers -->
@@ -1196,43 +1947,19 @@
       <h2>Don't just take our word for it</h2>
       <p>A few kind words from neighbours we've helped on the southside.</p>
     </div>
-    <div class="testimonial-grid">
-      <div class="testimonial fade-in">
-        <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
-        <p>"Nate sorted out our switchboard and added new powerpoints in the kitchen. Tidy work, sensible price, and explained everything as he went. Won't be calling anyone else."</p>
-        <div class="testimonial-author">
-          <div class="avatar">SK</div>
-          <div class="author-name">
-            <strong>Sarah K.</strong>
-            <span>Greenslopes</span>
-          </div>
-        </div>
-      </div>
-      <div class="testimonial fade-in">
-        <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
-        <p>"Got Nate in for a full media room — TV mounting, surround sound, smart lighting and the lot. Came in on quote, finished on time, and the missus is still showing it off."</p>
-        <div class="testimonial-author">
-          <div class="avatar">DM</div>
-          <div class="author-name">
-            <strong>Dan M.</strong>
-            <span>Carindale</span>
-          </div>
-        </div>
-      </div>
-      <div class="testimonial fade-in">
-        <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
-        <p>"Starlink up and running, mesh Wi-Fi through the whole house, CCTV done. One team, one invoice, no fuss. Easiest tradie experience we've had."</p>
-        <div class="testimonial-author">
-          <div class="avatar">PJ</div>
-          <div class="author-name">
-            <strong>Priya J.</strong>
-            <span>Springfield</span>
-          </div>
-        </div>
-      </div>
+    <!-- Trustindex Google Reviews widget (auto-pulls live reviews) -->
+    <div class="reviews-widget fade-in">
+      <script defer async src='https://cdn.trustindex.io/loader.js?e45c39f73f0b915c8176e8d8e29'></script>
     </div>
-    <div class="placeholder-note">
-      Placeholder reviews shown above — we'll swap these for real Google reviews before launch.
+
+    <div class="reviews-cta fade-in">
+      <a href="https://g.page/r/CbVjKnqoixi-EAE/review" target="_blank" rel="noopener" class="btn btn-primary">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        Leave us a Google review
+      </a>
+      <a href="https://g.page/r/CbVjKnqoixi-EAE" target="_blank" rel="noopener" class="btn btn-secondary">
+        Read all reviews on Google &rarr;
+      </a>
     </div>
   </div>
 </section>
@@ -1324,7 +2051,7 @@
             <option>CCTV / security</option>
             <option>Home theatre / AV</option>
             <option>Starlink installation</option>
-            <option>Fit-out / handyman</option>
+            <option>Fit-out / TV wall &amp; floating cabinet install</option>
             <option>Not sure &mdash; I need advice</option>
           </select>
         </div>
@@ -1345,13 +2072,12 @@
 </section>
 
 <!-- ===================== FOOTER ===================== -->
-<!-- EDIT: business name, tagline, links, licence numbers -->
 <footer>
   <div class="container">
     <div class="footer-grid">
       <div class="footer-brand">
         <h3>
-          <span class="logo-mark">M</span>
+          <span class="logo-mark" role="img" aria-label="MIH logo"></span>
           Massive Integrated Homes
         </h3>
         <p>Smart home automation, home theatre fit-outs and electrical work &mdash; one trusted team, end to end. Brisbane's southside.</p>
@@ -1376,57 +2102,65 @@
           <li><a href="#services">Security &amp; CCTV</a></li>
           <li><a href="#services">Home Theatre</a></li>
           <li><a href="#services">Starlink</a></li>
-          <li><a href="#services">Fit-outs &amp; Handyman</a></li>
+          <li><a href="#services">TV Wall &amp; Cabinet Install</a></li>
+          <li><a href="#services">Custom Fit-outs</a></li>
         </ul>
       </div>
 
       <div>
         <h4>Service Area</h4>
         <ul>
-          <li><a href="#area">Greenslopes</a></li>
-          <li><a href="#area">Carindale</a></li>
-          <li><a href="#area">Mt Gravatt</a></li>
-          <li><a href="#area">Springfield</a></li>
-          <li><a href="#area">Sunnybank</a></li>
-          <li><a href="#area">All suburbs</a></li>
+          <li>Brisbane Southside</li>
+          <li>Greenslopes</li>
+          <li>Holland Park</li>
+          <li>Mt Gravatt</li>
+          <li>Carindale</li>
+          <li>Springfield Lakes</li>
+          <li>Gold Coast</li>
         </ul>
       </div>
 
       <div>
-        <h4>Contact</h4>
+        <h4>Get In Touch</h4>
         <ul>
           <li><a href="tel:+61480568180">0480 568 180</a></li>
           <li><a href="mailto:nathaniel@massiveintegratedhomes.com.au">nathaniel@massive&shy;integratedhomes.com.au</a></li>
-          <li><a href="automation.html">MIH Automation</a></li>
-          <li><a href="#contact">Get a Quote</a></li>
+          <li>Mon&ndash;Sat 7am&ndash;7pm</li>
+          <li><a href="automation.html">MIH Automation &rarr;</a></li>
         </ul>
       </div>
     </div>
 
     <div class="footer-bottom">
-      <div>
-        &copy; <span id="year">2026</span> Massive Integrated Homes. All rights reserved.
-        <span class="licence">&middot; QBCC Licence #XXXXXX &middot; ABN XX XXX XXX XXX</span>
-      </div>
-      <div>
-        <a href="#" style="margin-right:1rem;">Privacy</a>
-        <a href="#">Terms</a>
-      </div>
+      <div>&copy; <span id="year">2026</span> Massive Integrated Homes. All rights reserved. &middot; QBCC Licensed &middot; Fully Insured</div>
+      <div>Brisbane &middot; Gold Coast</div>
     </div>
   </div>
 </footer>
 
+<!-- ===================== STICKY CTAs (always visible) ===================== -->
+<div class="sticky-cta" id="stickyCta" aria-hidden="false">
+  <a href="tel:+61480568180" class="sticky-btn call" aria-label="Call Massive Integrated Homes">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+    <span class="sticky-label">Call Now</span>
+  </a>
+  <a href="#contact" class="sticky-btn quote" aria-label="Get a free quote">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
+    <span class="sticky-label">Free Quote</span>
+  </a>
+</div>
+
 <!-- ===================== JS ===================== -->
 <script>
-  // Theme toggle — saves preference to localStorage
+  // Theme toggle
   function setTheme(mode) {
     document.body.classList.remove('theme-light', 'theme-dark');
     document.body.classList.add('theme-' + mode);
-    document.getElementById('themeLight').classList.toggle('active', mode === 'light');
-    document.getElementById('themeDark').classList.toggle('active', mode === 'dark');
+    var l = document.getElementById('themeLight'), d = document.getElementById('themeDark');
+    if (l) l.classList.toggle('active', mode === 'light');
+    if (d) d.classList.toggle('active', mode === 'dark');
     try { localStorage.setItem('mih-theme', mode); } catch (e) {}
   }
-  // Restore saved theme on load (default = light)
   (function() {
     try {
       var saved = localStorage.getItem('mih-theme');
@@ -1435,7 +2169,8 @@
   })();
 
   // Auto-update copyright year
-  document.getElementById('year').textContent = new Date().getFullYear();
+  var yearEl = document.getElementById('year');
+  if (yearEl) yearEl.textContent = new Date().getFullYear();
 
   // Fade-in on scroll
   if ('IntersectionObserver' in window) {
@@ -1452,13 +2187,111 @@
   // Close mobile menu after link tap
   document.querySelectorAll('.nav-links a').forEach(function(a) {
     a.addEventListener('click', function() {
-      document.getElementById('navlinks').classList.remove('open');
+      var n = document.getElementById('navlinks'); if (n) n.classList.remove('open');
     });
   });
 
+  // ===================== HERO SLIDESHOW =====================
+  (function() {
+    var slides = document.querySelectorAll('.hero-slide');
+    if (slides.length < 2) return;
+    var i = 0;
+    setInterval(function() {
+      slides[i].classList.remove('is-active');
+      i = (i + 1) % slides.length;
+      slides[i].classList.add('is-active');
+    }, 4500);
+  })();
+
+  // ===================== GALLERY TABS + LOAD MORE =====================
+  (function() {
+    var tabs = document.querySelectorAll('.gallery-tab');
+    var pools = document.querySelectorAll('.gallery-pool');
+    tabs.forEach(function(t) {
+      t.addEventListener('click', function() {
+        tabs.forEach(function(x){ x.classList.remove('is-active'); });
+        t.classList.add('is-active');
+        var cat = t.getAttribute('data-cat');
+        pools.forEach(function(p) {
+          p.classList.toggle('is-active', p.getAttribute('data-cat') === cat);
+        });
+      });
+    });
+    document.querySelectorAll('.gallery-loadmore').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var cat = btn.getAttribute('data-cat');
+        var pool = document.querySelector('.gallery-pool[data-cat="' + cat + '"]');
+        pool.querySelectorAll('.gallery-item').forEach(function(it){ it.style.display = ''; });
+        btn.style.display = 'none';
+      });
+    });
+  })();
+
+  // ===================== LIGHTBOX =====================
+  (function() {
+    var lb = document.getElementById('lightbox');
+    if (!lb) return;
+    var lbImg = lb.querySelector('img');
+    var counter = lb.querySelector('.lightbox-counter');
+    var currentList = [], currentIdx = 0;
+
+    function open(list, idx) {
+      currentList = list; currentIdx = idx;
+      show();
+      lb.classList.add('is-open');
+      document.body.style.overflow = 'hidden';
+    }
+    function show() {
+      lbImg.src = currentList[currentIdx];
+      counter.textContent = (currentIdx + 1) + ' / ' + currentList.length;
+    }
+    function close() {
+      lb.classList.remove('is-open');
+      document.body.style.overflow = '';
+      lbImg.src = '';
+    }
+    function next() { currentIdx = (currentIdx + 1) % currentList.length; show(); }
+    function prev() { currentIdx = (currentIdx - 1 + currentList.length) % currentList.length; show(); }
+
+    lb.querySelector('.lightbox-close').addEventListener('click', close);
+    lb.querySelector('.lightbox-next').addEventListener('click', next);
+    lb.querySelector('.lightbox-prev').addEventListener('click', prev);
+    lb.addEventListener('click', function(e) { if (e.target === lb) close(); });
+    document.addEventListener('keydown', function(e) {
+      if (!lb.classList.contains('is-open')) return;
+      if (e.key === 'Escape') close();
+      else if (e.key === 'ArrowRight') next();
+      else if (e.key === 'ArrowLeft') prev();
+    });
+
+    document.querySelectorAll('.gallery-pool').forEach(function(pool) {
+      pool.addEventListener('click', function(e) {
+        var item = e.target.closest('.gallery-item');
+        if (!item) return;
+        var items = Array.from(pool.querySelectorAll('.gallery-item')).filter(function(x){ return x.style.display !== 'none'; });
+        var list = items.map(function(x){ return x.getAttribute('data-src'); });
+        var idx = items.indexOf(item);
+        open(list, idx);
+      });
+    });
+  })();
+
+  // ===================== STICKY CTA visibility =====================
+  (function() {
+    var cta = document.getElementById('stickyCta');
+    var contact = document.getElementById('contact');
+    if (!cta || !contact) return;
+    function check() {
+      var r = contact.getBoundingClientRect();
+      // Hide when contact section is in view (don't compete with the form)
+      cta.classList.toggle('is-hidden', r.top < window.innerHeight && r.bottom > 0);
+    }
+    window.addEventListener('scroll', check, { passive: true });
+    window.addEventListener('resize', check);
+    check();
+  })();
+
   // ===================== ENQUIRY FORM HANDLER (Formspree) =====================
-  // Submits the form in the background so the visitor stays on the page.
-  // Shows an inline thank-you message on success.
   document.querySelectorAll('form.enquiry-form').forEach(function(form) {
     form.addEventListener('submit', function(e) {
       e.preventDefault();
@@ -1507,7 +2340,7 @@
       }).finally(function() {
         if (btn) { btn.disabled = false; btn.innerHTML = originalBtnText; }
       });
-    });
+       });
   });
 </script>
 
