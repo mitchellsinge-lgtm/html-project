@@ -827,6 +827,11 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   .licence { font-size: 0.8rem; color: rgba(255,255,255,0.45); }
 
   /* ===================== RESPONSIVE ===================== */
+  /* Prevent any element from forcing horizontal scroll on mobile */
+  html, body { overflow-x: hidden; max-width: 100%; }
+  img, svg, video, iframe { max-width: 100%; height: auto; }
+  .hero, .services, .gallery-section, section, footer { max-width: 100vw; overflow-x: hidden; }
+
   @media (max-width: 900px) {
     .hero-inner, .about-grid, .contact-grid, .footer-grid { grid-template-columns: 1fr; }
     .hero { padding: 3rem 0 4rem; }
@@ -852,12 +857,22 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
       align-items: flex-start;
     }
     .top-bar { font-size: 0.78rem; }
+    .top-bar-inner { flex-wrap: wrap; gap: 0.4rem 0.8rem; }
+    .top-bar-inner > span { white-space: normal; }
     .hero-badges { flex-direction: column; gap: 0.8rem; }
     .about-stats { grid-template-columns: repeat(3, 1fr); }
     .stat-num { font-size: 1.6rem; }
     .contact-people { grid-template-columns: 1fr; }
     .theme-toggle { top: auto; bottom: 1rem; right: 1rem; }
     .logo-text span { display: none; }
+    /* Mobile hero — reduce side padding and stop card overflow */
+    .container { padding-left: 1rem; padding-right: 1rem; }
+    .hero-inner { gap: 1.5rem; }
+    .hero-card { padding: 1.25rem; }
+    .hero-lead { font-size: 1rem; }
+    .hero h1 { font-size: 2.1rem; line-height: 1.1; }
+    .hero-cta { flex-direction: column; align-items: stretch; }
+    .hero-cta .btn { justify-content: center; }
   }
 
   /* ===================== SCROLL ANIMATIONS ===================== */
