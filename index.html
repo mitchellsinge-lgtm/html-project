@@ -831,6 +831,10 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   html, body { overflow-x: hidden; max-width: 100%; }
   img, svg, video, iframe { max-width: 100%; height: auto; }
   .hero, .services, .gallery-section, section, footer { max-width: 100vw; overflow-x: hidden; }
+  /* Allow grid/flex children to shrink below their min-content width so text actually wraps */
+  .hero-inner, .hero-inner > *, .about-grid, .about-grid > *, .contact-grid, .contact-grid > *, .footer-grid, .footer-grid > * { min-width: 0; }
+  .hero-lead, .hero h1, p { overflow-wrap: break-word; word-wrap: break-word; }
+  .container { width: 100%; box-sizing: border-box; }
 
   @media (max-width: 900px) {
     .hero-inner, .about-grid, .contact-grid, .footer-grid { grid-template-columns: 1fr; }
