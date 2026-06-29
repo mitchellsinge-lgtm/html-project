@@ -118,6 +118,13 @@ input,select,textarea{font-family:inherit;font-size:13.5px;padding:10px 12px;bor
 input:focus,select:focus,textarea:focus{outline:0;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
 textarea{resize:vertical;min-height:64px}
 .hint{font-size:11.5px;color:var(--muted)}
+.cust-pick{position:relative}
+.search-results{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1px solid var(--line-strong);border-radius:10px;box-shadow:var(--shadow-lg);z-index:30;max-height:260px;overflow:auto}
+.sr-item{padding:9px 12px;cursor:pointer;border-bottom:1px solid var(--line);font-size:13px}
+.sr-item:last-child{border-bottom:0}
+.sr-item:hover{background:var(--primary-soft)}
+.sr-new{color:var(--primary);font-weight:600}
+.newcust{margin-top:12px;padding:14px;border:1px dashed var(--line-strong);border-radius:10px;background:var(--primary-soft)}
 
 .li-row{display:grid;grid-template-columns:70px 1fr 110px 110px 34px;gap:8px;align-items:center;margin-bottom:8px}
 .li-head{display:grid;grid-template-columns:70px 1fr 110px 110px 34px;gap:8px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:700;margin-bottom:6px;padding:0 2px}
@@ -195,7 +202,26 @@ table.inv-items td{padding:9px 12px;border-bottom:1px solid #eee;font-size:12px}
   .inv-doc{max-width:none}
   @page{margin:12mm}
 }
-@media(max-width:860px){ .sidebar{display:none} .frow{grid-template-columns:1fr} .inv-cols,.inv-foot-cols{grid-template-columns:1fr} }
+.mobilenav{display:none}
+@media(max-width:860px){
+  .sidebar{display:none}
+  .frow{grid-template-columns:1fr}
+  .inv-cols,.inv-foot-cols{grid-template-columns:1fr}
+  .content .grid:not(.stat-grid){grid-template-columns:1fr!important}
+  .topbar{flex-wrap:wrap;gap:8px;padding:12px 16px}
+  .topbar h1{font-size:18px}
+  .topbar-right{gap:8px;flex-wrap:wrap}
+  .userchip .nm,.userchip .em{display:none}
+  .content{padding:18px 14px 96px}
+  .card{overflow-x:auto}
+  .cal-grid{min-width:520px}
+  .seg button{padding:6px 10px;font-size:12px}
+  .mobilenav{display:flex;position:fixed;bottom:0;left:0;right:0;z-index:50;background:#0c0b14;border-top:1px solid rgba(255,255,255,.1);padding:6px 4px;padding-bottom:calc(6px + env(safe-area-inset-bottom))}
+  .mobilenav button{flex:1;background:0;border:0;color:#9c95bb;display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 2px;font-size:10px;font-weight:600;cursor:pointer}
+  .mobilenav button.active{color:#fff}
+  .mobilenav .ic{font-size:18px;line-height:1}
+  .mobilenav button.active .ic{color:var(--accent)}
+}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:500;box-shadow:var(--shadow-lg);z-index:600;animation:pop .2s}
 .loading{position:fixed;inset:0;display:grid;place-items:center;background:var(--bg);z-index:400;color:var(--muted);font-size:14px}
 .spin{width:26px;height:26px;border:3px solid var(--line-strong);border-top-color:var(--primary);border-radius:50%;animation:sp 1s linear infinite;margin:0 auto 12px}
@@ -241,6 +267,13 @@ table.inv-items td{padding:9px 12px;border-bottom:1px solid #eee;font-size:12px}
     </div>
     <div class="content" id="content"></div>
   </div>
+  <nav class="mobilenav" id="mobileNav">
+    <button data-view="dashboard" class="active"><span class="ic">▦</span>Home</button>
+    <button data-view="customers"><span class="ic">◍</span>Clients</button>
+    <button data-view="calendar"><span class="ic">▤</span>Calendar</button>
+    <button data-view="invoices"><span class="ic">▣</span>Invoices</button>
+    <button data-view="settings"><span class="ic">⚙</span>Settings</button>
+  </nav>
 </div>
 
 <div id="modalRoot"></div>
@@ -406,8 +439,8 @@ async function saveSettingsRow(){ const {error}=await sb.from('settings').upsert
    ===================================================================== */
 let currentView='dashboard';
 let ownerFilter='all';
-document.getElementById('nav').addEventListener('click',e=>{ const b=e.target.closest('button[data-view]'); if(b) go(b.dataset.view); });
-function go(v){ currentView=v; document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===v)); render(); }
+['nav','mobileNav'].forEach(navId=>{ const n=document.getElementById(navId); if(n) n.addEventListener('click',e=>{ const b=e.target.closest('button[data-view]'); if(b) go(b.dataset.view); }); });
+function go(v){ currentView=v; document.querySelectorAll('#nav button, #mobileNav button').forEach(b=>b.classList.toggle('active',b.dataset.view===v)); render(); window.scrollTo(0,0); }
 const TITLES={dashboard:['Dashboard',()=> 'Shared workspace · '+DB.members.length+' team members'],customers:['Customers','Your shared client database'],calendar:['Calendar & Jobs','Everyone’s bookings in one place'],invoices:['Invoices','Create and manage invoices'],settings:['Settings','Business details & integrations']};
 function render(){
   const [t,s]=TITLES[currentView];
@@ -568,11 +601,30 @@ function renderJobList(){
 function jobBadge(s){ return {scheduled:'<span class="badge purple">Scheduled</span>',quote:'<span class="badge amber">Quote</span>',done:'<span class="badge green">Done</span>'}[s]||'<span class="badge gray">—</span>'; }
 function openJob(id,presetDate){
   const j=id?DB.jobs.find(x=>x.id===id):{date:presetDate||todayISO(),status:'scheduled',duration:2};
-  const custOpts=DB.customers.map(c=>`<option value="${c.id}" ${c.id===j.customerId?'selected':''}>${esc(c.name)}</option>`).join('');
+  const selCust=j.customerId?custById(j.customerId):null;
+  const selName=selCust?esc(selCust.name):'';
   modal(`${id?'Edit':'Schedule'} job`,`
     <div class="frow">
       <div class="field full"><label>Job title *</label><input id="j_title" value="${esc(j.title)}" placeholder="e.g. TV Installations & Electrical Works"></div>
-      <div class="field full"><label>Customer</label><select id="j_cust"><option value="">— none —</option>${custOpts}</select></div>
+      <div class="field full"><label>Customer</label>
+        <div class="cust-pick">
+          <input id="j_custsearch" autocomplete="off" placeholder="Search past customers, or type a new name…" value="${selName}" oninput="custSearch(this.value)" onfocus="custSearch(this.value)">
+          <div id="custResults" class="search-results hidden"></div>
+        </div>
+        <input type="hidden" id="j_custId" value="${esc(j.customerId||'')}">
+        <div id="newCustPanel" class="newcust hidden">
+          <div class="hint" style="margin:0 0 8px;font-weight:600;color:var(--primary)">➕ New customer — saved to your database when you save the job</div>
+          <div class="frow" style="margin-bottom:0">
+            <div class="field full"><label>Business / Customer name *</label><input id="nc_name" placeholder="e.g. World Gym Springfield"></div>
+            <div class="field"><label>Contact person</label><input id="nc_contact"></div>
+            <div class="field"><label>Phone</label><input id="nc_phone"></div>
+            <div class="field"><label>Email</label><input id="nc_email"></div>
+            <div class="field"><label>ABN</label><input id="nc_abn"></div>
+            <div class="field full"><label>Site address</label><input id="nc_address" placeholder="28 Technology Drive, Augustine Heights QLD 4300"></div>
+          </div>
+          <button type="button" class="btn line sm" style="margin-top:8px" onclick="cancelNewCust()">Cancel new customer</button>
+        </div>
+      </div>
       <div class="field"><label>Date *</label><input type="date" id="j_date" value="${esc(j.date)}"></div>
       <div class="field"><label>Start time</label><input type="time" id="j_time" value="${esc(j.time)}"></div>
       <div class="field"><label>Duration (hours)</label><input type="number" step="0.5" min="0.5" id="j_dur" value="${esc(j.duration||2)}"></div>
@@ -588,7 +640,19 @@ function openJob(id,presetDate){
         const title=val('j_title').trim(); if(!title){ toast('Title required'); return; }
         if(!val('j_date')){ toast('Date required'); return; }
         const ex=id?DB.jobs.find(x=>x.id===id):null;
-        const obj={id:id||uid(),title,customerId:val('j_cust'),date:val('j_date'),time:val('j_time'),duration:parseFloat(val('j_dur'))||2,status:val('j_status'),notes:val('j_notes'),
+        // resolve customer: existing selection, inline-new, or exact-name fallback
+        let customerId=val('j_custId');
+        const np=document.getElementById('newCustPanel');
+        const addingNew = np && !np.classList.contains('hidden') && val('nc_name').trim();
+        if(addingNew){
+          const nc={id:uid(),name:val('nc_name').trim(),contact:val('nc_contact'),phone:val('nc_phone'),email:val('nc_email'),abn:val('nc_abn'),address:val('nc_address'),notes:'',ownerId:me.id,ownerName:me.name};
+          try{ await upsertCust(nc); }catch(e){ return toast('Could not save new customer: '+e.message); }
+          DB.customers.push(nc); customerId=nc.id;
+        } else if(!customerId){
+          const typed=val('j_custsearch').trim().toLowerCase();
+          const m=typed?DB.customers.find(c=>(c.name||'').toLowerCase()===typed):null; if(m) customerId=m.id;
+        }
+        const obj={id:id||uid(),title,customerId,date:val('j_date'),time:val('j_time'),duration:parseFloat(val('j_dur'))||2,status:val('j_status'),notes:val('j_notes'),
           source:ex?ex.source:'local',googleEventId:ex?ex.googleEventId:null,calendarId:ex?ex.calendarId:null,
           ownerId:ex?ex.ownerId:me.id, ownerName:ex?ex.ownerName:me.name};
         let stored=ex?ex:obj;
@@ -598,6 +662,40 @@ function openJob(id,presetDate){
         closeModal(); render(); toast('Job saved');
       }} ]);
 }
+/* ---- customer search-as-you-type (job form) ---- */
+function custSearch(q){
+  const box=document.getElementById('custResults'); if(!box) return;
+  const inp=document.getElementById('j_custsearch'); const hid=document.getElementById('j_custId');
+  // if the typed text no longer matches the selected customer's name, clear the selection
+  const cur=hid.value?custById(hid.value):null;
+  if(!(cur && cur.name===inp.value)) hid.value='';
+  const term=(q||'').trim().toLowerCase();
+  let list=DB.customers.slice();
+  if(term) list=list.filter(c=>[c.name,c.phone,c.email,c.address].some(f=>(f||'').toLowerCase().includes(term)));
+  list=list.sort((a,b)=>a.name.localeCompare(b.name)).slice(0,8);
+  let html=list.map(c=>`<div class="sr-item" onclick="chooseCust('${c.id}')"><div class="t-name">${esc(c.name)}</div>${[c.phone,c.address].filter(Boolean).length?`<div class="muted" style="font-size:11px">${esc([c.phone,c.address].filter(Boolean).join(' · '))}</div>`:''}</div>`).join('');
+  const exact=term&&DB.customers.some(c=>(c.name||'').toLowerCase()===term);
+  if(term&&!exact){ html+=`<div class="sr-item sr-new" onclick="chooseNewCust()">➕ Add “${esc(inp.value.trim())}” as new customer</div>`; }
+  if(!html) html=`<div class="sr-item muted">Start typing a name… or <span class="sr-new" onclick="chooseNewCust()">add a new customer</span></div>`;
+  box.innerHTML=html; box.classList.remove('hidden');
+}
+function chooseCust(cid){
+  const c=custById(cid); if(!c) return;
+  document.getElementById('j_custId').value=cid;
+  document.getElementById('j_custsearch').value=c.name;
+  document.getElementById('custResults').classList.add('hidden');
+  hideNewCust();
+}
+function chooseNewCust(){
+  const typed=document.getElementById('j_custsearch').value.trim();
+  document.getElementById('custResults').classList.add('hidden');
+  document.getElementById('j_custId').value='';
+  const p=document.getElementById('newCustPanel'); p.classList.remove('hidden');
+  const n=document.getElementById('nc_name'); n.value=typed; n.focus();
+}
+function cancelNewCust(){ hideNewCust(); const s=document.getElementById('j_custsearch'); s.value=''; document.getElementById('j_custId').value=''; s.focus(); }
+function hideNewCust(){ const p=document.getElementById('newCustPanel'); if(p) p.classList.add('hidden'); }
+document.addEventListener('click',e=>{ const r=document.getElementById('custResults'); if(r&&!r.classList.contains('hidden')&&!e.target.closest('.cust-pick')&&!e.target.closest('.sr-item')) r.classList.add('hidden'); });
 
 /* =====================================================================
    INVOICES
@@ -792,7 +890,11 @@ function renderSyncCard(){
       <span class="hint" id="syncStatus">${s.lastSync?'Last synced '+new Date(s.lastSync).toLocaleString('en-AU'):'Not synced yet'}</span>
     </div>
     <div class="hint" style="margin-top:10px">Jobs sync to this calendar for everyone on the team; Google events import as jobs. Calendar permission lasts about an hour per sign-in — click <b>Connect</b> again if a sync says it expired.</div>`;
-  if(!GAuth.calendars.length) loadCalendars().then(renderSyncCard).catch(()=>{});
+  if(!GAuth.calendars.length) loadCalendars().then(renderSyncCard).catch(err=>{
+    el.innerHTML=`<div class="hint" style="color:var(--danger);margin-bottom:10px"><b>Couldn’t load your Google calendars.</b><br>${esc(err.message||'')}</div>
+      <button class="btn" onclick="reconnectCal()">Reconnect Google Calendar</button>
+      <div class="hint" style="margin-top:10px">When Google’s permission screen appears, make sure the box for <b>“See, edit, share and permanently delete all the calendars”</b> is <b>ticked</b> — that’s what lets the CRM read your calendar list.</div>`;
+  });
 }
 async function reconnectCal(){ await signIn(); }
 
@@ -862,9 +964,16 @@ async function pullFromGoogle(calId){
 let syncing=false;
 async function syncNow(){
   if(syncing) return;
-  if(!GAuth.connected){ toast('Connect Google first'); return renderSyncCard(); }
-  const calId=DB.settings.googleCalendarId; if(!calId){ toast('Choose a calendar'); return; }
+  if(!GAuth.connected||!GAuth.token){ toast('Reconnect Google for calendar access'); go('settings'); return; }
   syncing=true; updateSyncStatus('Syncing…');
+  // make sure we have a calendar; fetch the list and auto-pick if needed
+  try{ if(!GAuth.calendars.length) await loadCalendars(); }
+  catch(e){ syncing=false; updateSyncStatus(); console.error(e);
+    toast('Calendar access failed — reconnect Google. '+(e.message||'')); go('settings'); return; }
+  let calId=DB.settings.googleCalendarId || (GAuth.calendars[0]&&GAuth.calendars[0].id);
+  if(!calId){ syncing=false; updateSyncStatus();
+    toast('No writable Google calendar found — reconnect and tick the calendar permission'); go('settings'); return; }
+  DB.settings.googleCalendarId=calId;
   try{
     for(const j of DB.jobs.filter(j=>j.source!=='google'||j.googleEventId)){ await pushJobToGoogle(j); await upsertJob(j); }
     await pullFromGoogle(calId);
