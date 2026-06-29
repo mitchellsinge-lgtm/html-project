@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MIH CRM — Cloud</title>
 <link rel="icon" type="image/png" href="milogo.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0c0b14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MIH CRM">
+<link rel="apple-touch-icon" href="milogo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
@@ -223,6 +230,8 @@ table.inv-items td{padding:9px 12px;border-bottom:1px solid #eee;font-size:12px}
   .mobilenav button.active .ic{color:var(--accent)}
 }
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:500;box-shadow:var(--shadow-lg);z-index:600;animation:pop .2s}
+.updbar{position:fixed;left:50%;transform:translateX(-50%);bottom:88px;z-index:700;background:var(--primary);color:#fff;padding:10px 14px 10px 18px;border-radius:30px;box-shadow:var(--shadow-lg);display:flex;align-items:center;gap:12px;font-size:13px;font-weight:600;animation:pop .2s}
+.updbar button{background:#fff;color:var(--primary);border:0;border-radius:20px;padding:7px 14px;font-weight:700;cursor:pointer}
 .loading{position:fixed;inset:0;display:grid;place-items:center;background:var(--bg);z-index:400;color:var(--muted);font-size:14px}
 .spin{width:26px;height:26px;border:3px solid var(--line-strong);border-top-color:var(--primary);border-radius:50%;animation:sp 1s linear infinite;margin:0 auto 12px}
 @keyframes sp{to{transform:rotate(360deg)}}
@@ -283,6 +292,7 @@ table.inv-items td{padding:9px 12px;border-bottom:1px solid #eee;font-size:12px}
    MIH CRM — CLOUD (Supabase, shared workspace, Google sign-in)
    ===================================================================== */
 const CFG_KEY='mih_sb_cfg';
+const APP_VERSION='2026.06.29-1';   /* bump this when deploying; phones auto-refresh to match */
 const GST_DIVISOR=11;
 const CAL_SCOPE='https://www.googleapis.com/auth/calendar';
 const DEFAULT_SETTINGS={
@@ -1000,6 +1010,34 @@ function modal(title,body,actions,wideCls){
 }
 function closeModal(){ document.getElementById('modalRoot').innerHTML=''; }
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeModal(); });
+
+/* =====================================================================
+   AUTO-UPDATE — checks the deployed file and refreshes when it changes
+   ===================================================================== */
+let updateVer=null;
+async function checkForUpdate(){
+  try{
+    const r=await fetch(location.pathname+'?_chk='+Date.now(),{cache:'no-store'});
+    if(!r.ok) return;
+    const txt=await r.text();
+    const m=txt.match(/APP_VERSION='([^']+)'/);
+    if(m && m[1] && m[1]!==APP_VERSION) showUpdate(m[1]);
+  }catch(e){}
+}
+function showUpdate(v){
+  updateVer=v;
+  // safe to refresh straight away if the user isn't mid-edit in a dialog
+  if(!document.querySelector('.overlay')) return applyUpdate(v);
+  if(document.getElementById('updbar')) return;
+  const b=document.createElement('div'); b.id='updbar'; b.className='updbar';
+  b.innerHTML='🔄 New version ready <button id="updbtn">Update</button>';
+  document.body.appendChild(b);
+  document.getElementById('updbtn').onclick=()=>applyUpdate(updateVer);
+}
+function applyUpdate(v){ location.replace(location.pathname+'?v='+encodeURIComponent(v||Date.now())+location.hash); }
+setTimeout(checkForUpdate,8000);
+setInterval(checkForUpdate,10*60*1000);
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') checkForUpdate(); });
 
 /* ---- go ---- */
 boot();
