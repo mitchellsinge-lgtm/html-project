@@ -64,6 +64,7 @@ button{font-family:inherit}
 .optmenu button:hover{background:var(--primary-soft)}
 .optmenu .ohead{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:700;padding:8px 12px 4px}
 .optsep{height:1px;background:var(--line);margin:5px 4px}
+.optver{text-align:center;font-size:10.5px;color:var(--muted);padding:8px 4px 4px;letter-spacing:.3px}
 .avatar{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:700;font-size:13px}
 .userchip .nm{font-size:13px;font-weight:600}
 .userchip .em{font-size:11px;color:var(--muted)}
@@ -160,6 +161,17 @@ textarea{resize:vertical;min-height:64px}
 .cal-ev.done{opacity:.6}
 .cal-nav{display:flex;align-items:center;gap:10px}
 .cal-nav b{font-family:'Space Grotesk';font-size:16px;min-width:160px;text-align:center;display:inline-block}
+/* agenda (list) view */
+.ag-date{font-family:'Space Grotesk';font-weight:700;font-size:13.5px;color:var(--primary);margin:18px 0 9px;letter-spacing:.3px}
+.ag-date:first-child{margin-top:2px}
+.ag-pasthd{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:700;margin:24px 0 6px;border-top:1px solid var(--line);padding-top:16px}
+.ag-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:9px;cursor:pointer;box-shadow:var(--shadow)}
+.ag-card:hover{border-color:var(--line-strong)}
+.ag-top{display:flex;align-items:center;gap:10px;margin-bottom:3px}
+.ag-time{font-weight:700;font-size:13px;color:var(--ink-soft)}
+.ag-title{font-weight:600;font-size:15px;line-height:1.25}
+.ag-cust{font-size:12.5px;color:var(--muted);margin-top:3px}
+.ag-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;flex-wrap:wrap}
 
 /* invoice doc */
 .inv-doc{background:#fff;color:#1a1a1a;max-width:780px;margin:0 auto;font-size:12.5px}
@@ -308,7 +320,7 @@ table.inv-items td{padding:9px 12px;border-bottom:1px solid #eee;font-size:12px}
    MIH CRM — CLOUD (Supabase, shared workspace, Google sign-in)
    ===================================================================== */
 const CFG_KEY='mih_sb_cfg';
-const APP_VERSION='2026.06.29-3';   /* bump this when deploying; phones auto-refresh to match */
+const APP_VERSION='2026.06.29-5';   /* bump this when deploying; phones auto-refresh to match */
 const GST_DIVISOR=11;
 const CAL_SCOPE='https://www.googleapis.com/auth/calendar';
 const DEFAULT_SETTINGS={
@@ -433,6 +445,7 @@ function renderUserChip(){
       <button onclick="closeOptions();syncNow()">⟳ Sync calendar</button>
       <div class="optsep"></div>
       <button onclick="closeOptions();signOut()">⎋ Sign out (${esc(me.name)})</button>
+      <div class="optver">MIH CRM · v${esc(APP_VERSION)}</div>
     </div>`;
   const team=DB.members.map(m=>`<span class="owner-tag"><span class="owner-dot" style="background:${esc(m.color||'#7c3aed')}"></span>${esc(m.name||m.email)}</span>`).join('<br>');
   document.getElementById('teamFoot').innerHTML='Team:<br>'+team;
@@ -584,27 +597,68 @@ function openCustomer(id){
 /* =====================================================================
    CALENDAR & JOBS
    ===================================================================== */
-let calYear,calMonth;
+let calYear,calMonth,calMode=null;
 function viewCalendar(){
+  const isMobile=window.matchMedia('(max-width:860px)').matches;
+  if(calMode===null) calMode=isMobile?'agenda':'month';
   const now=new Date(); if(calYear==null){ calYear=now.getFullYear(); calMonth=now.getMonth(); }
   document.getElementById('topAction').innerHTML=filterSeg()+`<button class="btn" style="margin-left:12px" onclick="openJob()">+ Schedule job</button>`;
-  const monthName=new Date(calYear,calMonth,1).toLocaleDateString('en-AU',{month:'long',year:'numeric'});
-  document.getElementById('content').innerHTML=`
-    <div class="card pad" style="margin-bottom:18px">
-      <div class="section-head">
-        <div class="cal-nav">
-          <button class="btn line sm" onclick="calStep(-1)">‹</button><b>${monthName}</b>
-          <button class="btn line sm" onclick="calStep(1)">›</button>
-          <button class="btn ghost sm" onclick="calToday()">Today</button>
+  const gbtn=GAuth.connected?`<button class="btn ghost sm" onclick="syncNow()">⟳ Sync Google</button>`:`<button class="btn line sm" onclick="reconnectCal()">Connect Google</button>`;
+  const toggle=`<div class="seg"><button class="${calMode==='agenda'?'on':''}" onclick="setCalMode('agenda')">List</button><button class="${calMode==='month'?'on':''}" onclick="setCalMode('month')">Month</button></div>`;
+  if(calMode==='agenda'){
+    document.getElementById('content').innerHTML=`<div class="card pad">
+      <div class="section-head"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">${toggle}${gbtn}</div></div>
+      <div id="agenda"></div></div>`;
+    renderAgenda();
+  } else {
+    const monthName=new Date(calYear,calMonth,1).toLocaleDateString('en-AU',{month:'long',year:'numeric'});
+    document.getElementById('content').innerHTML=`
+      <div class="card pad" style="margin-bottom:18px">
+        <div class="section-head">
+          <div class="cal-nav"><button class="btn line sm" onclick="calStep(-1)">‹</button><b>${monthName}</b><button class="btn line sm" onclick="calStep(1)">›</button><button class="btn ghost sm" onclick="calToday()">Today</button></div>
+          <div style="display:flex;gap:8px;align-items:center">${toggle}${gbtn}</div>
         </div>
-        <div>${GAuth.connected?`<button class="btn ghost sm" onclick="syncNow()">⟳ Sync Google</button>`:`<button class="btn line sm" onclick="reconnectCal()">Connect Google</button>`}</div>
+        <div class="cal-grid">${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d=>`<div class="cal-dow">${d}</div>`).join('')}</div>
+        <div class="cal-grid" id="calCells"></div>
+        <div style="margin-top:12px">${DB.members.map(m=>`<span class="owner-tag" style="margin-right:14px"><span class="owner-dot" style="background:${esc(m.color||'#7c3aed')}"></span>${esc(m.name||m.email)}</span>`).join('')}</div>
       </div>
-      <div class="cal-grid">${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d=>`<div class="cal-dow">${d}</div>`).join('')}</div>
-      <div class="cal-grid" id="calCells"></div>
-      <div style="margin-top:12px">${DB.members.map(m=>`<span class="owner-tag" style="margin-right:14px"><span class="owner-dot" style="background:${esc(m.color||'#7c3aed')}"></span>${esc(m.name||m.email)}</span>`).join('')}</div>
-    </div>
-    <div class="card pad"><div class="section-head"><h2>All jobs</h2></div><div id="jobList"></div></div>`;
-  renderCalCells(); renderJobList();
+      <div class="card pad"><div class="section-head"><h2>All jobs</h2></div><div id="jobList"></div></div>`;
+    renderCalCells(); renderJobList();
+  }
+}
+function setCalMode(m){ calMode=m; viewCalendar(); }
+function renderAgenda(){
+  const el=document.getElementById('agenda'); if(!el) return;
+  const today=todayISO();
+  const jobs=mineOnly([...DB.jobs]).sort((a,b)=>(a.date||'').localeCompare(b.date||'')||(a.time||'').localeCompare(b.time||''));
+  if(!jobs.length){ el.innerHTML=emptyState('▤','No jobs scheduled','Tap “Schedule job” to add one.'); return; }
+  const upcoming=jobs.filter(j=>(j.date||'')>=today);
+  const past=jobs.filter(j=>(j.date||'')<today).reverse();
+  let html=upcoming.length?groupAgenda(upcoming,today):`<div class="hint" style="margin:6px 0 2px">No upcoming jobs — see earlier ones below.</div>`;
+  if(past.length) html+=`<div class="ag-pasthd">Earlier jobs</div>`+groupAgenda(past,today);
+  el.innerHTML=html;
+}
+function groupAgenda(list,today){
+  let html='',last=null;
+  for(const j of list){ if(j.date!==last){ last=j.date; html+=`<div class="ag-date">${agendaDateLabel(j.date,today)}</div>`; } html+=agendaCard(j); }
+  return html;
+}
+function agendaDateLabel(d,today){
+  if(!d) return 'No date';
+  const long=new Date(d+'T00:00:00').toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long'});
+  const tm=new Date(Date.now()+864e5).toISOString().slice(0,10);
+  if(d===today) return 'Today · '+long;
+  if(d===tm) return 'Tomorrow · '+long;
+  return long;
+}
+function agendaCard(j){
+  const c=custById(j.customerId);
+  return `<div class="ag-card" style="border-left:4px solid ${esc(ownerColor(j.ownerId))}" onclick="openJob('${j.id}')">
+    <div class="ag-top"><span class="ag-time">${esc(j.time||'—')}</span>${jobBadge(j.status)}</div>
+    <div class="ag-title">${esc(j.title)}</div>
+    ${c?`<div class="ag-cust">${esc(c.name)}${c.address?' · '+esc(c.address):''}</div>`:''}
+    <div class="ag-foot"><span class="owner-tag"><span class="owner-dot" style="background:${esc(ownerColor(j.ownerId))}"></span>${esc(j.ownerName||'')}</span><span onclick="event.stopPropagation()">${jobQuickActions(j)}</span></div>
+  </div>`;
 }
 function calStep(d){ calMonth+=d; if(calMonth<0){calMonth=11;calYear--;} if(calMonth>11){calMonth=0;calYear++;} renderCalCells(); }
 function calToday(){ const n=new Date(); calYear=n.getFullYear(); calMonth=n.getMonth(); renderCalCells(); }
