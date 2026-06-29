@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MIH CRM — Cloud</title>
+<link rel="icon" type="image/png" href="milogo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --bg:#f4f1fa; --panel:#ffffff; --ink:#15152a; --ink-soft:#2d2d55; --muted:#64748b;
+  --line:#e7e0f3; --line-strong:#d9cff0;
+  --primary:#7c3aed; --primary-hover:#6d28d9; --accent:#a855f7;
+  --primary-soft:rgba(124,58,237,.08); --primary-soft2:rgba(124,58,237,.14);
+  --dark:#0c0b14; --ok:#16a34a; --ok-soft:rgba(22,163,74,.12);
+  --warn:#d97706; --warn-soft:rgba(217,119,6,.12);
+  --danger:#dc2626; --danger-soft:rgba(220,38,38,.10);
+  --radius:14px; --shadow:0 6px 24px rgba(15,23,42,.08); --shadow-lg:0 18px 50px rgba(124,58,237,.16);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:'Inter',system-ui,Arial,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+h1,h2,h3,.brandfont{font-family:'Space Grotesk','Inter',sans-serif}
+a{color:var(--primary);text-decoration:none}
+button{font-family:inherit}
+.hidden{display:none!important}
+
+.app{display:flex;min-height:100vh}
+.sidebar{width:248px;background:linear-gradient(180deg,#0c0b14 0%,#1b1430 100%);color:#fff;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;flex-shrink:0}
+.brand{display:flex;align-items:center;gap:12px;padding:20px 18px 16px}
+.brand img{width:46px;height:46px;border-radius:10px;object-fit:cover;background:#000;border:1px solid rgba(255,255,255,.12)}
+.brand .b-name{font-weight:700;font-size:15px;line-height:1.1;letter-spacing:.3px}
+.brand .b-tag{font-size:9.5px;letter-spacing:1.5px;color:var(--accent);font-weight:700;margin-top:3px}
+.nav{display:flex;flex-direction:column;gap:3px;padding:8px 12px;flex:1}
+.nav button{display:flex;align-items:center;gap:11px;background:transparent;border:0;color:#cdc7e0;padding:11px 13px;border-radius:10px;cursor:pointer;font-size:14px;font-weight:500;text-align:left;width:100%;transition:.15s}
+.nav button:hover{background:rgba(255,255,255,.07);color:#fff}
+.nav button.active{background:var(--primary);color:#fff;box-shadow:0 6px 18px rgba(124,58,237,.45)}
+.nav .ic{width:18px;text-align:center;font-size:15px}
+.side-foot{padding:14px 16px;font-size:11px;color:#7d75a0;border-top:1px solid rgba(255,255,255,.08)}
+.side-foot button{background:rgba(255,255,255,.06);color:#cdc7e0;border:0;border-radius:8px;padding:7px 10px;font-size:11px;cursor:pointer;margin:3px 4px 0 0}
+.side-foot button:hover{background:rgba(255,255,255,.12);color:#fff}
+
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 28px;background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
+.topbar h1{margin:0;font-size:21px;font-weight:700}
+.topbar .sub{font-size:12.5px;color:var(--muted);margin-top:2px}
+.topbar-right{display:flex;align-items:center;gap:14px}
+.userchip{display:flex;align-items:center;gap:9px}
+.avatar{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:700;font-size:13px}
+.userchip .nm{font-size:13px;font-weight:600}
+.userchip .em{font-size:11px;color:var(--muted)}
+
+.content{padding:26px 28px 60px;max-width:1180px;width:100%}
+
+.btn{display:inline-flex;align-items:center;gap:7px;background:var(--primary);color:#fff;border:0;border-radius:10px;padding:10px 16px;font-size:13.5px;font-weight:600;cursor:pointer;transition:.15s}
+.btn:hover{background:var(--primary-hover);transform:translateY(-1px)}
+.btn.ghost{background:var(--primary-soft);color:var(--primary)}
+.btn.ghost:hover{background:var(--primary-soft2)}
+.btn.line{background:#fff;color:var(--ink-soft);border:1px solid var(--line-strong)}
+.btn.line:hover{background:var(--bg);transform:none}
+.btn.sm{padding:7px 11px;font-size:12px;border-radius:8px}
+.btn.danger{background:var(--danger-soft);color:var(--danger)}
+.btn.danger:hover{background:var(--danger);color:#fff}
+
+.grid{display:grid;gap:18px}
+.stat-grid{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.card.pad{padding:20px}
+.stat{padding:18px 20px;position:relative;overflow:hidden}
+.stat .lbl{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.stat .val{font-size:30px;font-weight:800;margin-top:6px;font-family:'Space Grotesk',sans-serif}
+.stat .sub{font-size:12px;color:var(--muted);margin-top:3px}
+.stat .ic{position:absolute;right:14px;top:14px;width:40px;height:40px;border-radius:11px;display:grid;place-items:center;font-size:19px;background:var(--primary-soft);color:var(--primary)}
+
+.section-head{display:flex;align-items:center;justify-content:space-between;margin:2px 0 16px}
+.section-head h2{margin:0;font-size:17px}
+
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+thead th{text-align:left;font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);font-weight:700;padding:11px 14px;border-bottom:1px solid var(--line)}
+tbody td{padding:13px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:var(--primary-soft)}
+.t-name{font-weight:600}
+.muted{color:var(--muted)}
+.empty{padding:46px 20px;text-align:center;color:var(--muted)}
+.empty .big{font-size:40px;margin-bottom:8px;opacity:.5}
+
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:4px 9px;border-radius:20px;letter-spacing:.3px}
+.badge.gray{background:#eceaf3;color:#5b5575}
+.badge.purple{background:var(--primary-soft2);color:var(--primary)}
+.badge.green{background:var(--ok-soft);color:var(--ok)}
+.badge.amber{background:var(--warn-soft);color:var(--warn)}
+.badge.red{background:var(--danger-soft);color:var(--danger)}
+.owner-tag{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--ink-soft)}
+.owner-dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+
+.seg{display:inline-flex;background:#efeaf8;border-radius:9px;padding:3px}
+.seg button{border:0;background:transparent;padding:6px 13px;border-radius:7px;font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer}
+.seg button.on{background:#fff;color:var(--primary);box-shadow:var(--shadow)}
+
+.overlay{position:fixed;inset:0;background:rgba(12,11,20,.55);backdrop-filter:blur(3px);display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;z-index:100;overflow:auto}
+.modal{background:#fff;border-radius:16px;width:100%;max-width:640px;box-shadow:var(--shadow-lg);animation:pop .18s ease}
+.modal.wide{max-width:900px}
+@keyframes pop{from{transform:translateY(10px);opacity:0}to{transform:none;opacity:1}}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--line)}
+.modal-head h3{margin:0;font-size:17px}
+.modal-head .x{background:0;border:0;font-size:22px;color:var(--muted);cursor:pointer;line-height:1}
+.modal-body{padding:20px 22px}
+.modal-foot{padding:16px 22px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field.full{grid-column:1/-1}
+label{font-size:12px;font-weight:600;color:var(--ink-soft)}
+input,select,textarea{font-family:inherit;font-size:13.5px;padding:10px 12px;border:1px solid var(--line-strong);border-radius:9px;background:#fff;color:var(--ink);width:100%}
+input:focus,select:focus,textarea:focus{outline:0;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
+textarea{resize:vertical;min-height:64px}
+.hint{font-size:11.5px;color:var(--muted)}
+
+.li-row{display:grid;grid-template-columns:70px 1fr 110px 110px 34px;gap:8px;align-items:center;margin-bottom:8px}
+.li-head{display:grid;grid-template-columns:70px 1fr 110px 110px 34px;gap:8px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:700;margin-bottom:6px;padding:0 2px}
+.li-del{background:var(--danger-soft);color:var(--danger);border:0;border-radius:8px;height:36px;cursor:pointer;font-size:15px}
+.totbox{margin-top:14px;margin-left:auto;width:280px;font-size:13.5px}
+.totbox .r{display:flex;justify-content:space-between;padding:6px 0}
+.totbox .r.tot{border-top:2px solid var(--ink);margin-top:6px;padding-top:10px;font-size:18px;font-weight:800;color:var(--primary)}
+
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.cal-dow{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:700;text-align:center;padding:6px 0}
+.cal-cell{background:#fff;border:1px solid var(--line);border-radius:10px;min-height:96px;padding:7px 8px;cursor:pointer;transition:.12s;position:relative}
+.cal-cell:hover{border-color:var(--line-strong);background:var(--primary-soft)}
+.cal-cell.other{background:#faf9fd;opacity:.55}
+.cal-cell.today{border-color:var(--primary);box-shadow:0 0 0 2px var(--primary-soft)}
+.cal-cell .dnum{font-size:12px;font-weight:700;color:var(--ink-soft)}
+.cal-cell.today .dnum{color:var(--primary)}
+.cal-ev{font-size:10.5px;font-weight:600;color:#fff;border-radius:5px;padding:2px 5px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:4px}
+.cal-ev.done{opacity:.6}
+.cal-nav{display:flex;align-items:center;gap:10px}
+.cal-nav b{font-family:'Space Grotesk';font-size:16px;min-width:160px;text-align:center;display:inline-block}
+
+/* invoice doc */
+.inv-doc{background:#fff;color:#1a1a1a;max-width:780px;margin:0 auto;font-size:12.5px}
+.inv-head{background:#0c0b14;color:#fff;display:flex;justify-content:space-between;align-items:flex-start;padding:22px 26px}
+.inv-head .lhs{display:flex;gap:16px;align-items:flex-start}
+.inv-head img{width:78px;height:78px;border-radius:10px;object-fit:cover;background:#000}
+.inv-head .co{font-family:'Space Grotesk';font-size:23px;font-weight:700;letter-spacing:.5px;line-height:1.05}
+.inv-head .tag{color:var(--accent);font-size:11px;font-weight:700;letter-spacing:1px;margin:4px 0 9px}
+.inv-head .ci{font-size:11px;color:#d6d1e6;line-height:1.7}
+.inv-stamp{background:#fff;border:2px solid var(--primary);border-radius:10px;text-align:center;min-width:158px;overflow:hidden}
+.inv-stamp .t{background:#0c0b14;color:#fff;font-family:'Space Grotesk';font-weight:700;letter-spacing:3px;font-size:15px;padding:7px}
+.inv-stamp .n{font-weight:800;font-size:17px;padding:8px 0 2px;color:#15152a;font-family:'Space Grotesk'}
+.inv-stamp .d{font-size:11px;color:#555;padding:0 0 8px}
+.inv-accent{height:5px;background:linear-gradient(90deg,var(--primary),var(--accent))}
+.inv-body{padding:22px 26px}
+.inv-cols{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
+.inv-panel{border:1px solid #e3e3e3;border-radius:8px;overflow:hidden}
+.inv-panel .ph{background:#f3f1f7;font-weight:700;font-size:11px;letter-spacing:.6px;text-transform:uppercase;padding:9px 12px;border-bottom:1px solid #e3e3e3}
+.inv-panel .pb{padding:12px}
+.inv-panel .pb .big{font-weight:700;font-size:14px;margin-bottom:4px}
+.inv-kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:11.5px}
+.inv-kv b{font-weight:700}
+.inv-sec-title{font-family:'Space Grotesk';font-weight:700;font-size:15px;margin:4px 0 10px}
+table.inv-items{border:1px solid #e3e3e3;border-radius:8px;overflow:hidden}
+table.inv-items th{background:#1a1726;color:#fff;text-transform:none;letter-spacing:0;font-size:11.5px;padding:9px 12px}
+table.inv-items th.r,table.inv-items td.r{text-align:right}
+table.inv-items td{padding:9px 12px;border-bottom:1px solid #eee;font-size:12px}
+.inv-foot-cols{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px;align-items:start}
+.inv-total{border:2px solid var(--primary);border-radius:10px;background:#f7f4fc;padding:22px;display:flex;justify-content:space-between;align-items:center}
+.inv-total .l{font-family:'Space Grotesk';font-weight:700;font-size:18px}
+.inv-total .v{font-family:'Space Grotesk';font-weight:800;font-size:24px;color:var(--primary)}
+.inv-services{background:#0c0b14;color:#fff;margin-top:22px}
+.inv-services .acc{height:4px;background:linear-gradient(90deg,var(--primary),var(--accent))}
+.inv-services .sv{padding:16px 26px}
+.inv-services .sh{font-weight:700;letter-spacing:.6px;font-size:12px;margin-bottom:7px}
+.inv-services .sl{font-size:11px;color:#cfc9e0;line-height:1.8}
+.inv-thanks{text-align:center;color:#999;font-size:11px;padding:14px}
+
+/* auth / config screens */
+.gate{position:fixed;inset:0;display:grid;place-items:center;background:linear-gradient(135deg,#1a0f3a 0%,#4c1d95 55%,#7c3aed 100%);z-index:500;padding:20px}
+.gate-card{background:#fff;border-radius:20px;box-shadow:0 30px 80px rgba(0,0,0,.35);width:100%;max-width:420px;padding:34px 32px;text-align:center}
+.gate-card img{width:72px;height:72px;border-radius:16px;object-fit:cover;background:#000;margin-bottom:14px}
+.gate-card h2{margin:0 0 4px;font-size:22px}
+.gate-card .tag{color:var(--accent);font-size:11px;font-weight:700;letter-spacing:1.5px;margin-bottom:22px}
+.gbtn{display:inline-flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line-strong);border-radius:10px;padding:12px 20px;font-size:14px;font-weight:600;color:var(--ink);cursor:pointer;width:100%;justify-content:center}
+.gbtn:hover{background:var(--bg)}
+.gbtn img{width:18px;height:18px;margin:0;border-radius:0;background:0}
+.gate-card .err{color:var(--danger);font-size:12.5px;margin-top:14px}
+.gate-card .field{text-align:left;margin-bottom:12px}
+
+@media print{
+  body{background:#fff}
+  .app .sidebar,.topbar,.no-print{display:none!important}
+  .main,.content{padding:0!important;margin:0!important;max-width:none!important}
+  .inv-doc{max-width:none}
+  @page{margin:12mm}
+}
+@media(max-width:860px){ .sidebar{display:none} .frow{grid-template-columns:1fr} .inv-cols,.inv-foot-cols{grid-template-columns:1fr} }
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:500;box-shadow:var(--shadow-lg);z-index:600;animation:pop .2s}
+.loading{position:fixed;inset:0;display:grid;place-items:center;background:var(--bg);z-index:400;color:var(--muted);font-size:14px}
+.spin{width:26px;height:26px;border:3px solid var(--line-strong);border-top-color:var(--primary);border-radius:50%;animation:sp 1s linear infinite;margin:0 auto 12px}
+@keyframes sp{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<div id="loading" class="loading"><div><div class="spin"></div>Loading…</div></div>
+<div id="gateRoot"></div>
+
+<div class="app hidden" id="appRoot">
+  <aside class="sidebar">
+    <div class="brand">
+      <img src="milogo.png" alt="MIH" onerror="this.style.display='none'">
+      <div>
+        <div class="b-name brandfont">MASSIVE<br>INTEGRATED HOMES</div>
+        <div class="b-tag">SMARTER HOMES. BETTER LIVING.</div>
+      </div>
+    </div>
+    <nav class="nav" id="nav">
+      <button data-view="dashboard" class="active"><span class="ic">▦</span> Dashboard</button>
+      <button data-view="customers"><span class="ic">◍</span> Customers</button>
+      <button data-view="calendar"><span class="ic">▤</span> Calendar &amp; Jobs</button>
+      <button data-view="invoices"><span class="ic">▣</span> Invoices</button>
+      <button data-view="settings"><span class="ic">⚙</span> Settings</button>
+    </nav>
+    <div class="side-foot">
+      <div id="teamFoot">Shared cloud workspace</div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <h1 id="viewTitle">Dashboard</h1>
+        <div class="sub" id="viewSub"></div>
+      </div>
+      <div class="topbar-right">
+        <div id="topAction"></div>
+        <div class="userchip" id="userChip"></div>
+      </div>
+    </div>
+    <div class="content" id="content"></div>
+  </div>
+</div>
+
+<div id="modalRoot"></div>
+
+<script>
+/* =====================================================================
+   MIH CRM — CLOUD (Supabase, shared workspace, Google sign-in)
+   ===================================================================== */
+const CFG_KEY='mih_sb_cfg';
+const GST_DIVISOR=11;
+const CAL_SCOPE='https://www.googleapis.com/auth/calendar';
+const DEFAULT_SETTINGS={
+  businessName:'Massive Integrated Homes', tagline:'SMARTER HOMES. BETTER LIVING.',
+  mobile:'0480 568 180', email:'Nathaniel@massiveintegratedhomes.com.au',
+  website:'www.massiveintegratedhomes.com.au', abn:'',
+  bankName:'Nathaniel Pemberton', bsb:'067-873', accountNumber:'17643364',
+  services:'TV Wall Mounting | Home Automation | Smart Home Integration | Security & CCTV\nWiFi & Networking | Multi-Room Audio | Home Theatre | Commercial AV',
+  calendarEmbed:'', googleCalendarId:'', lastSync:''
+};
+let sb=null, me=null;
+let DB={customers:[],jobs:[],invoices:[],members:[],settings:{...DEFAULT_SETTINGS},counters:{invoice:2}};
+const GAuth={token:null,connected:false,calendars:[],needReconnect:false};
+
+/* ---------- helpers ---------- */
+const uid=()=> (crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2));
+const money=n=>'$'+(Number(n)||0).toLocaleString('en-AU',{minimumFractionDigits:2,maximumFractionDigits:2});
+const esc=s=>(s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function fmtDate(d){ if(!d) return ''; const x=new Date(d+'T00:00:00'); return x.toLocaleDateString('en-AU',{day:'2-digit',month:'2-digit',year:'numeric'}); }
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+function toast(msg){ const t=document.createElement('div'); t.className='toast'; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),2400); }
+const val=id=>{ const e=document.getElementById(id); return e?e.value:''; };
+const custById=id=>DB.customers.find(c=>c.id===id);
+function custName(id){ const c=custById(id); return c?c.name:'—'; }
+function memberByEmail(email){ return DB.members.find(m=>(m.email||'').toLowerCase()===(email||'').toLowerCase()); }
+function ownerColor(o){ const m=DB.members.find(x=>x.id===o||(x.email||'').toLowerCase()===(o||'').toLowerCase()||x.name===o); return (m&&m.color)||'#7c3aed'; }
+function initials(name){ return (name||'?').split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase(); }
+
+/* =====================================================================
+   BOOT + AUTH
+   ===================================================================== */
+async function boot(){
+  const cfg=getCfg();
+  if(!cfg){ hide('loading'); return showConfig(); }
+  try{ sb=window.supabase.createClient(cfg.url,cfg.anonKey); }
+  catch(e){ hide('loading'); return showConfig('Could not initialise — check your URL and key.'); }
+  // capture provider_token returned in the URL hash right after Google redirect
+  const { data:{ session } } = await sb.auth.getSession();
+  sb.auth.onAuthStateChange((_e,s)=>{ if(s){ onSignedIn(s);} else { showLogin(); } });
+  if(session){ onSignedIn(session); } else { hide('loading'); showLogin(); }
+}
+function getCfg(){ try{ return JSON.parse(localStorage.getItem(CFG_KEY)||'null'); }catch(e){ return null; } }
+function hide(id){ const e=document.getElementById(id); if(e) e.classList.add('hidden'); }
+function show(id){ const e=document.getElementById(id); if(e) e.classList.remove('hidden'); }
+
+function showConfig(err){
+  document.getElementById('gateRoot').innerHTML=`
+   <div class="gate"><div class="gate-card">
+     <img src="milogo.png" onerror="this.style.display='none'">
+     <h2>Connect your workspace</h2>
+     <div class="tag">MIH CRM · CLOUD</div>
+     <div class="field"><label>Supabase Project URL</label><input id="cfg_url" placeholder="https://xxxx.supabase.co"></div>
+     <div class="field"><label>Supabase anon (public) key</label><input id="cfg_key" placeholder="eyJhbGci..."></div>
+     <button class="btn" style="width:100%;justify-content:center" onclick="saveCfg()">Save & continue</button>
+     <div class="hint" style="margin-top:14px;text-align:left">Find these in Supabase → Project Settings → API. The anon key is safe to use here (your data is protected by row-level security). One-time per device.</div>
+     ${err?`<div class="err">${esc(err)}</div>`:''}
+   </div></div>`;
+}
+function saveCfg(){
+  const url=val('cfg_url').trim().replace(/\/$/,''), key=val('cfg_key').trim();
+  if(!/^https:\/\/.+\.supabase\.co$/.test(url)){ return showConfig('That URL doesn’t look right (https://xxxx.supabase.co).'); }
+  if(key.length<30){ return showConfig('That anon key looks too short.'); }
+  localStorage.setItem(CFG_KEY,JSON.stringify({url,anonKey:key}));
+  document.getElementById('gateRoot').innerHTML=''; show('loading'); boot();
+}
+function showLogin(err){
+  document.getElementById('appRoot').classList.add('hidden');
+  document.getElementById('gateRoot').innerHTML=`
+   <div class="gate"><div class="gate-card">
+     <img src="milogo.png" onerror="this.style.display='none'">
+     <h2>MIH CRM</h2>
+     <div class="tag">SMARTER HOMES. BETTER LIVING.</div>
+     <button class="gbtn" onclick="signIn()">
+       <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" onerror="this.style.display='none'"> Sign in with Google
+     </button>
+     <div class="hint" style="margin-top:16px">Use your Massive Integrated Homes Google account. Access is limited to approved team members.</div>
+     ${err?`<div class="err">${esc(err)}</div>`:''}
+     <div class="hint" style="margin-top:18px"><a href="#" onclick="resetCfg();return false">Change workspace connection</a></div>
+   </div></div>`;
+}
+function resetCfg(){ localStorage.removeItem(CFG_KEY); location.reload(); }
+async function signIn(){
+  const { error } = await sb.auth.signInWithOAuth({ provider:'google',
+    options:{ scopes:CAL_SCOPE, queryParams:{ access_type:'offline', prompt:'consent' },
+      redirectTo: location.origin+location.pathname } });
+  if(error) showLogin(error.message);
+}
+async function signOut(){ await sb.auth.signOut(); GAuth.token=null; GAuth.connected=false; location.reload(); }
+
+async function onSignedIn(session){
+  show('loading');
+  if(session.provider_token){ GAuth.token=session.provider_token; GAuth.connected=true; GAuth.needReconnect=false; }
+  try{
+    await loadMembers();
+    if(!memberByEmail(session.user.email)){
+      hide('loading'); await sb.auth.signOut();
+      return showLogin('This account isn’t on the team list yet. Ask an admin to add '+session.user.email+' in Supabase.');
+    }
+    const m=memberByEmail(session.user.email);
+    me={ id:session.user.id, email:session.user.email, name:(m&&m.name)||session.user.user_metadata.full_name||session.user.email, color:(m&&m.color)||'#7c3aed' };
+    await loadAll();
+    document.getElementById('gateRoot').innerHTML='';
+    hide('loading'); show('appRoot');
+    renderUserChip();
+    render();
+  }catch(e){ console.error(e); hide('loading'); showLogin('Could not load your workspace: '+(e.message||e)); }
+}
+function renderUserChip(){
+  document.getElementById('userChip').innerHTML=`
+    <div class="avatar" style="background:${esc(me.color)}">${esc(initials(me.name))}</div>
+    <div><div class="nm">${esc(me.name)}</div><div class="em">${esc(me.email)}</div></div>
+    <button class="btn line sm" onclick="signOut()" title="Sign out">Sign out</button>`;
+  const team=DB.members.map(m=>`<span class="owner-tag"><span class="owner-dot" style="background:${esc(m.color||'#7c3aed')}"></span>${esc(m.name||m.email)}</span>`).join('<br>');
+  document.getElementById('teamFoot').innerHTML='Team:<br>'+team;
+}
+
+/* =====================================================================
+   DATA LAYER (Supabase)  — mapping snake_case rows <-> app objects
+   ===================================================================== */
+const rowToCust=r=>({id:r.id,name:r.name,contact:r.contact,phone:r.phone,email:r.email,abn:r.abn,address:r.address,notes:r.notes,ownerId:r.owner_id,ownerName:r.owner_name});
+const custToRow=c=>({id:c.id,name:c.name,contact:c.contact,phone:c.phone,email:c.email,abn:c.abn,address:c.address,notes:c.notes,owner_id:c.ownerId,owner_name:c.ownerName,updated_at:new Date().toISOString()});
+const rowToJob=r=>({id:r.id,title:r.title,customerId:r.customer_id,date:r.date,time:r.time,duration:Number(r.duration)||2,status:r.status,notes:r.notes,googleEventId:r.google_event_id,calendarId:r.calendar_id,source:r.source,ownerId:r.owner_id,ownerName:r.owner_name});
+const jobToRow=j=>({id:j.id,title:j.title,customer_id:j.customerId||null,date:j.date||null,time:j.time||null,duration:j.duration||2,status:j.status,notes:j.notes,google_event_id:j.googleEventId||null,calendar_id:j.calendarId||null,source:j.source||'local',owner_id:j.ownerId,owner_name:j.ownerName,updated_at:new Date().toISOString()});
+const rowToInv=r=>({id:r.id,number:r.number,date:r.date,customerId:r.customer_id,project:r.project,commenced:r.commenced,completed:r.completed,status:r.status,lines:r.lines||[],ownerId:r.owner_id,ownerName:r.owner_name});
+const invToRow=i=>({id:i.id,number:i.number,date:i.date||null,customer_id:i.customerId||null,project:i.project,commenced:i.commenced||null,completed:i.completed||null,status:i.status,lines:i.lines,owner_id:i.ownerId,owner_name:i.ownerName,updated_at:new Date().toISOString()});
+
+async function loadMembers(){
+  const {data,error}=await sb.from('members').select('*');
+  if(error) throw error; DB.members=data||[];
+}
+async function loadAll(){
+  const [cs,js,iv,st]=await Promise.all([
+    sb.from('customers').select('*'),
+    sb.from('jobs').select('*'),
+    sb.from('invoices').select('*'),
+    sb.from('settings').select('*').eq('id',1).maybeSingle()
+  ]);
+  if(cs.error||js.error||iv.error) throw (cs.error||js.error||iv.error);
+  DB.customers=(cs.data||[]).map(rowToCust);
+  DB.jobs=(js.data||[]).map(rowToJob);
+  DB.invoices=(iv.data||[]).map(rowToInv);
+  DB.settings=Object.assign({...DEFAULT_SETTINGS},(st&&st.data&&st.data.data)||{});
+  const maxN=DB.invoices.reduce((m,i)=>{const x=/MIH-(\d+)/.exec(i.number||'');return x?Math.max(m,+x[1]):m;},2);
+  DB.counters.invoice=maxN;
+}
+async function upsertCust(c){ const {error}=await sb.from('customers').upsert(custToRow(c)); if(error)throw error; }
+async function upsertJob(j){ const {error}=await sb.from('jobs').upsert(jobToRow(j)); if(error)throw error; }
+async function upsertInv(i){ const {error}=await sb.from('invoices').upsert(invToRow(i)); if(error)throw error; }
+async function delRow(table,id){ const {error}=await sb.from(table).delete().eq('id',id); if(error)throw error; }
+async function saveSettingsRow(){ const {error}=await sb.from('settings').upsert({id:1,data:DB.settings}); if(error)throw error; }
+
+/* =====================================================================
+   ROUTING
+   ===================================================================== */
+let currentView='dashboard';
+let ownerFilter='all';
+document.getElementById('nav').addEventListener('click',e=>{ const b=e.target.closest('button[data-view]'); if(b) go(b.dataset.view); });
+function go(v){ currentView=v; document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===v)); render(); }
+const TITLES={dashboard:['Dashboard',()=> 'Shared workspace · '+DB.members.length+' team members'],customers:['Customers','Your shared client database'],calendar:['Calendar & Jobs','Everyone’s bookings in one place'],invoices:['Invoices','Create and manage invoices'],settings:['Settings','Business details & integrations']};
+function render(){
+  const [t,s]=TITLES[currentView];
+  document.getElementById('viewTitle').textContent=t;
+  document.getElementById('viewSub').textContent=typeof s==='function'?s():s;
+  document.getElementById('topAction').innerHTML='';
+  ({dashboard:viewDashboard,customers:viewCustomers,calendar:viewCalendar,invoices:viewInvoices,settings:viewSettings}[currentView])();
+}
+function mineOnly(arr){ return ownerFilter==='mine'?arr.filter(x=>x.ownerId===me.id):arr; }
+function ownerTag(x){ const name=x.ownerName||'—'; return `<span class="owner-tag"><span class="owner-dot" style="background:${esc(ownerColor(x.ownerId)|| '#7c3aed')}"></span>${esc(name)}</span>`; }
+function filterSeg(){ return `<div class="seg"><button class="${ownerFilter==='all'?'on':''}" onclick="ownerFilter='all';render()">Everyone</button><button class="${ownerFilter==='mine'?'on':''}" onclick="ownerFilter='mine';render()">Mine</button></div>`; }
+
+/* =====================================================================
+   DASHBOARD
+   ===================================================================== */
+function emptyState(ic,t,s){ return `<div class="empty"><div class="big">${ic}</div><div style="font-weight:600;color:var(--ink-soft)">${t}</div><div style="font-size:12.5px;margin-top:4px">${s}</div></div>`; }
+function stat(lbl,v,sub,ic){ return `<div class="card stat"><div class="ic">${ic}</div><div class="lbl">${lbl}</div><div class="val">${v}</div><div class="sub">${sub}</div></div>`; }
+function viewDashboard(){
+  document.getElementById('topAction').innerHTML=filterSeg();
+  const jobs=mineOnly(DB.jobs), invs=mineOnly(DB.invoices);
+  const upcoming=jobs.filter(j=>j.date>=todayISO()&&j.status!=='done').sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  const unpaid=invs.filter(i=>i.status!=='paid');
+  const outstanding=unpaid.reduce((s,i)=>s+invTotal(i),0);
+  const collected=invs.filter(i=>i.status==='paid').reduce((s,i)=>s+invTotal(i),0);
+  document.getElementById('content').innerHTML=`
+  <div class="grid stat-grid" style="margin-bottom:22px">
+    ${stat('Customers',mineOnly(DB.customers).length,'in your database','◍')}
+    ${stat('Upcoming jobs',upcoming.length,'scheduled ahead','▤')}
+    ${stat('Outstanding',money(outstanding),unpaid.length+' unpaid','▣')}
+    ${stat('Collected',money(collected),'paid to date','✓')}
+  </div>
+  <div class="grid" style="grid-template-columns:1.3fr 1fr;align-items:start">
+    <div class="card pad">
+      <div class="section-head"><h2>Upcoming jobs</h2><button class="btn ghost sm" onclick="openJob()">+ Schedule</button></div>
+      ${upcoming.length?`<table><tbody>${upcoming.slice(0,8).map(j=>`
+        <tr style="cursor:pointer" onclick="openJob('${j.id}')">
+          <td style="width:96px"><div class="t-name">${fmtDate(j.date)}</div><div class="muted" style="font-size:11px">${esc(j.time||'')}</div></td>
+          <td><div class="t-name">${esc(j.title)}</div><div class="muted" style="font-size:11.5px">${esc(custName(j.customerId))}</div></td>
+          <td style="text-align:right">${ownerTag(j)}</td>
+        </tr>`).join('')}</tbody></table>`:emptyState('▤','No upcoming jobs','Schedule one to see it here.')}
+    </div>
+    <div class="card pad">
+      <div class="section-head"><h2>Recent invoices</h2><button class="btn ghost sm" onclick="openInvoice()">+ New</button></div>
+      ${invs.length?`<table><tbody>${[...invs].reverse().slice(0,8).map(i=>`
+        <tr style="cursor:pointer" onclick="previewInvoice('${i.id}')">
+          <td><div class="t-name">${esc(i.number)}</div><div class="muted" style="font-size:11.5px">${esc(custName(i.customerId))}</div></td>
+          <td style="text-align:right"><div class="t-name">${money(invTotal(i))}</div>${invBadge(i.status)}</td>
+        </tr>`).join('')}</tbody></table>`:emptyState('▣','No invoices yet','Generate your first MIH invoice.')}
+    </div>
+  </div>`;
+}
+
+/* =====================================================================
+   CUSTOMERS
+   ===================================================================== */
+function viewCustomers(){
+  document.getElementById('topAction').innerHTML=filterSeg()+`<button class="btn" style="margin-left:12px" onclick="openCustomer()">+ Add customer</button>`;
+  const list=mineOnly([...DB.customers]).sort((a,b)=>a.name.localeCompare(b.name));
+  const c=document.getElementById('content');
+  if(!list.length){ c.innerHTML=`<div class="card">${emptyState('◍','No customers yet','Add your first client to get started.')}</div>`; return; }
+  c.innerHTML=`<div class="card"><table><thead><tr><th>Name</th><th>Contact</th><th>Address</th><th>Added by</th><th></th></tr></thead><tbody>${list.map(c=>{
+    const jobs=DB.jobs.filter(j=>j.customerId===c.id).length;
+    return `<tr>
+      <td><div class="t-name">${esc(c.name)}</div>${c.contact?`<div class="muted" style="font-size:11.5px">${esc(c.contact)}</div>`:''}</td>
+      <td>${c.phone?`<div>${esc(c.phone)}</div>`:''}${c.email?`<div class="muted" style="font-size:11.5px">${esc(c.email)}</div>`:''}</td>
+      <td>${c.address?`<span class="muted">${esc(c.address)}</span>`:'<span class="muted">—</span>'}</td>
+      <td>${ownerTag(c)}</td>
+      <td style="text-align:right;white-space:nowrap">
+        ${c.address?`<button class="btn line sm" title="Open in Google Maps" onclick="openMap('${c.id}')">📍 Map</button>`:''}
+        <button class="btn ghost sm" onclick="openInvoice(null,'${c.id}')">Invoice</button>
+        <button class="btn line sm" onclick="openCustomer('${c.id}')">Edit</button>
+      </td></tr>`;
+  }).join('')}</tbody></table></div>`;
+}
+function openMap(id){ const c=custById(id); if(c&&c.address) window.open('https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(c.address),'_blank'); }
+function openCustomer(id){
+  const c=id?custById(id):{};
+  modal(`${id?'Edit':'Add'} customer`,`
+    <div class="frow">
+      <div class="field full"><label>Business / Customer name *</label><input id="f_name" value="${esc(c.name)}" placeholder="e.g. World Gym Springfield"></div>
+      <div class="field"><label>Contact person</label><input id="f_contact" value="${esc(c.contact)}"></div>
+      <div class="field"><label>Phone</label><input id="f_phone" value="${esc(c.phone)}"></div>
+      <div class="field"><label>Email</label><input id="f_email" value="${esc(c.email)}"></div>
+      <div class="field"><label>ABN</label><input id="f_abn" value="${esc(c.abn)}"></div>
+      <div class="field full"><label>Site address <span class="hint">(Map button & invoices)</span></label><input id="f_address" value="${esc(c.address)}" placeholder="28 Technology Drive, Augustine Heights QLD 4300"></div>
+      <div class="field full"><label>Notes</label><textarea id="f_notes">${esc(c.notes)}</textarea></div>
+    </div>`,
+    [ id?{label:'Delete',cls:'danger',act:async()=>{ if(confirm('Delete this customer?')){ await delRow('customers',id); DB.customers=DB.customers.filter(x=>x.id!==id); closeModal(); render(); }}}:null,
+      {label:'Save customer',cls:'btn',act:async()=>{
+        const name=val('f_name').trim(); if(!name){ toast('Name is required'); return; }
+        const obj={id:id||uid(),name,contact:val('f_contact'),phone:val('f_phone'),email:val('f_email'),abn:val('f_abn'),address:val('f_address'),notes:val('f_notes'),
+          ownerId:c.ownerId||me.id, ownerName:c.ownerName||me.name};
+        try{ await upsertCust(obj); }catch(e){ return toast('Save failed: '+e.message); }
+        if(id) Object.assign(custById(id),obj); else DB.customers.push(obj);
+        closeModal(); render(); toast('Customer saved');
+      }} ]);
+}
+
+/* =====================================================================
+   CALENDAR & JOBS
+   ===================================================================== */
+let calYear,calMonth;
+function viewCalendar(){
+  const now=new Date(); if(calYear==null){ calYear=now.getFullYear(); calMonth=now.getMonth(); }
+  document.getElementById('topAction').innerHTML=filterSeg()+`<button class="btn" style="margin-left:12px" onclick="openJob()">+ Schedule job</button>`;
+  const monthName=new Date(calYear,calMonth,1).toLocaleDateString('en-AU',{month:'long',year:'numeric'});
+  document.getElementById('content').innerHTML=`
+    <div class="card pad" style="margin-bottom:18px">
+      <div class="section-head">
+        <div class="cal-nav">
+          <button class="btn line sm" onclick="calStep(-1)">‹</button><b>${monthName}</b>
+          <button class="btn line sm" onclick="calStep(1)">›</button>
+          <button class="btn ghost sm" onclick="calToday()">Today</button>
+        </div>
+        <div>${GAuth.connected?`<button class="btn ghost sm" onclick="syncNow()">⟳ Sync Google</button>`:`<button class="btn line sm" onclick="reconnectCal()">Connect Google</button>`}</div>
+      </div>
+      <div class="cal-grid">${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d=>`<div class="cal-dow">${d}</div>`).join('')}</div>
+      <div class="cal-grid" id="calCells"></div>
+      <div style="margin-top:12px">${DB.members.map(m=>`<span class="owner-tag" style="margin-right:14px"><span class="owner-dot" style="background:${esc(m.color||'#7c3aed')}"></span>${esc(m.name||m.email)}</span>`).join('')}</div>
+    </div>
+    <div class="card pad"><div class="section-head"><h2>All jobs</h2></div><div id="jobList"></div></div>`;
+  renderCalCells(); renderJobList();
+}
+function calStep(d){ calMonth+=d; if(calMonth<0){calMonth=11;calYear--;} if(calMonth>11){calMonth=0;calYear++;} renderCalCells(); }
+function calToday(){ const n=new Date(); calYear=n.getFullYear(); calMonth=n.getMonth(); renderCalCells(); }
+function renderCalCells(){
+  const start=new Date(calYear,calMonth,1).getDay();
+  const daysIn=new Date(calYear,calMonth+1,0).getDate();
+  const prevDays=new Date(calYear,calMonth,0).getDate();
+  const today=todayISO(); const jobs=mineOnly(DB.jobs); const cells=[];
+  for(let i=0;i<42;i++){
+    let dayNum,mo,yr,other=false;
+    if(i<start){ dayNum=prevDays-start+1+i; mo=calMonth-1; yr=calYear; other=true; }
+    else if(i>=start+daysIn){ dayNum=i-start-daysIn+1; mo=calMonth+1; yr=calYear; other=true; }
+    else { dayNum=i-start+1; mo=calMonth; yr=calYear; }
+    let m=mo,y=yr; if(m<0){m=11;y--;} if(m>11){m=0;y++;}
+    const iso=`${y}-${String(m+1).padStart(2,'0')}-${String(dayNum).padStart(2,'0')}`;
+    const evs=jobs.filter(j=>j.date===iso);
+    cells.push(`<div class="cal-cell ${other?'other':''} ${iso===today?'today':''}" onclick="openJob(null,'${iso}')">
+      <div class="dnum">${dayNum}</div>
+      ${evs.slice(0,3).map(j=>`<div class="cal-ev ${j.status==='done'?'done':''}" style="background:${esc(ownerColor(j.ownerId))}" onclick="event.stopPropagation();openJob('${j.id}')" title="${esc(j.title)} — ${esc(j.ownerName||'')}">${j.status==='done'?'✓ ':''}${esc(j.time?j.time+' ':'')}${esc(j.title)}</div>`).join('')}
+      ${evs.length>3?`<div class="muted" style="font-size:10px;margin-top:2px">+${evs.length-3} more</div>`:''}
+    </div>`);
+  }
+  document.getElementById('calCells').innerHTML=cells.join('');
+}
+function renderJobList(){
+  const el=document.getElementById('jobList'); const jobs=mineOnly([...DB.jobs]).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  if(!jobs.length){ el.innerHTML=emptyState('▤','No jobs scheduled','Click a day or “Schedule job”.'); return; }
+  el.innerHTML=`<table><tbody>${jobs.map(j=>`
+    <tr style="cursor:pointer" onclick="openJob('${j.id}')">
+      <td style="width:120px"><div class="t-name">${fmtDate(j.date)}</div><div class="muted" style="font-size:11px">${esc(j.time||'')}</div></td>
+      <td><div class="t-name">${esc(j.title)}</div><div class="muted" style="font-size:11.5px">${esc(custName(j.customerId))}</div></td>
+      <td>${jobBadge(j.status)}</td>
+      <td>${ownerTag(j)}</td>
+    </tr>`).join('')}</tbody></table>`;
+}
+function jobBadge(s){ return {scheduled:'<span class="badge purple">Scheduled</span>',quote:'<span class="badge amber">Quote</span>',done:'<span class="badge green">Done</span>'}[s]||'<span class="badge gray">—</span>'; }
+function openJob(id,presetDate){
+  const j=id?DB.jobs.find(x=>x.id===id):{date:presetDate||todayISO(),status:'scheduled',duration:2};
+  const custOpts=DB.customers.map(c=>`<option value="${c.id}" ${c.id===j.customerId?'selected':''}>${esc(c.name)}</option>`).join('');
+  modal(`${id?'Edit':'Schedule'} job`,`
+    <div class="frow">
+      <div class="field full"><label>Job title *</label><input id="j_title" value="${esc(j.title)}" placeholder="e.g. TV Installations & Electrical Works"></div>
+      <div class="field full"><label>Customer</label><select id="j_cust"><option value="">— none —</option>${custOpts}</select></div>
+      <div class="field"><label>Date *</label><input type="date" id="j_date" value="${esc(j.date)}"></div>
+      <div class="field"><label>Start time</label><input type="time" id="j_time" value="${esc(j.time)}"></div>
+      <div class="field"><label>Duration (hours)</label><input type="number" step="0.5" min="0.5" id="j_dur" value="${esc(j.duration||2)}"></div>
+      <div class="field"><label>Status</label><select id="j_status">
+        <option value="scheduled" ${j.status==='scheduled'?'selected':''}>Scheduled</option>
+        <option value="quote" ${j.status==='quote'?'selected':''}>Quote / pending</option>
+        <option value="done" ${j.status==='done'?'selected':''}>Done</option></select></div>
+      <div class="field full"><label>Notes</label><textarea id="j_notes">${esc(j.notes)}</textarea></div>
+    </div>
+    ${id&&j.ownerName?`<div class="hint">Owner: ${esc(j.ownerName)}${GAuth.connected?' · changes sync to Google on save':''}</div>`:''}`,
+    [ id?{label:'Delete',cls:'danger',act:async()=>{ if(confirm('Delete this job?')){ const dj=DB.jobs.find(x=>x.id===id); await delRow('jobs',id); DB.jobs=DB.jobs.filter(x=>x.id!==id); closeModal(); render(); if(dj) deleteGoogleEvent(dj); }}}:null,
+      {label:'Save job',cls:'btn',act:async()=>{
+        const title=val('j_title').trim(); if(!title){ toast('Title required'); return; }
+        if(!val('j_date')){ toast('Date required'); return; }
+        const ex=id?DB.jobs.find(x=>x.id===id):null;
+        const obj={id:id||uid(),title,customerId:val('j_cust'),date:val('j_date'),time:val('j_time'),duration:parseFloat(val('j_dur'))||2,status:val('j_status'),notes:val('j_notes'),
+          source:ex?ex.source:'local',googleEventId:ex?ex.googleEventId:null,calendarId:ex?ex.calendarId:null,
+          ownerId:ex?ex.ownerId:me.id, ownerName:ex?ex.ownerName:me.name};
+        let stored=ex?ex:obj;
+        if(GAuth.connected&&DB.settings.googleCalendarId){ try{ await pushJobToGoogle(obj); }catch(e){ console.warn(e); } }
+        try{ await upsertJob(obj); }catch(e){ return toast('Save failed: '+e.message); }
+        if(id) Object.assign(stored,obj); else DB.jobs.push(obj);
+        closeModal(); render(); toast('Job saved');
+      }} ]);
+}
+
+/* =====================================================================
+   INVOICES
+   ===================================================================== */
+function invTotal(i){ return (i.lines||[]).reduce((s,l)=>s+(Number(l.qty)||0)*(Number(l.price)||0),0); }
+function invGST(i){ return invTotal(i)/GST_DIVISOR; }
+function invBadge(s){ return {draft:'<span class="badge gray">Draft</span>',sent:'<span class="badge amber">Sent</span>',paid:'<span class="badge green">Paid</span>'}[s]||''; }
+function viewInvoices(){
+  document.getElementById('topAction').innerHTML=filterSeg()+`<button class="btn" style="margin-left:12px" onclick="openInvoice()">+ New invoice</button>`;
+  const list=mineOnly([...DB.invoices]).reverse();
+  const c=document.getElementById('content');
+  if(!list.length){ c.innerHTML=`<div class="card">${emptyState('▣','No invoices yet','Create your first MIH-branded invoice.')}</div>`; return; }
+  c.innerHTML=`<div class="card"><table><thead><tr><th>Invoice</th><th>Customer</th><th>Status</th><th>By</th><th style="text-align:right">Total</th><th></th></tr></thead><tbody>${list.map(i=>`
+    <tr>
+      <td><div class="t-name">${esc(i.number)}</div><div class="muted" style="font-size:11px">${fmtDate(i.date)}</div></td>
+      <td>${esc(custName(i.customerId))}${i.project?`<div class="muted" style="font-size:11.5px">${esc(i.project)}</div>`:''}</td>
+      <td>${invBadge(i.status)}</td>
+      <td>${ownerTag(i)}</td>
+      <td style="text-align:right" class="t-name">${money(invTotal(i))}</td>
+      <td style="text-align:right;white-space:nowrap">
+        <button class="btn ghost sm" onclick="previewInvoice('${i.id}')">View / Print</button>
+        <button class="btn line sm" onclick="openInvoice('${i.id}')">Edit</button>
+      </td></tr>`).join('')}</tbody></table></div>`;
+}
+function nextInvNumber(){ return 'MIH-'+String(DB.counters.invoice+1).padStart(4,'0'); }
+let editingLines=[];
+function openInvoice(id,presetCust){
+  const inv=id?DB.invoices.find(x=>x.id===id):{number:nextInvNumber(),date:todayISO(),customerId:presetCust||'',project:'',commenced:'',completed:'',status:'draft',lines:[{desc:'',qty:1,price:0}]};
+  const custOpts=DB.customers.map(c=>`<option value="${c.id}" ${c.id===inv.customerId?'selected':''}>${esc(c.name)}</option>`).join('');
+  editingLines=JSON.parse(JSON.stringify(inv.lines&&inv.lines.length?inv.lines:[{desc:'',qty:1,price:0}]));
+  modal(`${id?'Edit':'New'} invoice`,`
+    <div class="frow">
+      <div class="field"><label>Invoice number</label><input id="i_number" value="${esc(inv.number)}"></div>
+      <div class="field"><label>Date</label><input type="date" id="i_date" value="${esc(inv.date)}"></div>
+      <div class="field full"><label>Customer *</label><select id="i_cust"><option value="">— select —</option>${custOpts}</select></div>
+      <div class="field full"><label>Project / description</label><input id="i_project" value="${esc(inv.project)}" placeholder="e.g. TV Installations & Electrical Works"></div>
+      <div class="field"><label>Work commenced</label><input type="date" id="i_comm" value="${esc(inv.commenced)}"></div>
+      <div class="field"><label>Work completed</label><input type="date" id="i_comp" value="${esc(inv.completed)}"></div>
+      <div class="field"><label>Status</label><select id="i_status">
+        <option value="draft" ${inv.status==='draft'?'selected':''}>Draft</option>
+        <option value="sent" ${inv.status==='sent'?'selected':''}>Sent</option>
+        <option value="paid" ${inv.status==='paid'?'selected':''}>Paid</option></select></div>
+    </div>
+    <label style="margin-bottom:8px;display:block">Itemised works &amp; materials</label>
+    <div class="li-head"><div>Qty</div><div>Description</div><div>Each ($)</div><div>Price</div><div></div></div>
+    <div id="liRows"></div>
+    <button class="btn ghost sm" onclick="addLine()" style="margin-top:4px">+ Add line</button>
+    <div class="totbox" id="liTot"></div>`,
+    [ id?{label:'Delete',cls:'danger',act:async()=>{ if(confirm('Delete this invoice?')){ await delRow('invoices',id); DB.invoices=DB.invoices.filter(x=>x.id!==id); closeModal(); render(); }}}:null,
+      {label:'Save & preview',cls:'btn',act:()=>saveInvoice(id)} ],'wide');
+  renderLines();
+}
+function renderLines(){
+  document.getElementById('liRows').innerHTML=editingLines.map((l,idx)=>`
+    <div class="li-row">
+      <input type="number" min="0" step="1" value="${esc(l.qty)}" oninput="updLine(${idx},'qty',this.value)">
+      <input type="text" value="${esc(l.desc)}" placeholder="Description" oninput="updLine(${idx},'desc',this.value)">
+      <input type="number" min="0" step="0.01" value="${esc(l.price)}" oninput="updLine(${idx},'price',this.value)">
+      <input type="text" value="${money((Number(l.qty)||0)*(Number(l.price)||0))}" readonly style="background:#f7f5fb">
+      <button class="li-del" onclick="delLine(${idx})">×</button>
+    </div>`).join('');
+  const total=editingLines.reduce((s,l)=>s+(Number(l.qty)||0)*(Number(l.price)||0),0);
+  document.getElementById('liTot').innerHTML=`
+    <div class="r"><span>Subtotal (GST Inc)</span><b>${money(total)}</b></div>
+    <div class="r muted"><span>GST included (10%)</span><span>${money(total/GST_DIVISOR)}</span></div>
+    <div class="r tot"><span>TOTAL DUE</span><span>${money(total)}</span></div>`;
+}
+function addLine(){ editingLines.push({desc:'',qty:1,price:0}); renderLines(); }
+function delLine(i){ editingLines.splice(i,1); if(!editingLines.length) editingLines.push({desc:'',qty:1,price:0}); renderLines(); }
+function updLine(i,k,v){ editingLines[i][k]=v; if(k!=='desc') renderLines(); }
+async function saveInvoice(id){
+  const customerId=val('i_cust'); if(!customerId){ toast('Select a customer'); return; }
+  const lines=editingLines.filter(l=>l.desc.trim()||Number(l.price)).map(l=>({desc:l.desc,qty:Number(l.qty)||0,price:Number(l.price)||0}));
+  if(!lines.length){ toast('Add at least one line item'); return; }
+  const ex=id?DB.invoices.find(x=>x.id===id):null;
+  const obj={id:id||uid(),number:val('i_number'),date:val('i_date'),customerId,project:val('i_project'),commenced:val('i_comm'),completed:val('i_comp'),status:val('i_status'),lines,
+    ownerId:ex?ex.ownerId:me.id, ownerName:ex?ex.ownerName:me.name};
+  try{ await upsertInv(obj); }catch(e){ return toast('Save failed: '+e.message); }
+  if(id) Object.assign(ex,obj); else { DB.invoices.push(obj); const m=/MIH-(\d+)/.exec(obj.number); if(m) DB.counters.invoice=Math.max(DB.counters.invoice,+m[1]); }
+  closeModal(); go('invoices'); previewInvoice(obj.id); toast('Invoice saved');
+}
+function previewInvoice(id){
+  const i=DB.invoices.find(x=>x.id===id); const c=custById(i.customerId)||{}; const s=DB.settings;
+  const total=invTotal(i),gst=invGST(i);
+  const html=`
+  <div class="inv-doc" id="invDoc">
+    <div class="inv-head">
+      <div class="lhs"><img src="milogo.png" onerror="this.style.display='none'">
+        <div><div class="co">${esc(s.businessName)}</div><div class="tag">${esc(s.tagline)}</div>
+          <div class="ci">Mobile: ${esc(s.mobile)}<br>Email: ${esc(s.email)}<br>Website: ${esc(s.website)}</div></div></div>
+      <div class="inv-stamp"><div class="t">INVOICE</div><div class="n">${esc(i.number)}</div><div class="d">${fmtDate(i.date)}</div></div>
+    </div>
+    <div class="inv-accent"></div>
+    <div class="inv-body">
+      <div class="inv-cols">
+        <div class="inv-panel"><div class="ph">Invoice To</div><div class="pb">
+          <div class="big">${esc(c.name||'—')}</div>${c.address?esc(c.address).replace(/, /g,'<br>'):''}
+          ${c.abn?`<div style="margin-top:6px">ABN: ${esc(c.abn)}</div>`:''}</div></div>
+        <div class="inv-panel"><div class="ph">Project Details</div><div class="pb"><div class="inv-kv">
+          ${i.project?`<b>Project:</b><span>${esc(i.project)}</span>`:''}
+          ${i.commenced?`<b>Work Commenced:</b><span>${fmtDate(i.commenced)}</span>`:''}
+          ${i.completed?`<b>Work Completed:</b><span>${fmtDate(i.completed)}</span>`:''}
+        </div></div></div>
+      </div>
+      <div class="inv-sec-title">Itemised Works and Materials</div>
+      <table class="inv-items"><thead><tr><th style="width:50px">QTY</th><th>Description</th><th class="r" style="width:110px">Each</th><th class="r" style="width:110px">Price</th></tr></thead>
+      <tbody>${i.lines.map(l=>`<tr><td>${esc(l.qty)}</td><td>${esc(l.desc)}</td><td class="r">${money(l.price)}</td><td class="r">${money((Number(l.qty)||0)*(Number(l.price)||0))}</td></tr>`).join('')}</tbody></table>
+      <div class="inv-foot-cols">
+        <div class="inv-panel"><div class="ph">Payment Details</div><div class="pb"><div class="inv-kv">
+          <b>Account Name</b><span>${esc(s.bankName)}</span><b>BSB</b><span>${esc(s.bsb)}</span>
+          <b>Account Number</b><span>${esc(s.accountNumber)}</span><b>Reference</b><span>${esc(i.number)}</span>
+        </div></div></div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;color:#555;padding:2px 4px"><span>Subtotal (GST Inc)</span><span>${money(total)}</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;color:#555;padding:2px 4px 10px"><span>GST Included</span><span>${money(gst)}</span></div>
+          <div class="inv-total"><span class="l">TOTAL DUE</span><span class="v">${money(total)}</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="inv-services"><div class="acc"></div><div class="sv"><div class="sh">OUR SERVICES</div><div class="sl">${esc(s.services).replace(/\n/g,'<br>')}</div></div></div>
+    <div class="inv-thanks">Thank you for choosing ${esc(s.businessName)}</div>
+  </div>`;
+  modal('Invoice '+i.number,html,
+    [ {label:'Edit',cls:'line',act:()=>{ closeModal(); openInvoice(id); }},
+      {label:'🖨 Print / Save PDF',cls:'btn',act:()=>printInvoice()} ],'wide');
+}
+function printInvoice(){
+  const doc=document.getElementById('invDoc').outerHTML; const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><title>Invoice</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <style>${document.querySelector('style').textContent}
+    body{background:#fff;margin:0}.inv-doc{max-width:none;margin:0}@page{margin:12mm}</style></head><body>${doc}</body></html>`);
+  w.document.close(); setTimeout(()=>{ w.focus(); w.print(); },500);
+}
+
+/* =====================================================================
+   SETTINGS
+   ===================================================================== */
+function viewSettings(){
+  const s=DB.settings;
+  document.getElementById('content').innerHTML=`
+  <div class="grid" style="grid-template-columns:1fr 1fr;align-items:start">
+    <div class="card pad">
+      <div class="section-head"><h2>Business details</h2></div>
+      <div class="frow">
+        <div class="field full"><label>Business name</label><input id="s_name" value="${esc(s.businessName)}"></div>
+        <div class="field full"><label>Tagline</label><input id="s_tag" value="${esc(s.tagline)}"></div>
+        <div class="field"><label>Mobile</label><input id="s_mobile" value="${esc(s.mobile)}"></div>
+        <div class="field"><label>ABN</label><input id="s_abn" value="${esc(s.abn)}"></div>
+        <div class="field full"><label>Email</label><input id="s_email" value="${esc(s.email)}"></div>
+        <div class="field full"><label>Website</label><input id="s_web" value="${esc(s.website)}"></div>
+        <div class="field full"><label>Services line (invoice footer)</label><textarea id="s_services">${esc(s.services)}</textarea></div>
+      </div>
+    </div>
+    <div class="card pad">
+      <div class="section-head"><h2>Payment details</h2></div>
+      <div class="frow">
+        <div class="field full"><label>Account name</label><input id="s_bank" value="${esc(s.bankName)}"></div>
+        <div class="field"><label>BSB</label><input id="s_bsb" value="${esc(s.bsb)}"></div>
+        <div class="field"><label>Account number</label><input id="s_acct" value="${esc(s.accountNumber)}"></div>
+      </div>
+      <div class="section-head" style="margin-top:18px"><h2>Google Calendar</h2></div>
+      <div id="syncCard"></div>
+    </div>
+  </div>
+  <div class="card pad" style="margin-top:18px">
+    <div class="section-head"><h2>Workspace</h2></div>
+    <div class="hint" style="margin-bottom:10px">Data is stored in your shared Supabase project and visible to all team members. Manage team access by editing the <b>members</b> table in Supabase.</div>
+    <button class="btn" onclick="saveSettings()">Save settings</button>
+    <button class="btn line" onclick="resetCfg()">Change workspace connection</button>
+  </div>`;
+  renderSyncCard();
+}
+async function saveSettings(){
+  Object.assign(DB.settings,{businessName:val('s_name'),tagline:val('s_tag'),mobile:val('s_mobile'),abn:val('s_abn'),
+    email:val('s_email'),website:val('s_web'),services:val('s_services'),bankName:val('s_bank'),bsb:val('s_bsb'),accountNumber:val('s_acct')});
+  try{ await saveSettingsRow(); toast('Settings saved'); }catch(e){ toast('Save failed: '+e.message); }
+}
+function renderSyncCard(){
+  const el=document.getElementById('syncCard'); if(!el) return; const s=DB.settings;
+  const calOpts=GAuth.calendars.map(c=>`<option value="${esc(c.id)}" ${c.id===s.googleCalendarId?'selected':''}>${esc(c.summary)}${c.primary?' (primary)':''}</option>`).join('');
+  if(!GAuth.connected){
+    el.innerHTML=`<div class="hint" style="margin-bottom:10px">Google Calendar wasn’t authorised at sign-in (or the permission expired).</div>
+      <button class="btn" onclick="reconnectCal()">Connect Google Calendar</button>`;
+    return;
+  }
+  el.innerHTML=`
+    <div class="field full"><label>Calendar to sync</label>
+      <select id="s_calsel" onchange="DB.settings.googleCalendarId=this.value;saveSettingsRow()">${calOpts||'<option>Loading…</option>'}</select></div>
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:12px">
+      <button class="btn" onclick="syncNow()">⟳ Sync now (two-way)</button>
+      <span class="hint" id="syncStatus">${s.lastSync?'Last synced '+new Date(s.lastSync).toLocaleString('en-AU'):'Not synced yet'}</span>
+    </div>
+    <div class="hint" style="margin-top:10px">Jobs sync to this calendar for everyone on the team; Google events import as jobs. Calendar permission lasts about an hour per sign-in — click <b>Connect</b> again if a sync says it expired.</div>`;
+  if(!GAuth.calendars.length) loadCalendars().then(renderSyncCard).catch(()=>{});
+}
+async function reconnectCal(){ await signIn(); }
+
+/* =====================================================================
+   GOOGLE CALENDAR (token from Supabase session)
+   ===================================================================== */
+const calBase=id=>'https://www.googleapis.com/calendar/v3/calendars/'+encodeURIComponent(id);
+async function gcal(url,opts){
+  if(!GAuth.token){ GAuth.needReconnect=true; throw new Error('Google calendar not connected'); }
+  opts=opts||{}; opts.headers=Object.assign({'Authorization':'Bearer '+GAuth.token,'Content-Type':'application/json'},opts.headers||{});
+  const r=await fetch(url,opts);
+  if(r.status===401){ GAuth.token=null; GAuth.connected=false; GAuth.needReconnect=true; throw new Error('Google sign-in for calendar expired — click Connect Google again'); }
+  if(!r.ok) throw new Error('Google API '+r.status+': '+(await r.text()).slice(0,160));
+  return r.status===204?null:r.json();
+}
+async function loadCalendars(){
+  const data=await gcal('https://www.googleapis.com/calendar/v3/users/me/calendarList?minAccessRole=writer&maxResults=250');
+  GAuth.calendars=data.items||[];
+  if(!DB.settings.googleCalendarId){ const p=GAuth.calendars.find(c=>c.primary)||GAuth.calendars[0]; if(p){ DB.settings.googleCalendarId=p.id; saveSettingsRow(); } }
+}
+function isoLocal(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function jobToEvent(j){
+  const start=new Date((j.date||todayISO())+'T'+(j.time||'09:00')+':00');
+  const end=new Date(start.getTime()+((j.duration||2)*3600*1000));
+  const c=custById(j.customerId);
+  const ev={summary:j.title,description:[(c?'Customer: '+c.name:''),(j.ownerName?'Assigned: '+j.ownerName:''),j.notes||''].filter(Boolean).join('\n'),
+    start:{dateTime:start.toISOString()},end:{dateTime:end.toISOString()},
+    extendedProperties:{private:{mihJobId:j.id}}};
+  if(c&&c.address) ev.location=c.address;
+  return ev;
+}
+function eventToJobFields(ev){
+  let date,time='',duration=2;
+  if(ev.start&&ev.start.dateTime){ const s=new Date(ev.start.dateTime),e=new Date(ev.end.dateTime);
+    date=isoLocal(s); time=String(s.getHours()).padStart(2,'0')+':'+String(s.getMinutes()).padStart(2,'0');
+    duration=Math.max(0.5,Math.round((e-s)/360000)/10);
+  } else { date=(ev.start&&ev.start.date)||todayISO(); duration=24; }
+  return {title:ev.summary||'(no title)',date,time,duration,notes:ev.description||''};
+}
+async function pushJobToGoogle(j){
+  const calId=DB.settings.googleCalendarId; if(!GAuth.connected||!calId) return;
+  const ev=jobToEvent(j);
+  if(j.googleEventId){
+    try{ await gcal(calBase(calId)+'/events/'+encodeURIComponent(j.googleEventId),{method:'PATCH',body:JSON.stringify(ev)}); }
+    catch(e){ if(/ 4(0[49]|10)/.test(e.message)){ const cr=await gcal(calBase(calId)+'/events',{method:'POST',body:JSON.stringify(ev)}); j.googleEventId=cr.id; j.calendarId=calId; } else throw e; }
+  } else { const cr=await gcal(calBase(calId)+'/events',{method:'POST',body:JSON.stringify(ev)}); j.googleEventId=cr.id; j.calendarId=calId; }
+}
+async function deleteGoogleEvent(j){
+  if(!GAuth.connected||!j.googleEventId) return;
+  const calId=j.calendarId||DB.settings.googleCalendarId;
+  try{ await gcal(calBase(calId)+'/events/'+encodeURIComponent(j.googleEventId),{method:'DELETE'}); }catch(e){ console.warn(e); }
+}
+async function pullFromGoogle(calId){
+  const timeMin=new Date(Date.now()-90*864e5).toISOString(), timeMax=new Date(Date.now()+365*864e5).toISOString();
+  let pageToken='',items=[];
+  do{ const url=calBase(calId)+'/events?singleEvents=true&showDeleted=true&maxResults=2500&timeMin='+encodeURIComponent(timeMin)+'&timeMax='+encodeURIComponent(timeMax)+(pageToken?'&pageToken='+pageToken:'');
+    const data=await gcal(url); items=items.concat(data.items||[]); pageToken=data.nextPageToken||''; }while(pageToken);
+  for(const ev of items){
+    const mihId=ev.extendedProperties&&ev.extendedProperties.private&&ev.extendedProperties.private.mihJobId;
+    const linked=DB.jobs.find(j=>j.googleEventId===ev.id)||(mihId?DB.jobs.find(j=>j.id===mihId):null);
+    if(ev.status==='cancelled'){ if(linked){ await delRow('jobs',linked.id); DB.jobs=DB.jobs.filter(j=>j!==linked); } continue; }
+    const f=eventToJobFields(ev);
+    if(linked){ linked.googleEventId=ev.id; linked.calendarId=calId; if(linked.source==='google'){ Object.assign(linked,f); await upsertJob(linked); } }
+    else if(!mihId){ const nj=Object.assign({id:uid(),source:'google',googleEventId:ev.id,calendarId:calId,status:'scheduled',customerId:'',ownerId:me.id,ownerName:me.name},f); DB.jobs.push(nj); await upsertJob(nj); }
+  }
+}
+let syncing=false;
+async function syncNow(){
+  if(syncing) return;
+  if(!GAuth.connected){ toast('Connect Google first'); return renderSyncCard(); }
+  const calId=DB.settings.googleCalendarId; if(!calId){ toast('Choose a calendar'); return; }
+  syncing=true; updateSyncStatus('Syncing…');
+  try{
+    for(const j of DB.jobs.filter(j=>j.source!=='google'||j.googleEventId)){ await pushJobToGoogle(j); await upsertJob(j); }
+    await pullFromGoogle(calId);
+    DB.settings.lastSync=new Date().toISOString(); await saveSettingsRow();
+    render(); toast('Calendar synced');
+  }catch(e){ console.error(e); toast(e.message||'Sync error'); renderSyncCard(); }
+  finally{ syncing=false; updateSyncStatus(); }
+}
+function updateSyncStatus(msg){ const el=document.getElementById('syncStatus'); if(el) el.textContent=msg||(DB.settings.lastSync?'Last synced '+new Date(DB.settings.lastSync).toLocaleString('en-AU'):'Not synced yet'); }
+
+/* =====================================================================
+   MODAL
+   ===================================================================== */
+function modal(title,body,actions,wideCls){
+  const acts=(actions||[]).filter(Boolean);
+  document.getElementById('modalRoot').innerHTML=`
+    <div class="overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal ${wideCls||''}">
+        <div class="modal-head"><h3>${esc(title)}</h3><button class="x" onclick="closeModal()">×</button></div>
+        <div class="modal-body">${body}</div>
+        <div class="modal-foot">${acts.map((a,i)=>`<button class="btn ${a.cls==='danger'?'danger':a.cls==='line'?'line':a.cls==='btn'?'':'ghost'}" data-i="${i}">${esc(a.label)}</button>`).join('')}</div>
+      </div></div>`;
+  const btns=document.querySelectorAll('.modal-foot button'); acts.forEach((a,i)=>{ btns[i].onclick=a.act; });
+}
+function closeModal(){ document.getElementById('modalRoot').innerHTML=''; }
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeModal(); });
+
+/* ---- go ---- */
+boot();
+</script>
+</body>
+</html>
