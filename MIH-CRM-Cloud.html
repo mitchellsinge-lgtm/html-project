@@ -328,20 +328,21 @@ table.inv-items td{padding:9px 12px;border-bottom:1px solid #eee;font-size:12px}
    MIH CRM — CLOUD (Supabase, shared workspace, Google sign-in)
    ===================================================================== */
 const CFG_KEY='mih_sb_cfg';
-const APP_VERSION='2026.06.29-7';   /* bump this when deploying; phones auto-refresh to match */
+const APP_VERSION='2026.06.29-10';   /* bump this when deploying; phones auto-refresh to match */
 const GST_DIVISOR=11;
 const CAL_SCOPE='https://www.googleapis.com/auth/calendar';
+const OAUTH_SCOPES='https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/gmail.send';
 const DEFAULT_SETTINGS={
   businessName:'Massive Integrated Homes', tagline:'SMARTER HOMES. BETTER LIVING.',
   mobile:'0480 568 180', email:'Nathaniel@massiveintegratedhomes.com.au',
-  website:'www.massiveintegratedhomes.com.au', abn:'',
+  website:'www.massiveintegratedhomes.com.au', abn:'62 834 287 138',
   bankName:'Nathaniel Pemberton', bsb:'067-873', accountNumber:'17643364',
   bankAccounts:[
     {label:'Nathaniel Pemberton', name:'Nathaniel Pemberton', bsb:'067-873', account:'17643364'},
     {label:'Mitchell Singe', name:'Mitchell Singe', bsb:'067-873', account:'1997 6285'}
   ],
   services:'TV Wall Mounting | Home Automation | Smart Home Integration | Security & CCTV\nWiFi & Networking | Multi-Room Audio | Home Theatre | Commercial AV',
-  calendarEmbed:'', googleCalendarId:'', lastSync:''
+  calendarEmbed:'', googleCalendarId:'', lastSync:'', reviewUrl:'https://g.page/r/CbVjKnqoixi-EAE/review'
 };
 let sb=null, me=null;
 let DB={customers:[],jobs:[],invoices:[],expenses:[],loans:[],loanEntries:[],members:[],settings:{...DEFAULT_SETTINGS},counters:{invoice:2},financialsReady:false};
@@ -417,7 +418,7 @@ function showLogin(err){
 function resetCfg(){ localStorage.removeItem(CFG_KEY); location.reload(); }
 async function signIn(){
   const { error } = await sb.auth.signInWithOAuth({ provider:'google',
-    options:{ scopes:CAL_SCOPE, queryParams:{ access_type:'offline', prompt:'consent' },
+    options:{ scopes:OAUTH_SCOPES, queryParams:{ access_type:'offline', prompt:'consent' },
       redirectTo: location.origin+location.pathname } });
   if(error) showLogin(error.message);
 }
@@ -820,7 +821,9 @@ function openJob(id,presetDate){
         if(GAuth.connected&&DB.settings.googleCalendarId){ try{ await pushJobToGoogle(obj); }catch(e){ console.warn(e); } }
         try{ await upsertJob(obj); }catch(e){ return toast('Save failed: '+e.message); }
         if(id) Object.assign(stored,obj); else DB.jobs.push(obj);
+        const justCompleted = obj.status==='done' && (!ex || ex.status!=='done');
         closeModal(); render(); toast('Job saved');
+        if(justCompleted && obj.customerId){ setTimeout(()=>{ if(confirm('Job marked Done. Create an invoice for this job now? (you can then email it to the customer)')) openInvoiceFromJob(obj); },60); }
       }} ]);
   updJobProfit(id||'');
 }
@@ -911,8 +914,12 @@ function viewInvoices(){
 }
 function nextInvNumber(){ return 'MIH-'+String(DB.counters.invoice+1).padStart(4,'0'); }
 let editingLines=[];
-function openInvoice(id,presetCust){
-  const inv=id?DB.invoices.find(x=>x.id===id):{number:nextInvNumber(),date:todayISO(),customerId:presetCust||'',project:'',commenced:'',completed:'',status:'draft',lines:[{desc:'',qty:1,price:0}]};
+function openInvoiceFromJob(job){
+  if(!job) return;
+  openInvoice(null, job.customerId, {project:job.title, completed:job.date, lines:[{desc:job.title, qty:1, price:Number(job.value)||0}]});
+}
+function openInvoice(id,presetCust,prefill){
+  const inv=id?DB.invoices.find(x=>x.id===id):{number:nextInvNumber(),date:todayISO(),customerId:presetCust||'',project:(prefill&&prefill.project)||'',commenced:'',completed:(prefill&&prefill.completed)||'',status:'draft',lines:(prefill&&prefill.lines&&prefill.lines.length)?prefill.lines:[{desc:'',qty:1,price:0}]};
   const custOpts=DB.customers.map(c=>`<option value="${c.id}" ${c.id===inv.customerId?'selected':''}>${esc(c.name)}</option>`).join('');
   editingLines=JSON.parse(JSON.stringify(inv.lines&&inv.lines.length?inv.lines:[{desc:'',qty:1,price:0}]));
   modal(`${id?'Edit':'New'} invoice`,`
@@ -1009,7 +1016,7 @@ function previewInvoice(id){
     <div class="inv-head">
       <div class="lhs"><img src="milogo.png" onerror="this.style.display='none'">
         <div><div class="co">${esc(s.businessName)}</div><div class="tag">${esc(s.tagline)}</div>
-          <div class="ci">Mobile: ${esc(s.mobile)}<br>Email: ${esc(s.email)}<br>Website: ${esc(s.website)}</div></div></div>
+          <div class="ci">ABN ${esc(s.abn||'62 834 287 138')}<br>Mobile: ${esc(s.mobile)}<br>Email: ${esc(s.email)}<br>Website: ${esc(s.website)}</div></div></div>
       <div class="inv-stamp"><div class="t">INVOICE</div><div class="n">${esc(i.number)}</div><div class="d">${fmtDate(i.date)}</div></div>
     </div>
     <div class="inv-accent"></div>
@@ -1044,7 +1051,80 @@ function previewInvoice(id){
   </div>`;
   modal('Invoice '+i.number,html,
     [ {label:'Edit',cls:'line',act:()=>{ closeModal(); openInvoice(id); }},
+      {label:'📧 Email to customer',cls:'line',act:()=>emailInvoice(id)},
       {label:'🖨 Print / Save PDF',cls:'btn',act:()=>printInvoice()} ],'wide');
+}
+/* ---- email an invoice from the logged-in Gmail account ---- */
+function b64url(s){
+  const bytes=new TextEncoder().encode(s); let bin=''; bytes.forEach(b=>bin+=String.fromCharCode(b));
+  return btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function invoiceEmailHtml(i,c){
+  const s=DB.settings; const total=invTotal(i),gst=invGST(i);
+  const arr=bankList(); const first=(i.ownerName||'').toLowerCase().split(' ')[0];
+  const pay=(i.bank&&i.bank.account)?i.bank:(arr.find(a=>(a.name||'').toLowerCase().includes(first))||arr[0]||{name:s.bankName,bsb:s.bsb,account:s.accountNumber});
+  const rows=i.lines.map(l=>`<tr><td style="padding:7px 8px;border-bottom:1px solid #eee">${esc(l.desc)}</td><td style="padding:7px 8px;border-bottom:1px solid #eee;text-align:center">${esc(l.qty)}</td><td style="padding:7px 8px;border-bottom:1px solid #eee;text-align:right">${money((Number(l.qty)||0)*(Number(l.price)||0))}</td></tr>`).join('');
+  const rurl=s.reviewUrl||'https://g.page/r/CbVjKnqoixi-EAE/review';
+  const review=rurl?`<div style="margin:22px 0;padding:18px;background:#faf7ff;border:1px solid #eae4f5;border-radius:10px;text-align:center">
+      <div style="font-size:15px;font-weight:700;color:#15152a;margin-bottom:6px">Happy with our work?</div>
+      <div style="font-size:13px;color:#555;margin-bottom:13px">A quick review means the world to a small local business — it only takes 30 seconds. Thank you!</div>
+      <a href="${esc(rurl)}" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;font-weight:700;padding:12px 24px;border-radius:8px;font-size:14px">⭐ Leave us a review</a>
+    </div>`:'';
+  return `<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;color:#15152a">
+    <div style="background:#0c0b14;color:#ffffff;padding:22px 24px;border-radius:10px 10px 0 0">
+      <div style="font-size:20px;font-weight:700;letter-spacing:.5px">${esc(s.businessName)}</div>
+      <div style="color:#a855f7;font-size:11px;font-weight:700;letter-spacing:1px;margin-top:3px">${esc(s.tagline)}</div>
+    </div>
+    <div style="height:4px;background:#7c3aed"></div>
+    <div style="padding:24px;border:1px solid #eee;border-top:0;border-radius:0 0 10px 10px">
+      <p style="font-size:14px;margin:0 0 12px">Hi ${esc(c.name||'there')},</p>
+      <p style="font-size:14px;line-height:1.55;margin:0 0 16px">Thanks very much for choosing ${esc(s.businessName)}. Please find your invoice below${i.project?` for <b>${esc(i.project)}</b>`:''}.</p>
+      <div style="font-size:13px;margin:0 0 10px"><b>Invoice:</b> ${esc(i.number)} &nbsp;·&nbsp; <b>Date:</b> ${fmtDate(i.date)}</div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;margin:6px 0">
+        <thead><tr style="background:#1a1726;color:#ffffff"><th style="padding:8px;text-align:left">Description</th><th style="padding:8px">Qty</th><th style="padding:8px;text-align:right">Price</th></tr></thead>
+        <tbody>${rows}</tbody></table>
+      <div style="text-align:right;font-size:17px;font-weight:800;margin:12px 0 2px;color:#7c3aed">Total Due: ${money(total)}</div>
+      <div style="font-size:11px;color:#777;text-align:right;margin-bottom:10px">Includes GST ${money(gst)}</div>
+      <div style="margin:16px 0;padding:14px;background:#f7f5fb;border-radius:8px;font-size:13px;line-height:1.7">
+        <div style="font-weight:700;margin-bottom:4px">Payment details</div>
+        Account Name: ${esc(pay.name||'')}<br>BSB: ${esc(pay.bsb||'')}<br>Account Number: ${esc(pay.account||'')}<br>Reference: ${esc(i.number)}
+      </div>
+      ${review}
+      <p style="font-size:13px;color:#555;margin:16px 0 0">Any questions, just reply to this email or call ${esc(s.mobile)}.</p>
+      <p style="font-size:13px;color:#555;margin:18px 0 0">Kind regards,<br><b>${esc(me&&me.name?me.name:s.businessName)}</b><br>${esc(s.businessName)}${s.abn?' · ABN '+esc(s.abn):''}</p>
+    </div></div>`;
+}
+async function gmailSend(to,subject,html){
+  const mime=['From: '+me.email,'To: '+to,'Subject: '+subject,'MIME-Version: 1.0','Content-Type: text/html; charset=UTF-8','',html].join('\r\n');
+  const r=await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send',{
+    method:'POST',headers:{'Authorization':'Bearer '+GAuth.token,'Content-Type':'application/json'},
+    body:JSON.stringify({raw:b64url(mime)})});
+  if(r.status===401){ GAuth.token=null; GAuth.connected=false; throw new Error('Google sign-in expired — reconnect in Settings, then try again'); }
+  if(!r.ok) throw new Error('Gmail '+r.status+': '+(await r.text()).slice(0,140));
+  return r.json();
+}
+function mailtoInvoice(i,c){
+  const s=DB.settings; const total=invTotal(i);
+  const body=`Hi ${c.name||'there'},\n\nThanks for choosing ${s.businessName}. Here is your invoice ${i.number} dated ${fmtDate(i.date)}.\n\n`
+    +i.lines.map(l=>`- ${l.desc}: ${money((Number(l.qty)||0)*(Number(l.price)||0))}`).join('\n')
+    +`\n\nTotal Due: ${money(total)}\n\nPayment: ${s.bankName} | BSB ${s.bsb} | Acc ${s.accountNumber} | Ref ${i.number}\n`
+    +`\nHappy with our work? Leave us a review: ${s.reviewUrl||'https://g.page/r/CbVjKnqoixi-EAE/review'}\n`
+    +`\nKind regards,\n${(me&&me.name)||s.businessName}\n${s.businessName}${s.abn?' · ABN '+s.abn:''}`;
+  const url='mailto:'+encodeURIComponent(c.email||'')+'?subject='+encodeURIComponent('Invoice '+i.number+' from '+s.businessName)+'&body='+encodeURIComponent(body);
+  window.location.href=url;
+}
+async function emailInvoice(id){
+  const i=DB.invoices.find(x=>x.id===id); if(!i) return;
+  const c=custById(i.customerId)||{};
+  if(!c.email){ toast('Add an email address to this customer first'); return; }
+  if(!GAuth.token){ if(confirm('Google email not connected. Open your mail app to send instead?')) mailtoInvoice(i,c); else { go('settings'); } return; }
+  toast('Sending…');
+  try{
+    await gmailSend(c.email,'Invoice '+i.number+' from '+DB.settings.businessName,invoiceEmailHtml(i,c));
+    if(i.status==='draft'){ i.status='sent'; try{ await upsertInv(i); }catch(e){} }
+    toast('Invoice emailed to '+c.email);
+    closeModal(); if(currentView==='invoices') render();
+  }catch(e){ console.error(e); if(confirm('Couldn’t send via Gmail ('+(e.message||'').slice(0,60)+'). Open your mail app instead?')) mailtoInvoice(i,c); }
 }
 function printInvoice(){
   const doc=document.getElementById('invDoc').outerHTML; const w=window.open('','_blank');
@@ -1071,6 +1151,7 @@ function viewSettings(){
         <div class="field"><label>ABN</label><input id="s_abn" value="${esc(s.abn)}"></div>
         <div class="field full"><label>Email</label><input id="s_email" value="${esc(s.email)}"></div>
         <div class="field full"><label>Website</label><input id="s_web" value="${esc(s.website)}"></div>
+        <div class="field full"><label>Google review link <span class="hint">(used in invoice emails)</span></label><input id="s_review" value="${esc(s.reviewUrl||'')}" placeholder="https://g.page/r/…/review"></div>
         <div class="field full"><label>Services line (invoice footer)</label><textarea id="s_services">${esc(s.services)}</textarea></div>
       </div>
     </div>
@@ -1114,7 +1195,7 @@ function removeBankRow(i){ collectBanks(); const arr=bankList().slice(); arr.spl
 async function saveSettings(){
   collectBanks(); const first=bankList()[0]||{};
   Object.assign(DB.settings,{businessName:val('s_name'),tagline:val('s_tag'),mobile:val('s_mobile'),abn:val('s_abn'),
-    email:val('s_email'),website:val('s_web'),services:val('s_services'),
+    email:val('s_email'),website:val('s_web'),services:val('s_services'),reviewUrl:val('s_review'),
     bankName:first.name||'',bsb:first.bsb||'',accountNumber:first.account||''});
   try{ await saveSettingsRow(); toast('Settings saved'); }catch(e){ toast('Save failed: '+e.message); }
 }
