@@ -142,9 +142,15 @@ textarea{resize:vertical;min-height:64px}
 .sr-new{color:var(--primary);font-weight:600}
 .newcust{margin-top:12px;padding:14px;border:1px dashed var(--line-strong);border-radius:10px;background:var(--primary-soft)}
 
-.li-row{display:grid;grid-template-columns:70px 1fr 110px 110px 34px;gap:8px;align-items:center;margin-bottom:8px}
-.li-head{display:grid;grid-template-columns:70px 1fr 110px 110px 34px;gap:8px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:700;margin-bottom:6px;padding:0 2px}
-.li-del{background:var(--danger-soft);color:var(--danger);border:0;border-radius:8px;height:36px;cursor:pointer;font-size:15px}
+.li-item{border:1px solid var(--line-strong);border-radius:10px;padding:10px 11px;margin-bottom:9px;background:#fff}
+.li-desc{width:100%;margin-bottom:8px}
+.li-sub{display:flex;align-items:center;gap:8px}
+.li-qty{width:60px;flex:0 0 auto;text-align:center}
+.li-each{width:100px;flex:0 0 auto}
+.li-x,.li-eq{color:var(--muted);font-size:13px}
+.li-line{margin-left:auto;font-weight:700;font-size:14px;min-width:74px;text-align:right}
+.li-del{background:var(--danger-soft);color:var(--danger);border:0;border-radius:8px;width:34px;height:38px;flex:0 0 auto;cursor:pointer;font-size:16px}
+.bankrow .btn{margin-top:2px}
 .totbox{margin-top:14px;margin-left:auto;width:280px;font-size:13.5px}
 .totbox .r{display:flex;justify-content:space-between;padding:6px 0}
 .totbox .r.tot{border-top:2px solid var(--ink);margin-top:6px;padding-top:10px;font-size:18px;font-weight:800;color:var(--primary)}
@@ -320,7 +326,7 @@ table.inv-items td{padding:9px 12px;border-bottom:1px solid #eee;font-size:12px}
    MIH CRM — CLOUD (Supabase, shared workspace, Google sign-in)
    ===================================================================== */
 const CFG_KEY='mih_sb_cfg';
-const APP_VERSION='2026.06.29-5';   /* bump this when deploying; phones auto-refresh to match */
+const APP_VERSION='2026.06.29-6';   /* bump this when deploying; phones auto-refresh to match */
 const GST_DIVISOR=11;
 const CAL_SCOPE='https://www.googleapis.com/auth/calendar';
 const DEFAULT_SETTINGS={
@@ -328,6 +334,10 @@ const DEFAULT_SETTINGS={
   mobile:'0480 568 180', email:'Nathaniel@massiveintegratedhomes.com.au',
   website:'www.massiveintegratedhomes.com.au', abn:'',
   bankName:'Nathaniel Pemberton', bsb:'067-873', accountNumber:'17643364',
+  bankAccounts:[
+    {label:'Nathaniel Pemberton', name:'Nathaniel Pemberton', bsb:'067-873', account:'17643364'},
+    {label:'Mitchell Singe', name:'Mitchell Singe', bsb:'067-873', account:'1997 6285'}
+  ],
   services:'TV Wall Mounting | Home Automation | Smart Home Integration | Security & CCTV\nWiFi & Networking | Multi-Room Audio | Home Theatre | Commercial AV',
   calendarEmbed:'', googleCalendarId:'', lastSync:''
 };
@@ -461,8 +471,8 @@ const rowToCust=r=>({id:r.id,name:r.name,contact:r.contact,phone:r.phone,email:r
 const custToRow=c=>({id:c.id,name:c.name,contact:c.contact,phone:c.phone,email:c.email,abn:c.abn,address:c.address,notes:c.notes,owner_id:c.ownerId,owner_name:c.ownerName,updated_at:new Date().toISOString()});
 const rowToJob=r=>({id:r.id,title:r.title,customerId:r.customer_id,date:r.date,time:r.time,duration:Number(r.duration)||2,status:r.status,notes:r.notes,googleEventId:r.google_event_id,calendarId:r.calendar_id,source:r.source,ownerId:r.owner_id,ownerName:r.owner_name});
 const jobToRow=j=>({id:j.id,title:j.title,customer_id:j.customerId||null,date:j.date||null,time:j.time||null,duration:j.duration||2,status:j.status,notes:j.notes,google_event_id:j.googleEventId||null,calendar_id:j.calendarId||null,source:j.source||'local',owner_id:j.ownerId,owner_name:j.ownerName,updated_at:new Date().toISOString()});
-const rowToInv=r=>({id:r.id,number:r.number,date:r.date,customerId:r.customer_id,project:r.project,commenced:r.commenced,completed:r.completed,status:r.status,lines:r.lines||[],ownerId:r.owner_id,ownerName:r.owner_name});
-const invToRow=i=>({id:i.id,number:i.number,date:i.date||null,customer_id:i.customerId||null,project:i.project,commenced:i.commenced||null,completed:i.completed||null,status:i.status,lines:i.lines,owner_id:i.ownerId,owner_name:i.ownerName,updated_at:new Date().toISOString()});
+const rowToInv=r=>({id:r.id,number:r.number,date:r.date,customerId:r.customer_id,project:r.project,commenced:r.commenced,completed:r.completed,status:r.status,lines:r.lines||[],bank:r.bank||null,ownerId:r.owner_id,ownerName:r.owner_name});
+const invToRow=i=>({id:i.id,number:i.number,date:i.date||null,customer_id:i.customerId||null,project:i.project,commenced:i.commenced||null,completed:i.completed||null,status:i.status,lines:i.lines,bank:i.bank||null,owner_id:i.ownerId,owner_name:i.ownerName,updated_at:new Date().toISOString()});
 
 async function loadMembers(){
   const {data,error}=await sb.from('members').select('*');
@@ -485,7 +495,12 @@ async function loadAll(){
 }
 async function upsertCust(c){ const {error}=await sb.from('customers').upsert(custToRow(c)); if(error)throw error; }
 async function upsertJob(j){ const {error}=await sb.from('jobs').upsert(jobToRow(j)); if(error)throw error; }
-async function upsertInv(i){ const {error}=await sb.from('invoices').upsert(invToRow(i)); if(error)throw error; }
+async function upsertInv(i){
+  const row=invToRow(i);
+  let {error}=await sb.from('invoices').upsert(row);
+  if(error && /bank/i.test(error.message||'')){ delete row.bank; const r2=await sb.from('invoices').upsert(row); error=r2.error; if(!error) toast('Saved — run migration-add-bank.sql in Supabase to remember bank choice'); }
+  if(error) throw error;
+}
 async function delRow(table,id){ const {error}=await sb.from(table).delete().eq('id',id); if(error)throw error; }
 async function saveSettingsRow(){ const {error}=await sb.from('settings').upsert({id:1,data:DB.settings}); if(error)throw error; }
 
@@ -855,38 +870,69 @@ function openInvoice(id,presetCust){
         <option value="paid" ${inv.status==='paid'?'selected':''}>Paid</option></select></div>
     </div>
     <label style="margin-bottom:8px;display:block">Itemised works &amp; materials</label>
-    <div class="li-head"><div>Qty</div><div>Description</div><div>Each ($)</div><div>Price</div><div></div></div>
     <div id="liRows"></div>
     <button class="btn ghost sm" onclick="addLine()" style="margin-top:4px">+ Add line</button>
-    <div class="totbox" id="liTot"></div>`,
+    <div class="totbox" id="liTot"></div>
+    <div class="field full" style="margin-top:18px"><label>Pay to (bank account on invoice)</label>
+      <select id="i_bank">${bankOptions(inv.bank, inv.ownerName||me.name)}</select></div>`,
     [ id?{label:'Delete',cls:'danger',act:async()=>{ if(confirm('Delete this invoice?')){ await delRow('invoices',id); DB.invoices=DB.invoices.filter(x=>x.id!==id); closeModal(); render(); }}}:null,
       {label:'Save & preview',cls:'btn',act:()=>saveInvoice(id)} ],'wide');
   renderLines();
 }
+function lineRowHtml(l,idx){
+  return `<div class="li-item">
+    <input class="li-desc" type="text" value="${esc(l.desc)}" placeholder="Description (e.g. Stairwell TV install & mount)" oninput="updLine(${idx},'desc',this.value)">
+    <div class="li-sub">
+      <input class="li-qty" type="number" inputmode="decimal" min="0" step="1" value="${esc(l.qty)}" placeholder="Qty" oninput="updLine(${idx},'qty',this.value)" aria-label="Quantity">
+      <span class="li-x">×</span>
+      <input class="li-each" type="number" inputmode="decimal" min="0" step="0.01" value="${esc(l.price)}" placeholder="Each $" oninput="updLine(${idx},'price',this.value)" aria-label="Price each">
+      <span class="li-eq">=</span>
+      <span class="li-line" id="litot_${idx}">${money((Number(l.qty)||0)*(Number(l.price)||0))}</span>
+      <button type="button" class="li-del" onclick="delLine(${idx})" aria-label="Remove line">×</button>
+    </div>
+  </div>`;
+}
 function renderLines(){
-  document.getElementById('liRows').innerHTML=editingLines.map((l,idx)=>`
-    <div class="li-row">
-      <input type="number" min="0" step="1" value="${esc(l.qty)}" oninput="updLine(${idx},'qty',this.value)">
-      <input type="text" value="${esc(l.desc)}" placeholder="Description" oninput="updLine(${idx},'desc',this.value)">
-      <input type="number" min="0" step="0.01" value="${esc(l.price)}" oninput="updLine(${idx},'price',this.value)">
-      <input type="text" value="${money((Number(l.qty)||0)*(Number(l.price)||0))}" readonly style="background:#f7f5fb">
-      <button class="li-del" onclick="delLine(${idx})">×</button>
-    </div>`).join('');
+  document.getElementById('liRows').innerHTML=editingLines.map((l,idx)=>lineRowHtml(l,idx)).join('');
+  updTotals();
+}
+function updTotals(){
+  const el=document.getElementById('liTot'); if(!el) return;
   const total=editingLines.reduce((s,l)=>s+(Number(l.qty)||0)*(Number(l.price)||0),0);
-  document.getElementById('liTot').innerHTML=`
+  el.innerHTML=`
     <div class="r"><span>Subtotal (GST Inc)</span><b>${money(total)}</b></div>
     <div class="r muted"><span>GST included (10%)</span><span>${money(total/GST_DIVISOR)}</span></div>
     <div class="r tot"><span>TOTAL DUE</span><span>${money(total)}</span></div>`;
 }
 function addLine(){ editingLines.push({desc:'',qty:1,price:0}); renderLines(); }
 function delLine(i){ editingLines.splice(i,1); if(!editingLines.length) editingLines.push({desc:'',qty:1,price:0}); renderLines(); }
-function updLine(i,k,v){ editingLines[i][k]=v; if(k!=='desc') renderLines(); }
+/* update only the affected line total + grand total — never rebuild inputs (keeps focus) */
+function updLine(i,k,v){
+  editingLines[i][k]=v;
+  if(k!=='desc'){
+    const lt=document.getElementById('litot_'+i);
+    if(lt) lt.textContent=money((Number(editingLines[i].qty)||0)*(Number(editingLines[i].price)||0));
+    updTotals();
+  }
+}
+function bankList(){
+  const s=DB.settings; let arr=s.bankAccounts;
+  if(!Array.isArray(arr)||!arr.length){ arr=[{label:s.bankName||'Account',name:s.bankName,bsb:s.bsb,account:s.accountNumber}]; }
+  return arr;
+}
+function bankOptions(selBank, ownerName){
+  const arr=bankList(); let sel=0;
+  if(selBank&&selBank.account){ const k=arr.findIndex(a=>a.account===selBank.account&&a.name===selBank.name); if(k>=0) sel=k; }
+  else if(ownerName){ const first=(ownerName||'').toLowerCase().split(' ')[0]; const k=arr.findIndex(a=>(a.name||'').toLowerCase().includes(first)); if(k>=0) sel=k; }
+  return arr.map((a,i)=>`<option value="${i}" ${i===sel?'selected':''}>${esc(a.label||a.name)} — BSB ${esc(a.bsb)} · ${esc(a.account)}</option>`).join('');
+}
 async function saveInvoice(id){
   const customerId=val('i_cust'); if(!customerId){ toast('Select a customer'); return; }
   const lines=editingLines.filter(l=>l.desc.trim()||Number(l.price)).map(l=>({desc:l.desc,qty:Number(l.qty)||0,price:Number(l.price)||0}));
   if(!lines.length){ toast('Add at least one line item'); return; }
   const ex=id?DB.invoices.find(x=>x.id===id):null;
-  const obj={id:id||uid(),number:val('i_number'),date:val('i_date'),customerId,project:val('i_project'),commenced:val('i_comm'),completed:val('i_comp'),status:val('i_status'),lines,
+  const bank=bankList()[parseInt(val('i_bank'))||0]||null;
+  const obj={id:id||uid(),number:val('i_number'),date:val('i_date'),customerId,project:val('i_project'),commenced:val('i_comm'),completed:val('i_comp'),status:val('i_status'),lines,bank,
     ownerId:ex?ex.ownerId:me.id, ownerName:ex?ex.ownerName:me.name};
   try{ await upsertInv(obj); }catch(e){ return toast('Save failed: '+e.message); }
   if(id) Object.assign(ex,obj); else { DB.invoices.push(obj); const m=/MIH-(\d+)/.exec(obj.number); if(m) DB.counters.invoice=Math.max(DB.counters.invoice,+m[1]); }
@@ -895,6 +941,10 @@ async function saveInvoice(id){
 function previewInvoice(id){
   const i=DB.invoices.find(x=>x.id===id); const c=custById(i.customerId)||{}; const s=DB.settings;
   const total=invTotal(i),gst=invGST(i);
+  const arr=bankList();
+  const first=(i.ownerName||'').toLowerCase().split(' ')[0];
+  const pay = (i.bank&&i.bank.account) ? i.bank
+            : (arr.find(a=>(a.name||'').toLowerCase().includes(first)) || arr[0] || {name:s.bankName,bsb:s.bsb,account:s.accountNumber});
   const html=`
   <div class="inv-doc" id="invDoc">
     <div class="inv-head">
@@ -920,8 +970,8 @@ function previewInvoice(id){
       <tbody>${i.lines.map(l=>`<tr><td>${esc(l.qty)}</td><td>${esc(l.desc)}</td><td class="r">${money(l.price)}</td><td class="r">${money((Number(l.qty)||0)*(Number(l.price)||0))}</td></tr>`).join('')}</tbody></table>
       <div class="inv-foot-cols">
         <div class="inv-panel"><div class="ph">Payment Details</div><div class="pb"><div class="inv-kv">
-          <b>Account Name</b><span>${esc(s.bankName)}</span><b>BSB</b><span>${esc(s.bsb)}</span>
-          <b>Account Number</b><span>${esc(s.accountNumber)}</span><b>Reference</b><span>${esc(i.number)}</span>
+          <b>Account Name</b><span>${esc(pay.name)}</span><b>BSB</b><span>${esc(pay.bsb)}</span>
+          <b>Account Number</b><span>${esc(pay.account)}</span><b>Reference</b><span>${esc(i.number)}</span>
         </div></div></div>
         <div>
           <div style="display:flex;justify-content:space-between;font-size:12px;color:#555;padding:2px 4px"><span>Subtotal (GST Inc)</span><span>${money(total)}</span></div>
@@ -966,12 +1016,10 @@ function viewSettings(){
       </div>
     </div>
     <div class="card pad">
-      <div class="section-head"><h2>Payment details</h2></div>
-      <div class="frow">
-        <div class="field full"><label>Account name</label><input id="s_bank" value="${esc(s.bankName)}"></div>
-        <div class="field"><label>BSB</label><input id="s_bsb" value="${esc(s.bsb)}"></div>
-        <div class="field"><label>Account number</label><input id="s_acct" value="${esc(s.accountNumber)}"></div>
-      </div>
+      <div class="section-head"><h2>Bank accounts</h2></div>
+      <div class="hint" style="margin-bottom:10px">Add the accounts you invoice from. When you create an invoice you pick which one appears on it (it defaults to whoever's creating the invoice).</div>
+      <div id="bankList"></div>
+      <button class="btn ghost sm" onclick="addBankRow()" style="margin-top:2px">+ Add bank account</button>
       <div class="section-head" style="margin-top:18px"><h2>Google Calendar</h2></div>
       <div id="syncCard"></div>
     </div>
@@ -982,11 +1030,33 @@ function viewSettings(){
     <button class="btn" onclick="saveSettings()">Save settings</button>
     <button class="btn line" onclick="resetCfg()">Change workspace connection</button>
   </div>`;
-  renderSyncCard();
+  renderSyncCard(); renderBankList();
 }
+function renderBankList(){
+  const el=document.getElementById('bankList'); if(!el) return;
+  const arr=bankList();
+  el.innerHTML=arr.map((a,i)=>`<div class="bankrow" data-i="${i}" style="border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:9px">
+    <div class="frow" style="margin-bottom:6px">
+      <div class="field full"><label>Account name</label><input class="bk_name" value="${esc(a.name||a.label||'')}" placeholder="e.g. Mitchell Singe"></div>
+      <div class="field"><label>BSB</label><input class="bk_bsb" value="${esc(a.bsb||'')}" placeholder="067-873"></div>
+      <div class="field"><label>Account number</label><input class="bk_acct" value="${esc(a.account||'')}" placeholder="1997 6285"></div>
+    </div>
+    <button type="button" class="btn line sm" onclick="removeBankRow(${i})">Remove</button>
+  </div>`).join('');
+}
+function collectBanks(){
+  const rows=[...document.querySelectorAll('#bankList .bankrow')];
+  if(!rows.length) return;
+  DB.settings.bankAccounts=rows.map(r=>{ const name=r.querySelector('.bk_name').value.trim(); return {label:name,name,bsb:r.querySelector('.bk_bsb').value.trim(),account:r.querySelector('.bk_acct').value.trim()}; }).filter(a=>a.name||a.account);
+  if(!DB.settings.bankAccounts.length) DB.settings.bankAccounts=[{label:'',name:'',bsb:'',account:''}];
+}
+function addBankRow(){ collectBanks(); DB.settings.bankAccounts=bankList().concat([{label:'',name:'',bsb:'',account:''}]); renderBankList(); }
+function removeBankRow(i){ collectBanks(); const arr=bankList().slice(); arr.splice(i,1); DB.settings.bankAccounts=arr.length?arr:[{label:'',name:'',bsb:'',account:''}]; renderBankList(); }
 async function saveSettings(){
+  collectBanks(); const first=bankList()[0]||{};
   Object.assign(DB.settings,{businessName:val('s_name'),tagline:val('s_tag'),mobile:val('s_mobile'),abn:val('s_abn'),
-    email:val('s_email'),website:val('s_web'),services:val('s_services'),bankName:val('s_bank'),bsb:val('s_bsb'),accountNumber:val('s_acct')});
+    email:val('s_email'),website:val('s_web'),services:val('s_services'),
+    bankName:first.name||'',bsb:first.bsb||'',accountNumber:first.account||''});
   try{ await saveSettingsRow(); toast('Settings saved'); }catch(e){ toast('Save failed: '+e.message); }
 }
 function renderSyncCard(){
