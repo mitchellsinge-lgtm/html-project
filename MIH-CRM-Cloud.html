@@ -290,6 +290,7 @@ table.inv-items td{padding:9px 12px;border-bottom:1px solid #eee;font-size:12px}
       <button data-view="customers"><span class="ic">◍</span> Customers</button>
       <button data-view="calendar"><span class="ic">▤</span> Calendar &amp; Jobs</button>
       <button data-view="invoices"><span class="ic">▣</span> Invoices</button>
+      <button data-view="financials"><span class="ic">＄</span> Financials</button>
       <button data-view="settings"><span class="ic">⚙</span> Settings</button>
     </nav>
     <div class="side-foot">
@@ -315,6 +316,7 @@ table.inv-items td{padding:9px 12px;border-bottom:1px solid #eee;font-size:12px}
     <button data-view="customers"><span class="ic">◍</span>Clients</button>
     <button data-view="calendar"><span class="ic">▤</span>Calendar</button>
     <button data-view="invoices"><span class="ic">▣</span>Invoices</button>
+    <button data-view="financials"><span class="ic">＄</span>Money</button>
     <button data-view="settings"><span class="ic">⚙</span>Settings</button>
   </nav>
 </div>
@@ -326,7 +328,7 @@ table.inv-items td{padding:9px 12px;border-bottom:1px solid #eee;font-size:12px}
    MIH CRM — CLOUD (Supabase, shared workspace, Google sign-in)
    ===================================================================== */
 const CFG_KEY='mih_sb_cfg';
-const APP_VERSION='2026.06.29-6';   /* bump this when deploying; phones auto-refresh to match */
+const APP_VERSION='2026.06.29-7';   /* bump this when deploying; phones auto-refresh to match */
 const GST_DIVISOR=11;
 const CAL_SCOPE='https://www.googleapis.com/auth/calendar';
 const DEFAULT_SETTINGS={
@@ -342,7 +344,8 @@ const DEFAULT_SETTINGS={
   calendarEmbed:'', googleCalendarId:'', lastSync:''
 };
 let sb=null, me=null;
-let DB={customers:[],jobs:[],invoices:[],members:[],settings:{...DEFAULT_SETTINGS},counters:{invoice:2}};
+let DB={customers:[],jobs:[],invoices:[],expenses:[],loans:[],loanEntries:[],members:[],settings:{...DEFAULT_SETTINGS},counters:{invoice:2},financialsReady:false};
+const EXP_CATS=['Materials','Subcontractor','Fuel','Vehicle','Tools & Equipment','Subscriptions','Insurance','Phone & Internet','Marketing','Office','Bank/Fees','Other'];
 const GAuth={token:null,connected:false,calendars:[],needReconnect:false};
 
 /* ---------- helpers ---------- */
@@ -450,7 +453,9 @@ function renderUserChip(){
       <button onclick="closeOptions();openJob()">📅 Schedule job</button>
       <button onclick="closeOptions();openCustomer()">➕ Add customer</button>
       <button onclick="closeOptions();openInvoice()">🧾 New invoice</button>
+      <button onclick="closeOptions();openExpense()">＄ Add expense</button>
       <div class="optsep"></div>
+      <button onclick="closeOptions();go('financials')">＄ Financials</button>
       <button onclick="closeOptions();go('settings')">⚙ Settings</button>
       <button onclick="closeOptions();syncNow()">⟳ Sync calendar</button>
       <div class="optsep"></div>
@@ -469,8 +474,14 @@ document.addEventListener('click',e=>{ const m=document.getElementById('optMenu'
    ===================================================================== */
 const rowToCust=r=>({id:r.id,name:r.name,contact:r.contact,phone:r.phone,email:r.email,abn:r.abn,address:r.address,notes:r.notes,ownerId:r.owner_id,ownerName:r.owner_name});
 const custToRow=c=>({id:c.id,name:c.name,contact:c.contact,phone:c.phone,email:c.email,abn:c.abn,address:c.address,notes:c.notes,owner_id:c.ownerId,owner_name:c.ownerName,updated_at:new Date().toISOString()});
-const rowToJob=r=>({id:r.id,title:r.title,customerId:r.customer_id,date:r.date,time:r.time,duration:Number(r.duration)||2,status:r.status,notes:r.notes,googleEventId:r.google_event_id,calendarId:r.calendar_id,source:r.source,ownerId:r.owner_id,ownerName:r.owner_name});
-const jobToRow=j=>({id:j.id,title:j.title,customer_id:j.customerId||null,date:j.date||null,time:j.time||null,duration:j.duration||2,status:j.status,notes:j.notes,google_event_id:j.googleEventId||null,calendar_id:j.calendarId||null,source:j.source||'local',owner_id:j.ownerId,owner_name:j.ownerName,updated_at:new Date().toISOString()});
+const rowToJob=r=>({id:r.id,title:r.title,customerId:r.customer_id,date:r.date,time:r.time,duration:Number(r.duration)||2,status:r.status,notes:r.notes,value:(r.value!=null?Number(r.value):null),googleEventId:r.google_event_id,calendarId:r.calendar_id,source:r.source,ownerId:r.owner_id,ownerName:r.owner_name});
+const jobToRow=j=>({id:j.id,title:j.title,customer_id:j.customerId||null,date:j.date||null,time:j.time||null,duration:j.duration||2,status:j.status,notes:j.notes,value:(j.value!=null&&j.value!==''?Number(j.value):null),google_event_id:j.googleEventId||null,calendar_id:j.calendarId||null,source:j.source||'local',owner_id:j.ownerId,owner_name:j.ownerName,updated_at:new Date().toISOString()});
+const rowToExp=r=>({id:r.id,jobId:r.job_id,date:r.date,category:r.category,description:r.description,amount:Number(r.amount)||0,gstInc:r.gst_inc!==false,recurring:r.recurring||'',receiptPath:r.receipt_path||'',ownerId:r.owner_id,ownerName:r.owner_name});
+const expToRow=e=>({id:e.id,job_id:e.jobId||null,date:e.date||null,category:e.category,description:e.description,amount:e.amount||0,gst_inc:e.gstInc!==false,recurring:e.recurring||null,receipt_path:e.receiptPath||null,owner_id:e.ownerId,owner_name:e.ownerName,updated_at:new Date().toISOString()});
+const rowToLoan=r=>({id:r.id,name:r.name,type:r.type||'business',openingBalance:Number(r.opening_balance)||0,notes:r.notes||'',ownerId:r.owner_id,ownerName:r.owner_name});
+const loanToRow=l=>({id:l.id,name:l.name,type:l.type||'business',opening_balance:l.openingBalance||0,notes:l.notes||'',owner_id:l.ownerId,owner_name:l.ownerName,updated_at:new Date().toISOString()});
+const rowToLE=r=>({id:r.id,loanId:r.loan_id,date:r.date,kind:r.kind||'repayment',amount:Number(r.amount)||0,note:r.note||'',ownerId:r.owner_id,ownerName:r.owner_name});
+const leToRow=x=>({id:x.id,loan_id:x.loanId,date:x.date||null,kind:x.kind||'repayment',amount:x.amount||0,note:x.note||'',owner_id:x.ownerId,owner_name:x.ownerName});
 const rowToInv=r=>({id:r.id,number:r.number,date:r.date,customerId:r.customer_id,project:r.project,commenced:r.commenced,completed:r.completed,status:r.status,lines:r.lines||[],bank:r.bank||null,ownerId:r.owner_id,ownerName:r.owner_name});
 const invToRow=i=>({id:i.id,number:i.number,date:i.date||null,customer_id:i.customerId||null,project:i.project,commenced:i.commenced||null,completed:i.completed||null,status:i.status,lines:i.lines,bank:i.bank||null,owner_id:i.ownerId,owner_name:i.ownerName,updated_at:new Date().toISOString()});
 
@@ -492,9 +503,36 @@ async function loadAll(){
   DB.settings=Object.assign({...DEFAULT_SETTINGS},(st&&st.data&&st.data.data)||{});
   const maxN=DB.invoices.reduce((m,i)=>{const x=/MIH-(\d+)/.exec(i.number||'');return x?Math.max(m,+x[1]):m;},2);
   DB.counters.invoice=maxN;
+  await loadFinancials();
+}
+async function loadFinancials(){
+  DB.expenses=[];DB.loans=[];DB.loanEntries=[];DB.financialsReady=false;
+  try{
+    const [ex,ln,le]=await Promise.all([sb.from('expenses').select('*'),sb.from('loans').select('*'),sb.from('loan_entries').select('*')]);
+    if(ex.error) return; // financials tables not created yet
+    DB.expenses=(ex.data||[]).map(rowToExp);
+    DB.loans=(ln.error?[]:(ln.data||[])).map(rowToLoan);
+    DB.loanEntries=(le.error?[]:(le.data||[])).map(rowToLE);
+    DB.financialsReady=true;
+  }catch(e){ DB.financialsReady=false; }
 }
 async function upsertCust(c){ const {error}=await sb.from('customers').upsert(custToRow(c)); if(error)throw error; }
-async function upsertJob(j){ const {error}=await sb.from('jobs').upsert(jobToRow(j)); if(error)throw error; }
+async function upsertJob(j){
+  const row=jobToRow(j);
+  let {error}=await sb.from('jobs').upsert(row);
+  if(error && /value/i.test(error.message||'')){ delete row.value; const r2=await sb.from('jobs').upsert(row); error=r2.error; }
+  if(error) throw error;
+}
+async function upsertExp(e){ const {error}=await sb.from('expenses').upsert(expToRow(e)); if(error)throw error; }
+async function upsertLoan(l){ const {error}=await sb.from('loans').upsert(loanToRow(l)); if(error)throw error; }
+async function upsertLE(x){ const {error}=await sb.from('loan_entries').upsert(leToRow(x)); if(error)throw error; }
+async function uploadReceipt(file){
+  const ext=((file.name||'jpg').split('.').pop()||'jpg').toLowerCase();
+  const path=me.id+'/'+uid()+'.'+ext;
+  const {error}=await sb.storage.from('receipts').upload(path,file,{upsert:false,contentType:file.type||'image/jpeg'});
+  if(error) throw error; return path;
+}
+async function receiptUrl(path){ if(!path) return ''; const {data,error}=await sb.storage.from('receipts').createSignedUrl(path,3600); return error?'':data.signedUrl; }
 async function upsertInv(i){
   const row=invToRow(i);
   let {error}=await sb.from('invoices').upsert(row);
@@ -511,13 +549,13 @@ let currentView='dashboard';
 let ownerFilter='all';
 ['nav','mobileNav'].forEach(navId=>{ const n=document.getElementById(navId); if(n) n.addEventListener('click',e=>{ const b=e.target.closest('button[data-view]'); if(b) go(b.dataset.view); }); });
 function go(v){ currentView=v; document.querySelectorAll('#nav button, #mobileNav button').forEach(b=>b.classList.toggle('active',b.dataset.view===v)); render(); window.scrollTo(0,0); }
-const TITLES={dashboard:['Dashboard',()=> 'Shared workspace · '+DB.members.length+' team members'],customers:['Customers','Your shared client database'],calendar:['Calendar & Jobs','Everyone’s bookings in one place'],invoices:['Invoices','Create and manage invoices'],settings:['Settings','Business details & integrations']};
+const TITLES={dashboard:['Dashboard',()=> 'Shared workspace · '+DB.members.length+' team members'],customers:['Customers','Your shared client database'],calendar:['Calendar & Jobs','Everyone’s bookings in one place'],invoices:['Invoices','Create and manage invoices'],financials:['Financials','Costs, profit, receipts & loans'],settings:['Settings','Business details & integrations']};
 function render(){
   const [t,s]=TITLES[currentView];
   document.getElementById('viewTitle').textContent=t;
   document.getElementById('viewSub').textContent=typeof s==='function'?s():s;
   document.getElementById('topAction').innerHTML='';
-  ({dashboard:viewDashboard,customers:viewCustomers,calendar:viewCalendar,invoices:viewInvoices,settings:viewSettings}[currentView])();
+  ({dashboard:viewDashboard,customers:viewCustomers,calendar:viewCalendar,invoices:viewInvoices,financials:viewFinancials,settings:viewSettings}[currentView])();
 }
 function mineOnly(arr){ return ownerFilter==='mine'?arr.filter(x=>x.ownerId===me.id):arr; }
 function ownerTag(x){ const name=x.ownerName||'—'; return `<span class="owner-tag"><span class="owner-dot" style="background:${esc(ownerColor(x.ownerId)|| '#7c3aed')}"></span>${esc(name)}</span>`; }
@@ -747,11 +785,20 @@ function openJob(id,presetDate){
         <option value="done" ${j.status==='done'?'selected':''}>Done</option></select></div>
       <div class="field full"><label>Notes</label><textarea id="j_notes">${esc(j.notes)}</textarea></div>
     </div>
-    ${id&&j.ownerName?`<div class="hint">Owner: ${esc(j.ownerName)}${GAuth.connected?' · changes sync to Google on save':''}</div>`:''}`,
+    ${id&&j.ownerName?`<div class="hint">Owner: ${esc(j.ownerName)}${GAuth.connected?' · changes sync to Google on save':''}</div>`:''}
+    <div class="li-item" style="margin-top:12px;background:var(--primary-soft);border-color:var(--line-strong)">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+        <b>Expenses &amp; Profit</b>
+        ${id?`<button type="button" class="btn line sm" onclick="closeModal();openExpense(null,'${id}')">+ Add expense</button>`:`<span class="hint">save the job first to add expenses</span>`}
+      </div>
+      <div class="frow" style="margin:10px 0 0"><div class="field"><label>Amount charged ($) — required to mark Done</label><input type="number" inputmode="decimal" step="0.01" id="j_value" value="${esc(j.value!=null?j.value:'')}" placeholder="0.00" oninput="updJobProfit('${id||''}')"></div></div>
+      <div id="jobProfit" style="margin-top:8px"></div>
+    </div>`,
     [ id?{label:'Delete',cls:'danger',act:async()=>{ if(confirm('Delete this job?')){ const dj=DB.jobs.find(x=>x.id===id); await delRow('jobs',id); DB.jobs=DB.jobs.filter(x=>x.id!==id); closeModal(); render(); if(dj) deleteGoogleEvent(dj); }}}:null,
       {label:'Save job',cls:'btn',act:async()=>{
         const title=val('j_title').trim(); if(!title){ toast('Title required'); return; }
         if(!val('j_date')){ toast('Date required'); return; }
+        if(val('j_status')==='done' && !(parseFloat(val('j_value'))>0)){ toast('Enter the amount charged to mark this job Done'); return; }
         const ex=id?DB.jobs.find(x=>x.id===id):null;
         // resolve customer: existing selection, inline-new, or exact-name fallback
         let customerId=val('j_custId');
@@ -766,6 +813,7 @@ function openJob(id,presetDate){
           const m=typed?DB.customers.find(c=>(c.name||'').toLowerCase()===typed):null; if(m) customerId=m.id;
         }
         const obj={id:id||uid(),title,customerId,date:val('j_date'),time:val('j_time'),duration:parseFloat(val('j_dur'))||2,status:val('j_status'),notes:val('j_notes'),
+          value:(val('j_value')!==''?parseFloat(val('j_value')):null),
           source:ex?ex.source:'local',googleEventId:ex?ex.googleEventId:null,calendarId:ex?ex.calendarId:null,
           ownerId:ex?ex.ownerId:me.id, ownerName:ex?ex.ownerName:me.name};
         let stored=ex?ex:obj;
@@ -774,6 +822,17 @@ function openJob(id,presetDate){
         if(id) Object.assign(stored,obj); else DB.jobs.push(obj);
         closeModal(); render(); toast('Job saved');
       }} ]);
+  updJobProfit(id||'');
+}
+function updJobProfit(id){
+  const el=document.getElementById('jobProfit'); if(!el) return;
+  const value=parseFloat(val('j_value'))||0;
+  const exp=id?jobExpensesTotal(id):0;
+  const profit=value-exp;
+  const n=id?DB.expenses.filter(e=>e.jobId===id).length:0;
+  el.innerHTML=`<div style="display:flex;justify-content:space-between;font-size:13px;padding:3px 0"><span>Amount charged</span><span>${money(value)}</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:13px;padding:3px 0"><span>Expenses (${n})</span><span>−${money(exp)}</span></div>
+    <div style="display:flex;justify-content:space-between;font-weight:800;border-top:1px solid var(--line-strong);padding-top:6px;margin-top:4px"><span>Profit</span><span style="color:${profit>=0?'var(--ok)':'var(--danger)'}">${money(profit)}</span></div>`;
 }
 /* ---- customer search-as-you-type (job form) ---- */
 function custSearch(q){
@@ -1168,6 +1227,175 @@ async function syncNow(){
   finally{ syncing=false; updateSyncStatus(); }
 }
 function updateSyncStatus(msg){ const el=document.getElementById('syncStatus'); if(el) el.textContent=msg||(DB.settings.lastSync?'Last synced '+new Date(DB.settings.lastSync).toLocaleString('en-AU'):'Not synced yet'); }
+
+/* =====================================================================
+   FINANCIALS — expenses, receipts, loans, profit
+   ===================================================================== */
+function rerenderFin(){ if(currentView==='financials') viewFinancials(); else render(); }
+function jobExpensesTotal(id){ return DB.expenses.filter(e=>e.jobId===id).reduce((s,e)=>s+e.amount,0); }
+function loanBalance(loanId){
+  const l=DB.loans.find(x=>x.id===loanId); if(!l) return 0;
+  const delta=DB.loanEntries.filter(e=>e.loanId===loanId).reduce((s,e)=>s+(e.kind==='advance'?e.amount:-e.amount),0);
+  return (l.openingBalance||0)+delta;
+}
+
+let receiptTmp=null;
+function openExpense(id,presetJobId){
+  if(!DB.financialsReady) return toast('Run financials-schema.sql in Supabase first');
+  const e=id?DB.expenses.find(x=>x.id===id):{date:todayISO(),gstInc:true,recurring:'',category:'Materials',jobId:presetJobId||''};
+  receiptTmp=e.receiptPath?{path:e.receiptPath}:null;
+  const jobOpts=[...DB.jobs].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(j=>`<option value="${j.id}" ${j.id===e.jobId?'selected':''}>${esc(j.title)} (${fmtDate(j.date)})</option>`).join('');
+  const catOpts=EXP_CATS.map(c=>`<option ${c===e.category?'selected':''}>${c}</option>`).join('');
+  modal(`${id?'Edit':'Add'} expense`,`
+    <div class="frow">
+      <div class="field"><label>Date</label><input type="date" id="e_date" value="${esc(e.date)}"></div>
+      <div class="field"><label>Amount ($)</label><input type="number" inputmode="decimal" step="0.01" id="e_amt" value="${esc(e.amount||'')}" placeholder="0.00"></div>
+      <div class="field"><label>Category</label><select id="e_cat">${catOpts}</select></div>
+      <div class="field"><label>GST included?</label><select id="e_gst"><option value="1" ${e.gstInc!==false?'selected':''}>Yes (incl. GST)</option><option value="0" ${e.gstInc===false?'selected':''}>No / N/A</option></select></div>
+      <div class="field full"><label>Description</label><input id="e_desc" value="${esc(e.description)}" placeholder="e.g. HDMI cables, wall plates, Bunnings"></div>
+      <div class="field"><label>Linked job</label><select id="e_job"><option value="">— general / no job —</option>${jobOpts}</select></div>
+      <div class="field"><label>Recurring?</label><select id="e_rec">
+        <option value="" ${!e.recurring?'selected':''}>One-off</option>
+        <option value="weekly" ${e.recurring==='weekly'?'selected':''}>Weekly</option>
+        <option value="monthly" ${e.recurring==='monthly'?'selected':''}>Monthly</option>
+        <option value="yearly" ${e.recurring==='yearly'?'selected':''}>Yearly</option></select></div>
+      <div class="field full"><label>Receipt photo <span class="hint">(opens your camera on phone)</span></label>
+        <input type="file" accept="image/*" capture="environment" id="e_receipt" onchange="onReceiptPick(this)">
+        <div id="receiptPrev" class="hint" style="margin-top:6px">${e.receiptPath?'📎 Receipt attached — pick again to replace':''}</div>
+      </div>
+    </div>`,
+    [ id?{label:'Delete',cls:'danger',act:async()=>{ if(confirm('Delete expense?')){ await delRow('expenses',id); DB.expenses=DB.expenses.filter(x=>x.id!==id); closeModal(); rerenderFin(); }}}:null,
+      {label:'Save expense',cls:'btn',act:async()=>{
+        const amt=parseFloat(val('e_amt')); if(!(amt>0)){ toast('Enter an amount'); return; }
+        const ex=id?DB.expenses.find(x=>x.id===id):null;
+        const obj={id:id||uid(),date:val('e_date'),amount:amt,category:val('e_cat'),gstInc:val('e_gst')==='1',description:val('e_desc'),jobId:val('e_job'),recurring:val('e_rec'),receiptPath:receiptTmp?receiptTmp.path:'',
+          ownerId:ex?ex.ownerId:me.id, ownerName:ex?ex.ownerName:me.name};
+        try{ await upsertExp(obj); }catch(err){ return toast('Save failed: '+err.message); }
+        if(ex) Object.assign(ex,obj); else DB.expenses.push(obj);
+        closeModal(); rerenderFin();
+      }} ]);
+}
+async function onReceiptPick(input){
+  const f=input.files&&input.files[0]; if(!f) return;
+  const prev=document.getElementById('receiptPrev'); if(prev) prev.textContent='Uploading…';
+  try{ const path=await uploadReceipt(f); receiptTmp={path}; if(prev) prev.innerHTML='📎 Receipt attached ✓'; }
+  catch(e){ if(prev) prev.textContent='Upload failed — '+(e.message||'check the receipts bucket exists'); }
+}
+async function viewReceipt(path){ const url=await receiptUrl(path); if(url) window.open(url,'_blank'); else toast('Could not open receipt'); }
+
+function openLoan(id){
+  if(!DB.financialsReady) return toast('Run financials-schema.sql in Supabase first');
+  const l=id?DB.loans.find(x=>x.id===id):{type:'business',openingBalance:0};
+  modal(`${id?'Edit':'Add'} loan`,`
+    <div class="frow">
+      <div class="field full"><label>Name *</label><input id="l_name" value="${esc(l.name)}" placeholder="e.g. Ute finance — or Nate ↔ Mitch"></div>
+      <div class="field"><label>Type</label><select id="l_type">
+        <option value="business" ${l.type!=='partner'?'selected':''}>Business loan</option>
+        <option value="partner" ${l.type==='partner'?'selected':''}>Partner loan (Nate ↔ Mitch)</option></select></div>
+      <div class="field"><label>Current balance owing ($)</label><input type="number" step="0.01" id="l_open" value="${esc(l.openingBalance||0)}"></div>
+      <div class="field full"><label>Notes</label><textarea id="l_notes">${esc(l.notes)}</textarea></div>
+    </div>
+    <div class="hint">For the partner loan, a positive balance means <b>Nate owes Mitch</b>. Use “+ Advance” to add to it and “− Repayment” to pay it down.</div>`,
+    [ id?{label:'Delete',cls:'danger',act:async()=>{ if(confirm('Delete loan and its history?')){ await delRow('loans',id); DB.loans=DB.loans.filter(x=>x.id!==id); DB.loanEntries=DB.loanEntries.filter(x=>x.loanId!==id); closeModal(); rerenderFin(); }}}:null,
+      {label:'Save loan',cls:'btn',act:async()=>{
+        const name=val('l_name').trim(); if(!name){ toast('Name required'); return; }
+        const ex=id?DB.loans.find(x=>x.id===id):null;
+        const obj={id:id||uid(),name,type:val('l_type'),openingBalance:parseFloat(val('l_open'))||0,notes:val('l_notes'),ownerId:ex?ex.ownerId:me.id,ownerName:ex?ex.ownerName:me.name};
+        try{ await upsertLoan(obj); }catch(e){ return toast('Save failed: '+e.message); }
+        if(ex) Object.assign(ex,obj); else DB.loans.push(obj); closeModal(); rerenderFin();
+      }} ]);
+}
+function openLoanEntry(loanId,kind){
+  modal(kind==='advance'?'Add advance (increase owed)':'Record repayment',`
+    <div class="frow">
+      <div class="field"><label>Date</label><input type="date" id="le_date" value="${todayISO()}"></div>
+      <div class="field"><label>Amount ($)</label><input type="number" step="0.01" id="le_amt" placeholder="0.00"></div>
+      <div class="field full"><label>Note</label><input id="le_note" placeholder="optional"></div>
+    </div>`,
+    [ {label:'Save',cls:'btn',act:async()=>{
+        const amt=parseFloat(val('le_amt')); if(!(amt>0)){ toast('Enter an amount'); return; }
+        const obj={id:uid(),loanId,date:val('le_date'),kind,amount:amt,note:val('le_note'),ownerId:me.id,ownerName:me.name};
+        try{ await upsertLE(obj); }catch(e){ return toast('Save failed: '+e.message); }
+        DB.loanEntries.push(obj); closeModal(); rerenderFin();
+      }} ]);
+}
+function loanCard(l){
+  const bal=loanBalance(l.id);
+  const entries=DB.loanEntries.filter(e=>e.loanId===l.id).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  return `<div style="border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:10px;background:#fff">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">
+      <div><div class="t-name" style="font-size:15px">${esc(l.name)}</div>${l.notes?`<div class="muted" style="font-size:12px">${esc(l.notes)}</div>`:''}</div>
+      <div style="text-align:right"><div class="muted" style="font-size:11px">Owing</div><div style="font-family:'Space Grotesk';font-weight:800;font-size:20px;color:${bal>0.005?'var(--danger)':'var(--ok)'}">${money(bal)}</div></div>
+    </div>
+    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn line sm" onclick="openLoanEntry('${l.id}','repayment')">− Repayment</button>
+      ${l.type==='partner'?`<button class="btn line sm" onclick="openLoanEntry('${l.id}','advance')">+ Advance</button>`:''}
+      <button class="btn line sm" onclick="openLoan('${l.id}')">Edit</button>
+    </div>
+    ${entries.length?`<div style="margin-top:10px">${entries.slice(0,6).map(e=>`<div style="display:flex;justify-content:space-between;font-size:12.5px;padding:5px 0;border-top:1px solid var(--line)"><span class="muted">${fmtDate(e.date)} · ${e.kind==='advance'?'Advance':'Repayment'}${e.note?' · '+esc(e.note):''}</span><span style="font-weight:600;color:${e.kind==='advance'?'var(--danger)':'var(--ok)'}">${e.kind==='advance'?'+':'−'}${money(e.amount)}</span></div>`).join('')}</div>`:''}
+  </div>`;
+}
+function recurringHtml(){
+  const r=DB.expenses.filter(e=>e.recurring);
+  if(!r.length) return `<div class="hint">No recurring costs yet — add insurance, subscriptions, phone, etc. (set “Recurring” when adding an expense).</div>`;
+  const monthly=r.reduce((s,e)=>s+(e.recurring==='weekly'?e.amount*52/12:e.recurring==='yearly'?e.amount/12:e.amount),0);
+  return `<div class="hint" style="margin-bottom:8px">≈ <b>${money(monthly)}</b> per month in recurring costs.</div>
+    <table><tbody>${r.map(e=>`<tr style="cursor:pointer" onclick="openExpense('${e.id}')"><td><div class="t-name">${esc(e.description||e.category)}</div><div class="muted" style="font-size:11px">${esc(e.category)} · ${esc(e.recurring)}</div></td><td style="text-align:right" class="t-name">${money(e.amount)}</td></tr>`).join('')}</tbody></table>`;
+}
+function expensesTableHtml(){
+  const list=[...DB.expenses].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).slice(0,150);
+  if(!list.length) return `<div class="hint">No expenses recorded yet.</div>`;
+  return `<table><thead><tr><th>Date</th><th>Description</th><th>Job</th><th>By</th><th style="text-align:right">Amount</th><th></th></tr></thead><tbody>${list.map(e=>`<tr>
+    <td>${fmtDate(e.date)}</td>
+    <td><div class="t-name">${esc(e.description||e.category)}</div><div class="muted" style="font-size:11px">${esc(e.category)}${e.recurring?' · '+esc(e.recurring):''}</div></td>
+    <td>${e.jobId?esc((DB.jobs.find(j=>j.id===e.jobId)||{}).title||'—'):'<span class="muted">—</span>'}</td>
+    <td>${ownerTag(e)}</td>
+    <td style="text-align:right" class="t-name">${money(e.amount)}</td>
+    <td style="text-align:right;white-space:nowrap">${e.receiptPath?`<button class="btn line sm" title="View receipt" onclick="viewReceipt('${esc(e.receiptPath)}')">🧾</button> `:''}<button class="btn line sm" onclick="openExpense('${e.id}')">Edit</button></td>
+  </tr>`).join('')}</tbody></table>`;
+}
+function exportExpenses(){
+  const rows=[['Date','Category','Description','Job','Amount','GST included','Recurring','Receipt','Recorded by']];
+  [...DB.expenses].sort((a,b)=>(a.date||'').localeCompare(b.date||'')).forEach(e=>rows.push([e.date||'',e.category||'',e.description||'',(e.jobId?(DB.jobs.find(j=>j.id===e.jobId)||{}).title||'':''),e.amount,e.gstInc?'Yes':'No',e.recurring||'',e.receiptPath?'Yes':'',e.ownerName||'']));
+  const csv=rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  const b=new Blob([csv],{type:'text/csv'}); const u=URL.createObjectURL(b); const a=document.createElement('a'); a.href=u; a.download='MIH-expenses-'+todayISO()+'.csv'; a.click(); URL.revokeObjectURL(u);
+  toast('Expenses exported (CSV)');
+}
+function viewFinancials(){
+  document.getElementById('topAction').innerHTML='';
+  const c=document.getElementById('content');
+  if(!DB.financialsReady){ c.innerHTML=`<div class="card pad">${emptyState('＄','Financials not set up yet','Run <b>financials-schema.sql</b> in Supabase → SQL Editor to enable expenses, receipts and loans, then reload.')}</div>`; return; }
+  const paidRev=DB.invoices.filter(i=>i.status==='paid').reduce((s,i)=>s+invTotal(i),0);
+  const totalExp=DB.expenses.reduce((s,e)=>s+e.amount,0);
+  const net=paidRev-totalExp;
+  const partnerLoans=DB.loans.filter(l=>l.type==='partner');
+  const partnerBal=partnerLoans.reduce((s,l)=>s+loanBalance(l.id),0);
+  const bizLoans=DB.loans.filter(l=>l.type!=='partner');
+  const bizDebt=bizLoans.reduce((s,l)=>s+loanBalance(l.id),0);
+  c.innerHTML=`
+   <div class="grid stat-grid" style="margin-bottom:22px">
+     ${stat('Revenue (paid)',money(paidRev),'invoices marked paid','＄')}
+     ${stat('Expenses',money(totalExp),DB.expenses.length+' recorded','▣')}
+     ${stat('Net profit',money(net),'revenue − expenses','✓')}
+     ${stat('Owed to Mitch',money(partnerBal),'Nate ↔ Mitch balance','◍')}
+   </div>
+   <div class="card pad" style="margin-bottom:18px">
+     <div class="section-head"><h2>Partner loan · Nate ↔ Mitch</h2><button class="btn ghost sm" onclick="openLoan()">+ Add loan</button></div>
+     ${partnerLoans.length?partnerLoans.map(loanCard).join(''):`<div class="hint">No partner loan yet. Click “+ Add loan”, choose <b>Partner loan</b>, name it “Nate ↔ Mitch”, and set the current balance (positive = Nate owes Mitch).</div>`}
+   </div>
+   <div class="card pad" style="margin-bottom:18px">
+     <div class="section-head"><h2>Business loans${bizLoans.length?` · owing ${money(bizDebt)}`:''}</h2><button class="btn ghost sm" onclick="openLoan()">+ Add loan</button></div>
+     ${bizLoans.length?bizLoans.map(loanCard).join(''):`<div class="hint">No business loans. Add tool/vehicle finance with “+ Add loan”.</div>`}
+   </div>
+   <div class="card pad" style="margin-bottom:18px">
+     <div class="section-head"><h2>Recurring / ongoing costs</h2><button class="btn ghost sm" onclick="openExpense()">+ Add cost</button></div>
+     ${recurringHtml()}
+   </div>
+   <div class="card pad">
+     <div class="section-head"><h2>All expenses</h2><div style="display:flex;gap:8px"><button class="btn line sm" onclick="exportExpenses()">⇩ Export CSV</button><button class="btn ghost sm" onclick="openExpense()">+ Add expense</button></div></div>
+     ${expensesTableHtml()}
+   </div>`;
+}
 
 /* =====================================================================
    MODAL
