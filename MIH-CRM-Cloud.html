@@ -55,7 +55,15 @@ button{font-family:inherit}
 .topbar h1{margin:0;font-size:21px;font-weight:700}
 .topbar .sub{font-size:12.5px;color:var(--muted);margin-top:2px}
 .topbar-right{display:flex;align-items:center;gap:14px}
-.userchip{display:flex;align-items:center;gap:9px}
+.userchip{display:flex;align-items:center;gap:9px;position:relative}
+.chipbtn{display:flex;align-items:center;gap:9px;background:0;border:0;cursor:pointer;padding:4px 6px;border-radius:10px}
+.chipbtn:hover{background:var(--primary-soft)}
+.chipbtn .caret{color:var(--muted);font-size:11px}
+.optmenu{position:absolute;right:0;top:calc(100% + 8px);background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow-lg);z-index:90;min-width:210px;padding:6px}
+.optmenu button{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:0;border:0;padding:11px 12px;border-radius:8px;font-size:14px;color:var(--ink);cursor:pointer}
+.optmenu button:hover{background:var(--primary-soft)}
+.optmenu .ohead{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:700;padding:8px 12px 4px}
+.optsep{height:1px;background:var(--line);margin:5px 4px}
 .avatar{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:700;font-size:13px}
 .userchip .nm{font-size:13px;font-weight:600}
 .userchip .em{font-size:11px;color:var(--muted)}
@@ -223,6 +231,14 @@ table.inv-items td{padding:9px 12px;border-bottom:1px solid #eee;font-size:12px}
   .card{overflow-x:auto}
   .cal-grid{min-width:520px}
   .seg button{padding:6px 10px;font-size:12px}
+  /* stack data tables into readable cards (no horizontal zoom) */
+  #content table,#content thead,#content tbody,#content tr,#content td{display:block}
+  #content thead{display:none}
+  #content tr{border:1px solid var(--line);border-radius:12px;margin-bottom:10px;background:#fff;padding:3px 2px}
+  #content tr:hover{background:#fff}
+  #content td{border:0!important;padding:7px 14px;text-align:left!important}
+  #content td:empty{display:none}
+  #content td .btn,#content td a.btn{margin:3px 6px 3px 0}
   .mobilenav{display:flex;position:fixed;bottom:0;left:0;right:0;z-index:50;background:#0c0b14;border-top:1px solid rgba(255,255,255,.1);padding:6px 4px;padding-bottom:calc(6px + env(safe-area-inset-bottom))}
   .mobilenav button{flex:1;background:0;border:0;color:#9c95bb;display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 2px;font-size:10px;font-weight:600;cursor:pointer}
   .mobilenav button.active{color:#fff}
@@ -292,7 +308,7 @@ table.inv-items td{padding:9px 12px;border-bottom:1px solid #eee;font-size:12px}
    MIH CRM — CLOUD (Supabase, shared workspace, Google sign-in)
    ===================================================================== */
 const CFG_KEY='mih_sb_cfg';
-const APP_VERSION='2026.06.29-1';   /* bump this when deploying; phones auto-refresh to match */
+const APP_VERSION='2026.06.29-3';   /* bump this when deploying; phones auto-refresh to match */
 const GST_DIVISOR=11;
 const CAL_SCOPE='https://www.googleapis.com/auth/calendar';
 const DEFAULT_SETTINGS={
@@ -402,12 +418,28 @@ async function onSignedIn(session){
 }
 function renderUserChip(){
   document.getElementById('userChip').innerHTML=`
-    <div class="avatar" style="background:${esc(me.color)}">${esc(initials(me.name))}</div>
-    <div><div class="nm">${esc(me.name)}</div><div class="em">${esc(me.email)}</div></div>
-    <button class="btn line sm" onclick="signOut()" title="Sign out">Sign out</button>`;
+    <button class="chipbtn" onclick="toggleOptions(event)" aria-label="Menu">
+      <div class="avatar" style="background:${esc(me.color)}">${esc(initials(me.name))}</div>
+      <div class="who"><div class="nm">${esc(me.name)}</div><div class="em">${esc(me.email)}</div></div>
+      <span class="caret">▾</span>
+    </button>
+    <div id="optMenu" class="optmenu hidden">
+      <div class="ohead">Create</div>
+      <button onclick="closeOptions();openJob()">📅 Schedule job</button>
+      <button onclick="closeOptions();openCustomer()">➕ Add customer</button>
+      <button onclick="closeOptions();openInvoice()">🧾 New invoice</button>
+      <div class="optsep"></div>
+      <button onclick="closeOptions();go('settings')">⚙ Settings</button>
+      <button onclick="closeOptions();syncNow()">⟳ Sync calendar</button>
+      <div class="optsep"></div>
+      <button onclick="closeOptions();signOut()">⎋ Sign out (${esc(me.name)})</button>
+    </div>`;
   const team=DB.members.map(m=>`<span class="owner-tag"><span class="owner-dot" style="background:${esc(m.color||'#7c3aed')}"></span>${esc(m.name||m.email)}</span>`).join('<br>');
   document.getElementById('teamFoot').innerHTML='Team:<br>'+team;
 }
+function toggleOptions(e){ if(e) e.stopPropagation(); const m=document.getElementById('optMenu'); if(m) m.classList.toggle('hidden'); }
+function closeOptions(){ const m=document.getElementById('optMenu'); if(m) m.classList.add('hidden'); }
+document.addEventListener('click',e=>{ const m=document.getElementById('optMenu'); if(m&&!m.classList.contains('hidden')&&!e.target.closest('.userchip')) m.classList.add('hidden'); });
 
 /* =====================================================================
    DATA LAYER (Supabase)  — mapping snake_case rows <-> app objects
@@ -606,6 +638,7 @@ function renderJobList(){
       <td><div class="t-name">${esc(j.title)}</div><div class="muted" style="font-size:11.5px">${esc(custName(j.customerId))}</div></td>
       <td>${jobBadge(j.status)}</td>
       <td>${ownerTag(j)}</td>
+      <td style="text-align:right;white-space:nowrap">${jobQuickActions(j)}</td>
     </tr>`).join('')}</tbody></table>`;
 }
 function jobBadge(s){ return {scheduled:'<span class="badge purple">Scheduled</span>',quote:'<span class="badge amber">Quote</span>',done:'<span class="badge green">Done</span>'}[s]||'<span class="badge gray">—</span>'; }
@@ -634,6 +667,7 @@ function openJob(id,presetDate){
           </div>
           <button type="button" class="btn line sm" style="margin-top:8px" onclick="cancelNewCust()">Cancel new customer</button>
         </div>
+        <div id="custActions">${custActionsHtml(selCust)}</div>
       </div>
       <div class="field"><label>Date *</label><input type="date" id="j_date" value="${esc(j.date)}"></div>
       <div class="field"><label>Start time</label><input type="time" id="j_time" value="${esc(j.time)}"></div>
@@ -678,7 +712,7 @@ function custSearch(q){
   const inp=document.getElementById('j_custsearch'); const hid=document.getElementById('j_custId');
   // if the typed text no longer matches the selected customer's name, clear the selection
   const cur=hid.value?custById(hid.value):null;
-  if(!(cur && cur.name===inp.value)) hid.value='';
+  if(!(cur && cur.name===inp.value)){ hid.value=''; const ca=document.getElementById('custActions'); if(ca) ca.innerHTML=''; }
   const term=(q||'').trim().toLowerCase();
   let list=DB.customers.slice();
   if(term) list=list.filter(c=>[c.name,c.phone,c.email,c.address].some(f=>(f||'').toLowerCase().includes(term)));
@@ -695,6 +729,7 @@ function chooseCust(cid){
   document.getElementById('j_custsearch').value=c.name;
   document.getElementById('custResults').classList.add('hidden');
   hideNewCust();
+  const ca=document.getElementById('custActions'); if(ca) ca.innerHTML=custActionsHtml(c);
 }
 function chooseNewCust(){
   const typed=document.getElementById('j_custsearch').value.trim();
@@ -705,6 +740,22 @@ function chooseNewCust(){
 }
 function cancelNewCust(){ hideNewCust(); const s=document.getElementById('j_custsearch'); s.value=''; document.getElementById('j_custId').value=''; s.focus(); }
 function hideNewCust(){ const p=document.getElementById('newCustPanel'); if(p) p.classList.add('hidden'); }
+function telLink(p){ return (p||'').replace(/[^+\d]/g,''); }
+function custActionsHtml(c){
+  if(!c) return '';
+  const tel=telLink(c.phone); const a=[];
+  if(c.address) a.push(`<a class="btn line sm" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.address)}">📍 Map</a>`);
+  if(tel){ a.push(`<a class="btn line sm" href="tel:${esc(tel)}">📞 Call</a>`); a.push(`<a class="btn line sm" href="sms:${esc(tel)}">💬 Text</a>`); }
+  if(!a.length) return `<div class="hint" style="margin-top:8px">Add a phone or address to this customer to enable call, text & map.</div>`;
+  return `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">${a.join('')}</div>`;
+}
+function jobQuickActions(j){
+  const c=custById(j.customerId); if(!c) return '';
+  const tel=telLink(c.phone); const a=[];
+  if(c.address) a.push(`<a class="btn line sm" target="_blank" rel="noopener" title="Open in Google Maps" onclick="event.stopPropagation()" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.address)}">📍</a>`);
+  if(tel){ a.push(`<a class="btn line sm" title="Call" onclick="event.stopPropagation()" href="tel:${esc(tel)}">📞</a>`); a.push(`<a class="btn line sm" title="Text" onclick="event.stopPropagation()" href="sms:${esc(tel)}">💬</a>`); }
+  return a.join(' ');
+}
 document.addEventListener('click',e=>{ const r=document.getElementById('custResults'); if(r&&!r.classList.contains('hidden')&&!e.target.closest('.cust-pick')&&!e.target.closest('.sr-item')) r.classList.add('hidden'); });
 
 /* =====================================================================
