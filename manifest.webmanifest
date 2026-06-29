@@ -1,0 +1,16 @@
+{
+  "name": "MIH CRM",
+  "short_name": "MIH CRM",
+  "description": "Massive Integrated Homes — customers, jobs, calendar and invoices.",
+  "start_url": "./MIH-CRM-Cloud.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0c0b14",
+  "theme_color": "#0c0b14",
+  "icons": [
+    { "src": "milogo.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "milogo.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "milogo.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
