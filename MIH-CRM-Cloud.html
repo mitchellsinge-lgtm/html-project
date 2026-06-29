@@ -330,7 +330,7 @@ table.inv-items td{padding:9px 12px;border-bottom:1px solid #eee;font-size:12px}
    MIH CRM — CLOUD (Supabase, shared workspace, Google sign-in)
    ===================================================================== */
 const CFG_KEY='mih_sb_cfg';
-const APP_VERSION='2026.06.29-16';   /* bump this when deploying; phones auto-refresh to match */
+const APP_VERSION='2026.06.29-17';   /* bump this when deploying; phones auto-refresh to match */
 const GST_DIVISOR=11;
 const CAL_SCOPE='https://www.googleapis.com/auth/calendar';
 const OAUTH_SCOPES='https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/gmail.send';
@@ -1196,17 +1196,38 @@ function invoiceEmailHtml(i,c){
       <p style="font-size:13px;color:#555;margin:18px 0 0">Kind regards,<br><b>${esc(me&&me.name?me.name:s.businessName)}</b><br>${esc(s.businessName)}${s.abn?' · ABN '+esc(s.abn):''}</p>
     </div></div>`;
 }
-async function gmailSend(to,subject,html,pdfB64,pdfName){
+function invoiceEmailText(i,c){
+  const s=DB.settings; const total=invTotal(i),gst=invGST(i);
+  const arr=bankList(); const first=(i.ownerName||'').toLowerCase().split(' ')[0];
+  const pay=(i.bank&&i.bank.account)?i.bank:(arr.find(a=>(a.name||'').toLowerCase().includes(first))||arr[0]||{name:s.bankName,bsb:s.bsb,account:s.accountNumber});
+  return `Hi ${c.name||'there'},\n\nThanks very much for choosing ${s.businessName}.${i.project?' Invoice for '+i.project+'.':''}\n\n`
+    +`Invoice ${i.number} — ${fmtDate(i.date)}\n`
+    +i.lines.map(l=>`  ${l.qty} x ${l.desc} — ${money((Number(l.qty)||0)*(Number(l.price)||0))}`).join('\n')
+    +`\n\nTotal Due: ${money(total)} (incl. GST ${money(gst)})\n\n`
+    +`Payment details:\n  Account Name: ${pay.name||''}\n  BSB: ${pay.bsb||''}\n  Account Number: ${pay.account||''}\n  Reference: ${i.number}\n\n`
+    +`The invoice is also attached as a PDF.\n\n`
+    +`Happy with our work? A quick review really helps: ${s.reviewUrl||'https://g.page/r/CbVjKnqoixi-EAE/review'}\n\n`
+    +`Any questions, just reply to this email or call ${s.mobile}.\n\nKind regards,\n${(me&&me.name)||s.businessName}\n${s.businessName}${s.abn?' · ABN '+s.abn:''}`;
+}
+async function gmailSend(to,subject,html,text,pdfB64,pdfName){
+  const fromName=(DB.settings.businessName||'Invoice').replace(/[\r\n"<>]/g,'');
+  const replyTo=(DB.settings.email||'').trim();
+  const base=['From: '+fromName+' <'+me.email+'>','To: '+to,(replyTo?'Reply-To: '+replyTo:''),'Subject: '+subject,'MIME-Version: 1.0'].filter(Boolean);
+  const alt='alt_'+Math.random().toString(36).slice(2,10);
+  const altBody=[
+    '--'+alt,'Content-Type: text/plain; charset=UTF-8','Content-Transfer-Encoding: 7bit','',(text||''),'',
+    '--'+alt,'Content-Type: text/html; charset=UTF-8','Content-Transfer-Encoding: 7bit','',html,'',
+    '--'+alt+'--'].join('\r\n');
   let mime;
   if(pdfB64){
-    const b='mihbnd_'+Math.random().toString(36).slice(2);
-    mime=['From: '+me.email,'To: '+to,'Subject: '+subject,'MIME-Version: 1.0',
-      'Content-Type: multipart/mixed; boundary="'+b+'"','',
-      '--'+b,'Content-Type: text/html; charset=UTF-8','Content-Transfer-Encoding: 7bit','',html,'',
-      '--'+b,'Content-Type: application/pdf; name="'+pdfName+'"','Content-Transfer-Encoding: base64','Content-Disposition: attachment; filename="'+pdfName+'"','',pdfB64,'',
-      '--'+b+'--',''].join('\r\n');
+    const mix='mix_'+Math.random().toString(36).slice(2,10);
+    mime=base.concat([
+      'Content-Type: multipart/mixed; boundary="'+mix+'"','',
+      '--'+mix,'Content-Type: multipart/alternative; boundary="'+alt+'"','',altBody,'',
+      '--'+mix,'Content-Type: application/pdf; name="'+pdfName+'"','Content-Transfer-Encoding: base64','Content-Disposition: attachment; filename="'+pdfName+'"','',pdfB64,'',
+      '--'+mix+'--',''].join('\r\n'));
   } else {
-    mime=['From: '+me.email,'To: '+to,'Subject: '+subject,'MIME-Version: 1.0','Content-Type: text/html; charset=UTF-8','',html].join('\r\n');
+    mime=base.concat(['Content-Type: multipart/alternative; boundary="'+alt+'"','',altBody,'']).join('\r\n');
   }
   const r=await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send',{
     method:'POST',headers:{'Authorization':'Bearer '+GAuth.token,'Content-Type':'application/json'},
@@ -1223,13 +1244,8 @@ async function gmailSend(to,subject,html,pdfB64,pdfName){
   return r.json();
 }
 function mailtoInvoice(i,c){
-  const s=DB.settings; const total=invTotal(i);
-  const body=`Hi ${c.name||'there'},\n\nThanks for choosing ${s.businessName}. Here is your invoice ${i.number} dated ${fmtDate(i.date)}.\n\n`
-    +i.lines.map(l=>`- ${l.desc}: ${money((Number(l.qty)||0)*(Number(l.price)||0))}`).join('\n')
-    +`\n\nTotal Due: ${money(total)}\n\nPayment: ${s.bankName} | BSB ${s.bsb} | Acc ${s.accountNumber} | Ref ${i.number}\n`
-    +`\nHappy with our work? Leave us a review: ${s.reviewUrl||'https://g.page/r/CbVjKnqoixi-EAE/review'}\n`
-    +`\nKind regards,\n${(me&&me.name)||s.businessName}\n${s.businessName}${s.abn?' · ABN '+s.abn:''}`;
-  const url='mailto:'+encodeURIComponent(c.email||'')+'?subject='+encodeURIComponent('Invoice '+i.number+' from '+s.businessName)+'&body='+encodeURIComponent(body);
+  const s=DB.settings;
+  const url='mailto:'+encodeURIComponent(c.email||'')+'?subject='+encodeURIComponent('Invoice '+i.number+' from '+s.businessName)+'&body='+encodeURIComponent(invoiceEmailText(i,c));
   window.location.href=url;
 }
 function emailInvoice(id){
@@ -1261,7 +1277,7 @@ async function doSendInvoice(invId){
   try{ pdf=await invoicePdf(invId); }catch(e){ console.warn('PDF generation failed, sending without attachment:',e); }
   toast('Sending…');
   try{
-    await gmailSend(to,'Invoice '+i.number+' from '+DB.settings.businessName,invoiceEmailHtml(i,c),pdf?pdf.b64:null,'Invoice-'+i.number+'.pdf');
+    await gmailSend(to,'Invoice '+i.number+' from '+DB.settings.businessName,invoiceEmailHtml(i,c),invoiceEmailText(i,c),pdf?pdf.b64:null,'Invoice-'+i.number+'.pdf');
     i.sentAt=new Date().toISOString(); if(i.status==='draft') i.status='sent';
     try{ await upsertInv(i); }catch(e){ console.warn(e); }
     if(pdf) storeInvoicePdf(invId, pdf.blob); // keep a permanent copy in records
