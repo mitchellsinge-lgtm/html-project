@@ -16,6 +16,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 :root{
   --bg:#f4f1fa; --panel:#ffffff; --ink:#15152a; --ink-soft:#2d2d55; --muted:#64748b;
@@ -328,7 +330,7 @@ table.inv-items td{padding:9px 12px;border-bottom:1px solid #eee;font-size:12px}
    MIH CRM — CLOUD (Supabase, shared workspace, Google sign-in)
    ===================================================================== */
 const CFG_KEY='mih_sb_cfg';
-const APP_VERSION='2026.06.29-12';   /* bump this when deploying; phones auto-refresh to match */
+const APP_VERSION='2026.06.29-15';   /* bump this when deploying; phones auto-refresh to match */
 const GST_DIVISOR=11;
 const CAL_SCOPE='https://www.googleapis.com/auth/calendar';
 const OAUTH_SCOPES='https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/gmail.send';
@@ -424,9 +426,12 @@ async function signIn(){
 }
 async function signOut(){ await sb.auth.signOut(); GAuth.token=null; GAuth.connected=false; location.reload(); }
 
+function saveGTok(t){ try{ localStorage.setItem('mih_gtok',JSON.stringify({t,e:Date.now()+3300000})); }catch(e){} }
+function loadGTok(){ try{ const o=JSON.parse(localStorage.getItem('mih_gtok')||'null'); if(o&&o.e>Date.now()) return o.t; localStorage.removeItem('mih_gtok'); }catch(e){} return null; }
 async function onSignedIn(session){
   show('loading');
-  if(session.provider_token){ GAuth.token=session.provider_token; GAuth.connected=true; GAuth.needReconnect=false; }
+  if(session.provider_token){ GAuth.token=session.provider_token; GAuth.connected=true; GAuth.needReconnect=false; saveGTok(session.provider_token); }
+  else { const t=loadGTok(); if(t){ GAuth.token=t; GAuth.connected=true; } }
   try{
     await loadMembers();
     if(!memberByEmail(session.user.email)){
@@ -483,8 +488,8 @@ const rowToLoan=r=>({id:r.id,name:r.name,type:r.type||'business',openingBalance:
 const loanToRow=l=>({id:l.id,name:l.name,type:l.type||'business',opening_balance:l.openingBalance||0,notes:l.notes||'',owner_id:l.ownerId,owner_name:l.ownerName,updated_at:new Date().toISOString()});
 const rowToLE=r=>({id:r.id,loanId:r.loan_id,date:r.date,kind:r.kind||'repayment',amount:Number(r.amount)||0,note:r.note||'',ownerId:r.owner_id,ownerName:r.owner_name});
 const leToRow=x=>({id:x.id,loan_id:x.loanId,date:x.date||null,kind:x.kind||'repayment',amount:x.amount||0,note:x.note||'',owner_id:x.ownerId,owner_name:x.ownerName});
-const rowToInv=r=>({id:r.id,number:r.number,date:r.date,customerId:r.customer_id,project:r.project,commenced:r.commenced,completed:r.completed,status:r.status,lines:r.lines||[],bank:r.bank||null,ownerId:r.owner_id,ownerName:r.owner_name});
-const invToRow=i=>({id:i.id,number:i.number,date:i.date||null,customer_id:i.customerId||null,project:i.project,commenced:i.commenced||null,completed:i.completed||null,status:i.status,lines:i.lines,bank:i.bank||null,owner_id:i.ownerId,owner_name:i.ownerName,updated_at:new Date().toISOString()});
+const rowToInv=r=>({id:r.id,number:r.number,date:r.date,customerId:r.customer_id,project:r.project,commenced:r.commenced,completed:r.completed,status:r.status,lines:r.lines||[],bank:r.bank||null,sentAt:r.sent_at||null,ownerId:r.owner_id,ownerName:r.owner_name});
+const invToRow=i=>({id:i.id,number:i.number,date:i.date||null,customer_id:i.customerId||null,project:i.project,commenced:i.commenced||null,completed:i.completed||null,status:i.status,lines:i.lines,bank:i.bank||null,sent_at:i.sentAt||null,owner_id:i.ownerId,owner_name:i.ownerName,updated_at:new Date().toISOString()});
 
 async function loadMembers(){
   const {data,error}=await sb.from('members').select('*');
@@ -536,9 +541,17 @@ async function uploadReceipt(file){
 async function receiptUrl(path){ if(!path) return ''; const {data,error}=await sb.storage.from('receipts').createSignedUrl(path,3600); return error?'':data.signedUrl; }
 async function upsertInv(i){
   const row=invToRow(i);
-  let {error}=await sb.from('invoices').upsert(row);
-  if(error && /bank/i.test(error.message||'')){ delete row.bank; const r2=await sb.from('invoices').upsert(row); error=r2.error; if(!error) toast('Saved — run migration-add-bank.sql in Supabase to remember bank choice'); }
-  if(error) throw error;
+  // tolerate optional columns that may not be migrated yet (bank, sent_at, job_id)
+  const optional=['bank','sent_at','job_id'];
+  for(let n=0;n<4;n++){
+    const {error}=await sb.from('invoices').upsert(row);
+    if(!error) return;
+    const msg=error.message||'';
+    const miss=optional.find(col=>(col in row) && msg.includes(col));
+    if(miss){ delete row[miss]; continue; }
+    throw error;
+  }
+  throw new Error('Invoice save failed (schema)');
 }
 async function delRow(table,id){ const {error}=await sb.from(table).delete().eq('id',id); if(error)throw error; }
 async function saveSettingsRow(){ const {error}=await sb.from('settings').upsert({id:1,data:DB.settings}); if(error)throw error; }
@@ -599,7 +612,26 @@ function viewDashboard(){
           <td style="text-align:right"><div class="t-name">${money(invTotal(i))}</div>${invBadge(i.status)}</td>
         </tr>`).join('')}</tbody></table>`:emptyState('▣','No invoices yet','Generate your first MIH invoice.')}
     </div>
+  </div>
+  <div class="card pad" style="margin-top:18px">
+    <div class="section-head"><h2>Sent invoices</h2><span class="muted" style="font-size:12px">${sentInvoices().length} sent</span></div>
+    ${sentInvoicesHtml()}
   </div>`;
+}
+function sentInvoices(){ return mineOnly(DB.invoices).filter(i=>i.sentAt||i.status==='sent'||i.status==='paid').sort((a,b)=>(b.sentAt||b.date||'').localeCompare(a.sentAt||a.date||'')); }
+function fmtSent(iso){ if(!iso) return '—'; const d=new Date(iso); return d.toLocaleString('en-AU',{day:'2-digit',month:'short',year:'2-digit',hour:'2-digit',minute:'2-digit'}); }
+function invDesc(i){ if(i.project) return i.project; const l=(i.lines||[])[0]; return l&&l.desc?l.desc:'Invoice'; }
+function sentInvoicesHtml(){
+  const list=sentInvoices();
+  if(!list.length) return emptyState('📧','No invoices sent yet','When you email an invoice it appears here with the date sent.');
+  return `<table><thead><tr><th>Invoice</th><th>Description</th><th>Sent</th><th style="text-align:right">Total</th><th></th></tr></thead><tbody>${list.map(i=>`
+    <tr>
+      <td style="cursor:pointer" onclick="previewInvoice('${i.id}')"><div class="t-name">${esc(i.number)}</div><div class="muted" style="font-size:11px">${esc(custName(i.customerId))}</div></td>
+      <td><div>${esc(invDesc(i))}</div>${invBadge(i.status)}</td>
+      <td class="muted" style="font-size:12px">${esc(fmtSent(i.sentAt))}</td>
+      <td style="text-align:right" class="t-name">${money(invTotal(i))}</td>
+      <td style="text-align:right;white-space:nowrap"><button class="btn line sm" onclick="saveInvoicePdf('${i.id}')">📄 Save</button></td>
+    </tr>`).join('')}</tbody></table>`;
 }
 
 /* =====================================================================
@@ -1035,14 +1067,14 @@ async function saveInvoice(id){
   if(id) Object.assign(ex,obj); else { DB.invoices.push(obj); const m=/MIH-(\d+)/.exec(obj.number); if(m) DB.counters.invoice=Math.max(DB.counters.invoice,+m[1]); }
   closeModal(); go('invoices'); previewInvoice(obj.id); toast('Invoice saved');
 }
-function previewInvoice(id){
+function invoiceDocHtml(id){
   const i=DB.invoices.find(x=>x.id===id); const c=custById(i.customerId)||{}; const s=DB.settings;
   const total=invTotal(i),gst=invGST(i);
   const arr=bankList();
   const first=(i.ownerName||'').toLowerCase().split(' ')[0];
   const pay = (i.bank&&i.bank.account) ? i.bank
             : (arr.find(a=>(a.name||'').toLowerCase().includes(first)) || arr[0] || {name:s.bankName,bsb:s.bsb,account:s.accountNumber});
-  const html=`
+  return `
   <div class="inv-doc" id="invDoc">
     <div class="inv-head">
       <div class="lhs"><img src="milogo.png" onerror="this.style.display='none'">
@@ -1080,10 +1112,49 @@ function previewInvoice(id){
     <div class="inv-services"><div class="acc"></div><div class="sv"><div class="sh">OUR SERVICES</div><div class="sl">${esc(s.services).replace(/\n/g,'<br>')}</div></div></div>
     <div class="inv-thanks">Thank you for choosing ${esc(s.businessName)}</div>
   </div>`;
-  modal('Invoice '+i.number,html,
+}
+function previewInvoice(id){
+  const i=DB.invoices.find(x=>x.id===id);
+  modal('Invoice '+i.number,invoiceDocHtml(id),
     [ {label:'Edit',cls:'line',act:()=>{ closeModal(); openInvoice(id); }},
+      {label:'📄 Save PDF to records',cls:'line',act:()=>saveInvoicePdf(id)},
       {label:'📧 Email to customer',cls:'line',act:()=>emailInvoice(id)},
-      {label:'🖨 Print / Save PDF',cls:'btn',act:()=>printInvoice()} ],'wide');
+      {label:'🖨 Print',cls:'btn',act:()=>printInvoice()} ],'wide');
+}
+async function invoicePdf(id){
+  if(!window.html2canvas || !window.jspdf) throw new Error('PDF library not loaded');
+  const wrap=document.createElement('div');
+  wrap.style.cssText='position:fixed;left:-99999px;top:0;width:780px;background:#fff';
+  wrap.innerHTML=invoiceDocHtml(id);
+  document.body.appendChild(wrap);
+  try{
+    const node=wrap.querySelector('.inv-doc');
+    const canvas=await html2canvas(node,{scale:2,backgroundColor:'#ffffff',useCORS:true,logging:false});
+    const img=canvas.toDataURL('image/jpeg',0.92);
+    const pdf=new window.jspdf.jsPDF({unit:'pt',format:'a4'});
+    const pw=pdf.internal.pageSize.getWidth();
+    const ph=canvas.height*(pw/canvas.width);
+    pdf.addImage(img,'JPEG',0,0,pw,Math.min(ph,pdf.internal.pageSize.getHeight()));
+    const b64=pdf.output('datauristring').split(',')[1].replace(/(.{76})/g,'$1\r\n');
+    return { b64, blob:pdf.output('blob') };
+  } finally { document.body.removeChild(wrap); }
+}
+async function storeInvoicePdf(id, blob){
+  try{ await sb.storage.from('receipts').upload('invoices/'+id+'.pdf', blob, {upsert:true, contentType:'application/pdf'}); return true; }
+  catch(e){ console.warn('store invoice pdf failed:',e); return false; }
+}
+async function openStoredInvoicePdf(id){
+  const {data,error}=await sb.storage.from('receipts').createSignedUrl('invoices/'+id+'.pdf',3600);
+  if(error||!data){ toast('No saved PDF yet — use “Save PDF to records” first'); return; }
+  window.open(data.signedUrl,'_blank');
+}
+async function saveInvoicePdf(id){
+  toast('Generating PDF…');
+  let pdf; try{ pdf=await invoicePdf(id); }catch(e){ return toast('PDF failed: '+(e.message||'')); }
+  const ok=await storeInvoicePdf(id, pdf.blob);
+  // also download a local copy
+  const u=URL.createObjectURL(pdf.blob); const a=document.createElement('a'); a.href=u; a.download='Invoice-'+(DB.invoices.find(x=>x.id===id)||{}).number+'.pdf'; a.click(); URL.revokeObjectURL(u);
+  toast(ok?'Saved to records + downloaded':'Downloaded (storage save failed — check receipts bucket)');
 }
 /* ---- email an invoice from the logged-in Gmail account ---- */
 function b64url(s){
@@ -1125,12 +1196,22 @@ function invoiceEmailHtml(i,c){
       <p style="font-size:13px;color:#555;margin:18px 0 0">Kind regards,<br><b>${esc(me&&me.name?me.name:s.businessName)}</b><br>${esc(s.businessName)}${s.abn?' · ABN '+esc(s.abn):''}</p>
     </div></div>`;
 }
-async function gmailSend(to,subject,html){
-  const mime=['From: '+me.email,'To: '+to,'Subject: '+subject,'MIME-Version: 1.0','Content-Type: text/html; charset=UTF-8','',html].join('\r\n');
+async function gmailSend(to,subject,html,pdfB64,pdfName){
+  let mime;
+  if(pdfB64){
+    const b='mihbnd_'+Math.random().toString(36).slice(2);
+    mime=['From: '+me.email,'To: '+to,'Subject: '+subject,'MIME-Version: 1.0',
+      'Content-Type: multipart/mixed; boundary="'+b+'"','',
+      '--'+b,'Content-Type: text/html; charset=UTF-8','Content-Transfer-Encoding: 7bit','',html,'',
+      '--'+b,'Content-Type: application/pdf; name="'+pdfName+'"','Content-Transfer-Encoding: base64','Content-Disposition: attachment; filename="'+pdfName+'"','',pdfB64,'',
+      '--'+b+'--',''].join('\r\n');
+  } else {
+    mime=['From: '+me.email,'To: '+to,'Subject: '+subject,'MIME-Version: 1.0','Content-Type: text/html; charset=UTF-8','',html].join('\r\n');
+  }
   const r=await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send',{
     method:'POST',headers:{'Authorization':'Bearer '+GAuth.token,'Content-Type':'application/json'},
     body:JSON.stringify({raw:b64url(mime)})});
-  if(r.status===401){ GAuth.token=null; GAuth.connected=false; throw new Error('Google sign-in expired — reconnect in Settings, then try again'); }
+  if(r.status===401){ GAuth.token=null; GAuth.connected=false; localStorage.removeItem('mih_gtok'); throw new Error('Google sign-in expired — reconnect in Settings, then try again'); }
   if(!r.ok) throw new Error('Gmail '+r.status+': '+(await r.text()).slice(0,140));
   return r.json();
 }
@@ -1162,14 +1243,24 @@ async function doSendInvoice(invId){
   const to=val('em_to').trim();
   if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)){ toast('Enter a valid email address'); return; }
   if(to!==(c.email||'')){ c.email=to; try{ await upsertCust(c); toast('Saved email to '+c.name+'’s profile'); }catch(e){ console.warn(e); } }
-  if(!GAuth.token){ closeModal(); if(confirm('Google email not connected. Open your mail app to send instead?')) mailtoInvoice(i,c); else go('settings'); return; }
-  closeModal(); toast('Sending…');
+  if(!GAuth.token){
+    closeModal();
+    if(confirm('Your Google session has expired. Reconnect now to send from the app?\n\n(Cancel to open your phone’s mail app instead — note: no PDF attachment that way.)')){ signIn(); }
+    else { mailtoInvoice(i,c); }
+    return;
+  }
+  closeModal(); toast('Preparing invoice…');
+  let pdf=null;
+  try{ pdf=await invoicePdf(invId); }catch(e){ console.warn('PDF generation failed, sending without attachment:',e); }
+  toast('Sending…');
   try{
-    await gmailSend(to,'Invoice '+i.number+' from '+DB.settings.businessName,invoiceEmailHtml(i,c));
-    if(i.status==='draft'){ i.status='sent'; try{ await upsertInv(i); }catch(e){} }
-    toast('Invoice emailed to '+to);
+    await gmailSend(to,'Invoice '+i.number+' from '+DB.settings.businessName,invoiceEmailHtml(i,c),pdf?pdf.b64:null,'Invoice-'+i.number+'.pdf');
+    i.sentAt=new Date().toISOString(); if(i.status==='draft') i.status='sent';
+    try{ await upsertInv(i); }catch(e){ console.warn(e); }
+    if(pdf) storeInvoicePdf(invId, pdf.blob); // keep a permanent copy in records
+    toast('Invoice emailed to '+to+(pdf?' (PDF attached & saved)':''));
     if(currentView==='invoices'||currentView==='customers') render();
-  }catch(e){ console.error(e); if(confirm('Couldn’t send via Gmail ('+(e.message||'').slice(0,60)+'). Open your mail app instead?')) mailtoInvoice(i,c); }
+  }catch(e){ console.error(e); if(confirm('Couldn’t send via Gmail ('+(e.message||'').slice(0,70)+'). Open your mail app instead?')) mailtoInvoice(i,c); }
 }
 function printInvoice(){
   const doc=document.getElementById('invDoc').outerHTML; const w=window.open('','_blank');
