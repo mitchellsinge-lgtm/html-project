@@ -328,7 +328,7 @@ table.inv-items td{padding:9px 12px;border-bottom:1px solid #eee;font-size:12px}
    MIH CRM — CLOUD (Supabase, shared workspace, Google sign-in)
    ===================================================================== */
 const CFG_KEY='mih_sb_cfg';
-const APP_VERSION='2026.06.29-10';   /* bump this when deploying; phones auto-refresh to match */
+const APP_VERSION='2026.06.29-12';   /* bump this when deploying; phones auto-refresh to match */
 const GST_DIVISOR=11;
 const CAL_SCOPE='https://www.googleapis.com/auth/calendar';
 const OAUTH_SCOPES='https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/gmail.send';
@@ -920,13 +920,32 @@ function openInvoiceFromJob(job){
 }
 function openInvoice(id,presetCust,prefill){
   const inv=id?DB.invoices.find(x=>x.id===id):{number:nextInvNumber(),date:todayISO(),customerId:presetCust||'',project:(prefill&&prefill.project)||'',commenced:'',completed:(prefill&&prefill.completed)||'',status:'draft',lines:(prefill&&prefill.lines&&prefill.lines.length)?prefill.lines:[{desc:'',qty:1,price:0}]};
-  const custOpts=DB.customers.map(c=>`<option value="${c.id}" ${c.id===inv.customerId?'selected':''}>${esc(c.name)}</option>`).join('');
+  const selCust=inv.customerId?custById(inv.customerId):null;
+  const selName=selCust?esc(selCust.name):'';
   editingLines=JSON.parse(JSON.stringify(inv.lines&&inv.lines.length?inv.lines:[{desc:'',qty:1,price:0}]));
   modal(`${id?'Edit':'New'} invoice`,`
     <div class="frow">
       <div class="field"><label>Invoice number</label><input id="i_number" value="${esc(inv.number)}"></div>
       <div class="field"><label>Date</label><input type="date" id="i_date" value="${esc(inv.date)}"></div>
-      <div class="field full"><label>Customer *</label><select id="i_cust"><option value="">— select —</option>${custOpts}</select></div>
+      <div class="field full"><label>Customer *</label>
+        <div class="cust-pick">
+          <input id="j_custsearch" autocomplete="off" placeholder="Search past customers, or type a new name…" value="${selName}" oninput="custSearch(this.value)" onfocus="custSearch(this.value)">
+          <div id="custResults" class="search-results hidden"></div>
+        </div>
+        <input type="hidden" id="j_custId" value="${esc(inv.customerId||'')}">
+        <div id="newCustPanel" class="newcust hidden">
+          <div class="hint" style="margin:0 0 8px;font-weight:600;color:var(--primary)">➕ New customer — saved to your database when you save the invoice</div>
+          <div class="frow" style="margin-bottom:0">
+            <div class="field full"><label>Business / Customer name *</label><input id="nc_name" placeholder="e.g. World Gym Springfield"></div>
+            <div class="field"><label>Contact person</label><input id="nc_contact"></div>
+            <div class="field"><label>Phone</label><input id="nc_phone"></div>
+            <div class="field"><label>Email</label><input id="nc_email"></div>
+            <div class="field"><label>ABN</label><input id="nc_abn"></div>
+            <div class="field full"><label>Site address</label><input id="nc_address" placeholder="28 Technology Drive, Augustine Heights QLD 4300"></div>
+          </div>
+          <button type="button" class="btn line sm" style="margin-top:8px" onclick="cancelNewCust()">Cancel new customer</button>
+        </div>
+      </div>
       <div class="field full"><label>Project / description</label><input id="i_project" value="${esc(inv.project)}" placeholder="e.g. TV Installations & Electrical Works"></div>
       <div class="field"><label>Work commenced</label><input type="date" id="i_comm" value="${esc(inv.commenced)}"></div>
       <div class="field"><label>Work completed</label><input type="date" id="i_comp" value="${esc(inv.completed)}"></div>
@@ -993,7 +1012,19 @@ function bankOptions(selBank, ownerName){
   return arr.map((a,i)=>`<option value="${i}" ${i===sel?'selected':''}>${esc(a.label||a.name)} — BSB ${esc(a.bsb)} · ${esc(a.account)}</option>`).join('');
 }
 async function saveInvoice(id){
-  const customerId=val('i_cust'); if(!customerId){ toast('Select a customer'); return; }
+  // resolve customer from the search picker (existing, inline-new, or exact-name)
+  let customerId=val('j_custId');
+  const np=document.getElementById('newCustPanel');
+  const addingNew = np && !np.classList.contains('hidden') && val('nc_name').trim();
+  if(addingNew){
+    const nc={id:uid(),name:val('nc_name').trim(),contact:val('nc_contact'),phone:val('nc_phone'),email:val('nc_email'),abn:val('nc_abn'),address:val('nc_address'),notes:'',ownerId:me.id,ownerName:me.name};
+    try{ await upsertCust(nc); }catch(e){ return toast('Could not save new customer: '+e.message); }
+    DB.customers.push(nc); customerId=nc.id;
+  } else if(!customerId){
+    const typed=val('j_custsearch').trim().toLowerCase();
+    const m=typed?DB.customers.find(c=>(c.name||'').toLowerCase()===typed):null; if(m) customerId=m.id;
+  }
+  if(!customerId){ toast('Search and pick a customer, or add a new one'); return; }
   const lines=editingLines.filter(l=>l.desc.trim()||Number(l.price)).map(l=>({desc:l.desc,qty:Number(l.qty)||0,price:Number(l.price)||0}));
   if(!lines.length){ toast('Add at least one line item'); return; }
   const ex=id?DB.invoices.find(x=>x.id===id):null;
@@ -1113,17 +1144,31 @@ function mailtoInvoice(i,c){
   const url='mailto:'+encodeURIComponent(c.email||'')+'?subject='+encodeURIComponent('Invoice '+i.number+' from '+s.businessName)+'&body='+encodeURIComponent(body);
   window.location.href=url;
 }
-async function emailInvoice(id){
+function emailInvoice(id){
   const i=DB.invoices.find(x=>x.id===id); if(!i) return;
-  const c=custById(i.customerId)||{};
-  if(!c.email){ toast('Add an email address to this customer first'); return; }
-  if(!GAuth.token){ if(confirm('Google email not connected. Open your mail app to send instead?')) mailtoInvoice(i,c); else { go('settings'); } return; }
-  toast('Sending…');
+  const c=custById(i.customerId);
+  if(!c){ toast('No customer on this invoice'); return; }
+  modal('Send invoice '+i.number,`
+    <div class="field full"><label>Send to — ${esc(c.name)}'s email</label>
+      <input id="em_to" type="email" inputmode="email" value="${esc(c.email||'')}" placeholder="customer@email.com"></div>
+    <div class="hint" style="margin-top:8px">${c.email?'This is the email saved on '+esc(c.name)+'’s profile — please check it’s correct.':'⚠ No email is saved for '+esc(c.name)+' yet — add one above.'} Any change here is saved to their profile.</div>
+    <div class="hint" style="margin-top:12px">Sending from <b>${esc(me.email)}</b> · Total ${money(invTotal(i))}${DB.settings.reviewUrl?' · review link included':''}</div>`,
+    [ {label:'Cancel',cls:'line',act:()=>closeModal()},
+      {label:'📧 Send invoice',cls:'btn',act:()=>doSendInvoice(i.id)} ]);
+  setTimeout(()=>{ const el=document.getElementById('em_to'); if(el&&!el.value) el.focus(); },50);
+}
+async function doSendInvoice(invId){
+  const i=DB.invoices.find(x=>x.id===invId); const c=custById(i.customerId);
+  const to=val('em_to').trim();
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)){ toast('Enter a valid email address'); return; }
+  if(to!==(c.email||'')){ c.email=to; try{ await upsertCust(c); toast('Saved email to '+c.name+'’s profile'); }catch(e){ console.warn(e); } }
+  if(!GAuth.token){ closeModal(); if(confirm('Google email not connected. Open your mail app to send instead?')) mailtoInvoice(i,c); else go('settings'); return; }
+  closeModal(); toast('Sending…');
   try{
-    await gmailSend(c.email,'Invoice '+i.number+' from '+DB.settings.businessName,invoiceEmailHtml(i,c));
+    await gmailSend(to,'Invoice '+i.number+' from '+DB.settings.businessName,invoiceEmailHtml(i,c));
     if(i.status==='draft'){ i.status='sent'; try{ await upsertInv(i); }catch(e){} }
-    toast('Invoice emailed to '+c.email);
-    closeModal(); if(currentView==='invoices') render();
+    toast('Invoice emailed to '+to);
+    if(currentView==='invoices'||currentView==='customers') render();
   }catch(e){ console.error(e); if(confirm('Couldn’t send via Gmail ('+(e.message||'').slice(0,60)+'). Open your mail app instead?')) mailtoInvoice(i,c); }
 }
 function printInvoice(){
