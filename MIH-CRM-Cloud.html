@@ -330,7 +330,7 @@ table.inv-items td{padding:9px 12px;border-bottom:1px solid #eee;font-size:12px}
    MIH CRM — CLOUD (Supabase, shared workspace, Google sign-in)
    ===================================================================== */
 const CFG_KEY='mih_sb_cfg';
-const APP_VERSION='2026.06.29-17';   /* bump this when deploying; phones auto-refresh to match */
+const APP_VERSION='2026.06.29-18';   /* bump this when deploying; phones auto-refresh to match */
 const GST_DIVISOR=11;
 const CAL_SCOPE='https://www.googleapis.com/auth/calendar';
 const OAUTH_SCOPES='https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/gmail.send';
@@ -1234,8 +1234,9 @@ async function gmailSend(to,subject,html,text,pdfB64,pdfName){
     body:JSON.stringify({raw:b64url(mime)})});
   if(r.status===401){ GAuth.token=null; GAuth.connected=false; localStorage.removeItem('mih_gtok'); throw new Error('Google sign-in expired — sign out and back in, then try again'); }
   if(!r.ok){
-    const t=await r.text(); let detail=t.slice(0,160);
-    if(r.status===403){
+    const t=await r.text(); let detail=t.slice(0,300);
+    if(r.status===400 && /recipient/i.test(t)) detail='The customer’s email address looks invalid or empty. Check it’s a real, correctly-typed address and try again.';
+    else if(r.status===403){
       if(/has not been used|is disabled|accessNotConfigured|SERVICE_DISABLED/i.test(t)) detail='Gmail API is not enabled in your Google Cloud project. Enable it (APIs & Services → Library → Gmail API → Enable), then sign out/in.';
       else if(/insufficient|scope|ACCESS_TOKEN_SCOPE/i.test(t)) detail='Email permission not granted. Sign out and back in and approve “Send email on your behalf”.';
     }
