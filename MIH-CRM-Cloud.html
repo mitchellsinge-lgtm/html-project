@@ -330,7 +330,7 @@ table.inv-items td{padding:9px 12px;border-bottom:1px solid #eee;font-size:12px}
    MIH CRM — CLOUD (Supabase, shared workspace, Google sign-in)
    ===================================================================== */
 const CFG_KEY='mih_sb_cfg';
-const APP_VERSION='2026.06.29-18';   /* bump this when deploying; phones auto-refresh to match */
+const APP_VERSION='2026.06.29-19';   /* bump this when deploying; phones auto-refresh to match */
 const GST_DIVISOR=11;
 const CAL_SCOPE='https://www.googleapis.com/auth/calendar';
 const OAUTH_SCOPES='https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/gmail.send';
@@ -1264,8 +1264,8 @@ function emailInvoice(id){
 }
 async function doSendInvoice(invId){
   const i=DB.invoices.find(x=>x.id===invId); const c=custById(i.customerId);
-  const to=val('em_to').trim();
-  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)){ toast('Enter a valid email address'); return; }
+  const to=(val('em_to')||'').replace(/[​-‍﻿ ]/g,'').trim();
+  if(!/^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$/.test(to)){ toast('Enter a valid email address (e.g. name@gmail.com)'); return; }
   if(to!==(c.email||'')){ c.email=to; try{ await upsertCust(c); toast('Saved email to '+c.name+'’s profile'); }catch(e){ console.warn(e); } }
   if(!GAuth.token){
     closeModal();
@@ -1284,7 +1284,7 @@ async function doSendInvoice(invId){
     if(pdf) storeInvoicePdf(invId, pdf.blob); // keep a permanent copy in records
     toast('Invoice emailed to '+to+(pdf?' (PDF attached & saved)':''));
     if(currentView==='invoices'||currentView==='customers') render();
-  }catch(e){ console.error(e); if(confirm('Couldn’t send via Gmail ('+(e.message||'').slice(0,70)+'). Open your mail app instead?')) mailtoInvoice(i,c); }
+  }catch(e){ console.error(e); if(confirm('Couldn’t send to:\n'+to+'\n\n'+(e.message||'').slice(0,200)+'\n\nOpen your mail app instead?')) mailtoInvoice(i,c); }
 }
 function printInvoice(){
   const doc=document.getElementById('invDoc').outerHTML; const w=window.open('','_blank');
