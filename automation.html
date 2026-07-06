@@ -321,6 +321,11 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   .fade-in.visible { opacity: 1; transform: translateY(0); }
 
   /* ===================== RESPONSIVE ===================== */
+  /* Prevent horizontal scroll on mobile */
+  html, body { overflow-x: hidden; max-width: 100%; }
+  img, svg, video, iframe { max-width: 100%; height: auto; }
+  section, header, footer { max-width: 100vw; overflow-x: hidden; }
+
   @media (max-width: 900px) {
     .feature-grid, .steps-grid, .packages-grid, .quote-grid { grid-template-columns: 1fr; }
     .package-card.featured { transform: none; }
@@ -337,7 +342,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   }
   @media (max-width: 600px) {
     .compare-table th, .compare-table td { padding: 0.7rem 0.6rem; font-size: 0.85rem; }
-    .top-bar-inner { justify-content: center; }
+    .top-bar-inner { justify-content: center; flex-wrap: wrap; }
+    .container { padding-left: 1rem; padding-right: 1rem; }
   }
 </style>
 </head>
@@ -360,7 +366,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <!-- ===================== TOP BAR ===================== -->
 <div class="top-bar">
   <div class="container top-bar-inner">
-    <span>&#9203; Mon–Sat 7am–7pm &middot; South East QLD installs</span>
+    <span>&#9203; Mon–Sat 7am–7pm &middot; Brisbane &amp; Gold Coast installs</span>
     <span><strong>Call us</strong> <a href="tel:+61480568180">0480 568 180</a></span>
   </div>
 </div>
@@ -688,7 +694,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <div class="quote-copy fade-in">
       <h2>Ready to bring your home together?</h2>
       <p>Book a free, no-obligation quote today. Tell us a bit about your place and we'll get back the same day during business hours.</p>
-      <p>South East QLD installs &mdash; from $3,990. No pressure, no obligation.</p>
+      <p>Brisbane &amp; Gold Coast installs &mdash; from $3,990. No pressure, no obligation.</p>
       <a href="tel:+61480568180" class="phone-cta">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
         Or call Nate &mdash; 0480 568 180
@@ -734,7 +740,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           <span class="logo-mark" role="img" aria-label="MIH logo"></span>
           MIH Automation
         </h3>
-        <p>Smart home automation by Massive Integrated Homes. Brisbane Southside &mdash; one app, every brand, no rebuild.</p>
+        <p>Smart home automation by Massive Integrated Homes. All of Brisbane &amp; the Gold Coast &mdash; one app, every brand, no rebuild.</p>
       </div>
       <div class="footer-meta">
         <p><strong>Brisbane, QLD</strong></p>
