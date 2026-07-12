@@ -330,10 +330,10 @@ table.inv-items td{padding:9px 12px;border-bottom:1px solid #eee;font-size:12px}
    MIH CRM — CLOUD (Supabase, shared workspace, Google sign-in)
    ===================================================================== */
 const CFG_KEY='mih_sb_cfg';
-const APP_VERSION='2026.06.29-20';   /* bump this when deploying; phones auto-refresh to match */
+const APP_VERSION='2026.06.29-22';   /* bump this when deploying; phones auto-refresh to match */
 const GST_DIVISOR=11;
 const CAL_SCOPE='https://www.googleapis.com/auth/calendar';
-const OAUTH_SCOPES='https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/gmail.send';
+const OAUTH_SCOPES='https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/spreadsheets';
 const DEFAULT_SETTINGS={
   businessName:'Massive Integrated Homes', tagline:'SMARTER HOMES. BETTER LIVING.',
   mobile:'0480 568 180', email:'Nathaniel@massiveintegratedhomes.com.au',
@@ -344,8 +344,10 @@ const DEFAULT_SETTINGS={
     {label:'Mitchell Singe', name:'Mitchell Singe', bsb:'067-873', account:'1997 6285'}
   ],
   services:'TV Wall Mounting | Home Automation | Smart Home Integration | Security & CCTV\nWiFi & Networking | Multi-Room Audio | Home Theatre | Commercial AV',
-  calendarEmbed:'', googleCalendarId:'', lastSync:'', reviewUrl:'https://g.page/r/CbVjKnqoixi-EAE/review'
+  calendarEmbed:'', googleCalendarId:'', lastSync:'', reviewUrl:'https://g.page/r/CbVjKnqoixi-EAE/review',
+  googleSheetId:'https://docs.google.com/spreadsheets/d/1ZHmpAxzOo2GPfGIzrReMztPKNP3MBYi23neekylLZjc/edit', lastSheetSync:''
 };
+const DEFAULT_SHEET='1ZHmpAxzOo2GPfGIzrReMztPKNP3MBYi23neekylLZjc';
 let sb=null, me=null;
 let DB={customers:[],jobs:[],invoices:[],expenses:[],loans:[],loanEntries:[],members:[],settings:{...DEFAULT_SETTINGS},counters:{invoice:2,quote:0},financialsReady:false};
 const EXP_CATS=['Materials','Subcontractor','Fuel','Vehicle','Tools & Equipment','Subscriptions','Insurance','Phone & Internet','Marketing','Office','Bank/Fees','Other'];
@@ -1354,6 +1356,11 @@ function viewSettings(){
       <button class="btn ghost sm" onclick="addBankRow()" style="margin-top:2px">+ Add bank account</button>
       <div class="section-head" style="margin-top:18px"><h2>Google Calendar</h2></div>
       <div id="syncCard"></div>
+      <div class="section-head" style="margin-top:18px"><h2>Google Sheet (finances)</h2></div>
+      <div class="field full"><label>Google Sheet link or ID</label>
+        <input id="s_sheet" value="${esc(s.googleSheetId||'')}" placeholder="https://docs.google.com/spreadsheets/d/…">
+        <div class="hint">Create a blank Google Sheet, share it with you &amp; Nate, and paste its link here. Then use <b>Financials → Sync to Google Sheet</b>. One-time: enable the <b>Google Sheets API</b> in Google Cloud (APIs &amp; Services → Library) and sign out/in so the app gets sheet permission.</div>
+      </div>
     </div>
   </div>
   <div class="card pad" style="margin-top:18px">
@@ -1387,7 +1394,7 @@ function removeBankRow(i){ collectBanks(); const arr=bankList().slice(); arr.spl
 async function saveSettings(){
   collectBanks(); const first=bankList()[0]||{};
   Object.assign(DB.settings,{businessName:val('s_name'),tagline:val('s_tag'),mobile:val('s_mobile'),abn:val('s_abn'),
-    email:val('s_email'),website:val('s_web'),services:val('s_services'),reviewUrl:val('s_review'),
+    email:val('s_email'),website:val('s_web'),services:val('s_services'),reviewUrl:val('s_review'),googleSheetId:val('s_sheet'),
     bankName:first.name||'',bsb:first.bsb||'',accountNumber:first.account||''});
   try{ await saveSettingsRow(); toast('Settings saved'); }catch(e){ toast('Save failed: '+e.message); }
 }
@@ -1634,6 +1641,76 @@ function exportExpenses(){
   const b=new Blob([csv],{type:'text/csv'}); const u=URL.createObjectURL(b); const a=document.createElement('a'); a.href=u; a.download='MIH-expenses-'+todayISO()+'.csv'; a.click(); URL.revokeObjectURL(u);
   toast('Expenses exported (CSV)');
 }
+/* ---- Google Sheets sync ---- */
+const r2=n=>Math.round((Number(n)||0)*100)/100;
+function sheetId(){ const raw=(DB.settings.googleSheetId||'').trim(); const m=/\/d\/([a-zA-Z0-9-_]+)/.exec(raw); return (m?m[1]:raw)||DEFAULT_SHEET; }
+async function gsheet(path,method,body){
+  if(!GAuth.token) throw new Error('Google not connected — sign out and back in.');
+  const r=await fetch('https://sheets.googleapis.com/v4/spreadsheets/'+path,{method:method||'GET',headers:{'Authorization':'Bearer '+GAuth.token,'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});
+  if(r.status===401){ GAuth.token=null; GAuth.connected=false; localStorage.removeItem('mih_gtok'); throw new Error('Google sign-in expired — sign out and back in.'); }
+  if(!r.ok){ const t=await r.text();
+    if(r.status===403 && /disabled|has not been used|SERVICE_DISABLED/i.test(t)) throw new Error('Google Sheets API not enabled. Enable it in Google Cloud (APIs & Services → Library → Google Sheets API), then sign out/in.');
+    if(r.status===404) throw new Error('Sheet not found — check the Sheet link/ID in Settings and that this Google account can edit it.');
+    throw new Error('Sheets '+r.status+': '+t.slice(0,150));
+  }
+  return r.status===204?null:r.json();
+}
+async function ensureTabs(id,titles){
+  const data=await gsheet(id+'?fields=sheets.properties.title');
+  const have=(data.sheets||[]).map(s=>s.properties.title);
+  const missing=titles.filter(t=>!have.includes(t));
+  if(missing.length) await gsheet(id+':batchUpdate','POST',{requests:missing.map(t=>({addSheet:{properties:{title:t}}}))});
+}
+async function writeTab(id,title,rows){
+  await gsheet(id+'/values/'+encodeURIComponent(title)+':clear','POST',{});
+  await gsheet(id+'/values/'+encodeURIComponent(title)+'!A1?valueInputOption=RAW','PUT',{values:rows});
+}
+function sumSheetRows(){
+  const paidRev=DB.invoices.filter(i=>i.type!=='quote'&&i.status==='paid').reduce((s,i)=>s+invTotal(i),0);
+  const totalExp=DB.expenses.reduce((s,e)=>s+e.amount,0);
+  const outstanding=DB.invoices.filter(i=>i.type!=='quote'&&i.status!=='paid').reduce((s,i)=>s+invTotal(i),0);
+  const partnerBal=DB.loans.filter(l=>l.type==='partner').reduce((s,l)=>s+loanBalance(l.id),0);
+  const bizDebt=DB.loans.filter(l=>l.type!=='partner').reduce((s,l)=>s+loanBalance(l.id),0);
+  return [['MIH Finances — updated',new Date().toLocaleString('en-AU')],[],
+    ['Revenue (paid invoices)',r2(paidRev)],['Total expenses',r2(totalExp)],['Net profit',r2(paidRev-totalExp)],
+    ['Outstanding (unpaid invoices)',r2(outstanding)],['Business loans owing',r2(bizDebt)],['Partner loan — Nate owes Mitch',r2(partnerBal)]];
+}
+function expSheetRows(){
+  const rows=[['Date','Category','Description','Job','Amount','GST inc','Recurring','Receipt','By']];
+  [...DB.expenses].sort((a,b)=>(a.date||'').localeCompare(b.date||'')).forEach(e=>rows.push([e.date||'',e.category||'',e.description||'',(e.jobId?(DB.jobs.find(j=>j.id===e.jobId)||{}).title||'':''),r2(e.amount),e.gstInc?'Yes':'No',e.recurring||'',e.receiptPath?'Yes':'',e.ownerName||'']));
+  return rows;
+}
+function invSheetRows(type){
+  const q=type==='quote';
+  const rows=[[q?'Quote':'Invoice','Date','Customer','Project','Status','Sent','Total','By']];
+  DB.invoices.filter(i=> q? i.type==='quote' : i.type!=='quote').sort((a,b)=>(a.date||'').localeCompare(b.date||'')).forEach(i=>rows.push([i.number||'',i.date||'',custName(i.customerId),i.project||'',i.status||'',i.sentAt?new Date(i.sentAt).toLocaleString('en-AU'):'',r2(invTotal(i)),i.ownerName||'']));
+  return rows;
+}
+function loanSheetRows(){
+  const rows=[['Loan','Type','Balance owing','Notes']];
+  DB.loans.forEach(l=>rows.push([l.name||'',l.type||'business',r2(loanBalance(l.id)),l.notes||'']));
+  return rows;
+}
+let sheetSyncing=false;
+async function sheetsSync(){
+  if(sheetSyncing) return;
+  if(!DB.financialsReady){ toast('Set up financials first (financials-schema.sql)'); return; }
+  const id=sheetId(); if(!id){ toast('Paste your Google Sheet link in Settings first'); go('settings'); return; }
+  if(!GAuth.token){ toast('Reconnect Google to sync the sheet'); go('settings'); return; }
+  sheetSyncing=true; updateSheetStatus('Syncing…');
+  try{
+    await ensureTabs(id,['Summary','Expenses','Invoices','Quotes','Loans']);
+    await writeTab(id,'Summary',sumSheetRows());
+    await writeTab(id,'Expenses',expSheetRows());
+    await writeTab(id,'Invoices',invSheetRows('invoice'));
+    await writeTab(id,'Quotes',invSheetRows('quote'));
+    await writeTab(id,'Loans',loanSheetRows());
+    DB.settings.lastSheetSync=new Date().toISOString(); await saveSettingsRow();
+    toast('Google Sheet updated');
+  }catch(e){ console.error(e); toast('Sheet sync failed: '+(e.message||'').slice(0,90)); }
+  finally{ sheetSyncing=false; updateSheetStatus(); }
+}
+function updateSheetStatus(msg){ const el=document.getElementById('sheetStatus'); if(el) el.textContent=msg||(DB.settings.lastSheetSync?'Last synced '+new Date(DB.settings.lastSheetSync).toLocaleString('en-AU'):'Not synced yet'); }
 function viewFinancials(){
   document.getElementById('topAction').innerHTML='';
   const c=document.getElementById('content');
@@ -1651,6 +1728,11 @@ function viewFinancials(){
      ${stat('Expenses',money(totalExp),DB.expenses.length+' recorded','▣')}
      ${stat('Net profit',money(net),'revenue − expenses','✓')}
      ${stat('Owed to Mitch',money(partnerBal),'Nate ↔ Mitch balance','◍')}
+   </div>
+   <div class="card pad" style="margin-bottom:18px">
+     <div class="section-head"><h2>Google Sheet</h2><a href="https://docs.google.com/spreadsheets/d/${esc(sheetId())}" target="_blank" class="btn line sm">Open sheet ↗</a></div>
+     <button class="btn" onclick="sheetsSync()">⇪ Sync finances to Google Sheet</button> <span class="hint" id="sheetStatus" style="margin-left:8px">${DB.settings.lastSheetSync?'Last synced '+new Date(DB.settings.lastSheetSync).toLocaleString('en-AU'):'Not synced yet'}</span>
+     <div class="hint" style="margin-top:8px">Writes/refreshes the <b>Summary, Expenses, Invoices, Quotes</b> and <b>Loans</b> tabs. Other tabs in the sheet are left untouched.</div>
    </div>
    <div class="card pad" style="margin-bottom:18px">
      <div class="section-head"><h2>Partner loan · Nate ↔ Mitch</h2><button class="btn ghost sm" onclick="openLoan()">+ Add loan</button></div>
