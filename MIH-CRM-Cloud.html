@@ -330,7 +330,7 @@ table.inv-items td{padding:9px 12px;border-bottom:1px solid #eee;font-size:12px}
    MIH CRM — CLOUD (Supabase, shared workspace, Google sign-in)
    ===================================================================== */
 const CFG_KEY='mih_sb_cfg';
-const APP_VERSION='2026.06.29-23';   /* bump this when deploying; phones auto-refresh to match */
+const APP_VERSION='2026.06.29-24';   /* bump this when deploying; phones auto-refresh to match */
 const GST_DIVISOR=11;
 const CAL_SCOPE='https://www.googleapis.com/auth/calendar';
 const OAUTH_SCOPES='https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/spreadsheets';
@@ -487,8 +487,8 @@ const rowToJob=r=>({id:r.id,title:r.title,customerId:r.customer_id,date:r.date,t
 const jobToRow=j=>({id:j.id,title:j.title,customer_id:j.customerId||null,date:j.date||null,time:j.time||null,duration:j.duration||2,status:j.status,notes:j.notes,value:(j.value!=null&&j.value!==''?Number(j.value):null),google_event_id:j.googleEventId||null,calendar_id:j.calendarId||null,source:j.source||'local',owner_id:j.ownerId,owner_name:j.ownerName,updated_at:new Date().toISOString()});
 const rowToExp=r=>({id:r.id,jobId:r.job_id,date:r.date,category:r.category,description:r.description,amount:Number(r.amount)||0,gstInc:r.gst_inc!==false,recurring:r.recurring||'',receiptPath:r.receipt_path||'',ownerId:r.owner_id,ownerName:r.owner_name});
 const expToRow=e=>({id:e.id,job_id:e.jobId||null,date:e.date||null,category:e.category,description:e.description,amount:e.amount||0,gst_inc:e.gstInc!==false,recurring:e.recurring||null,receipt_path:e.receiptPath||null,owner_id:e.ownerId,owner_name:e.ownerName,updated_at:new Date().toISOString()});
-const rowToLoan=r=>({id:r.id,name:r.name,type:r.type||'business',openingBalance:Number(r.opening_balance)||0,notes:r.notes||'',ownerId:r.owner_id,ownerName:r.owner_name});
-const loanToRow=l=>({id:l.id,name:l.name,type:l.type||'business',opening_balance:l.openingBalance||0,notes:l.notes||'',owner_id:l.ownerId,owner_name:l.ownerName,updated_at:new Date().toISOString()});
+const rowToLoan=r=>({id:r.id,name:r.name,type:r.type||'business',openingBalance:Number(r.opening_balance)||0,notes:r.notes||'',plan:r.plan||null,ownerId:r.owner_id,ownerName:r.owner_name});
+const loanToRow=l=>({id:l.id,name:l.name,type:l.type||'business',opening_balance:l.openingBalance||0,notes:l.notes||'',plan:l.plan||null,owner_id:l.ownerId,owner_name:l.ownerName,updated_at:new Date().toISOString()});
 const rowToLE=r=>({id:r.id,loanId:r.loan_id,date:r.date,kind:r.kind||'repayment',amount:Number(r.amount)||0,note:r.note||'',ownerId:r.owner_id,ownerName:r.owner_name});
 const leToRow=x=>({id:x.id,loan_id:x.loanId,date:x.date||null,kind:x.kind||'repayment',amount:x.amount||0,note:x.note||'',owner_id:x.ownerId,owner_name:x.ownerName});
 const rowToInv=r=>({id:r.id,number:r.number,date:r.date,customerId:r.customer_id,project:r.project,commenced:r.commenced,completed:r.completed,status:r.status,lines:r.lines||[],bank:r.bank||null,sentAt:r.sent_at||null,type:r.type||'invoice',ownerId:r.owner_id,ownerName:r.owner_name});
@@ -533,7 +533,12 @@ async function upsertJob(j){
   if(error) throw error;
 }
 async function upsertExp(e){ const {error}=await sb.from('expenses').upsert(expToRow(e)); if(error)throw error; }
-async function upsertLoan(l){ const {error}=await sb.from('loans').upsert(loanToRow(l)); if(error)throw error; }
+async function upsertLoan(l){
+  const row=loanToRow(l);
+  let {error}=await sb.from('loans').upsert(row);
+  if(error && /plan/i.test(error.message||'')){ delete row.plan; const r2=await sb.from('loans').upsert(row); error=r2.error; if(!error) toast('Saved — run migration-add-loanplan.sql to store the repayment plan'); }
+  if(error) throw error;
+}
 async function upsertLE(x){ const {error}=await sb.from('loan_entries').upsert(leToRow(x)); if(error)throw error; }
 async function uploadReceipt(file){
   const ext=((file.name||'jpg').split('.').pop()||'jpg').toLowerCase();
@@ -1567,18 +1572,58 @@ function openLoan(id){
       <div class="field"><label>Type</label><select id="l_type">
         <option value="business" ${l.type!=='partner'?'selected':''}>Business loan</option>
         <option value="partner" ${l.type==='partner'?'selected':''}>Partner loan (Nate ↔ Mitch)</option></select></div>
-      <div class="field"><label>Current balance owing ($)</label><input type="number" step="0.01" id="l_open" value="${esc(l.openingBalance||0)}"></div>
+      <div class="field"><label>Current balance owing ($) <span class="hint">(ignored if a plan is set below)</span></label><input type="number" step="0.01" id="l_open" value="${esc(l.openingBalance||0)}"></div>
       <div class="field full"><label>Notes</label><textarea id="l_notes">${esc(l.notes)}</textarea></div>
     </div>
-    <div class="hint">For the partner loan, a positive balance means <b>Nate owes Mitch</b>. Use “+ Advance” to add to it and “− Repayment” to pay it down.</div>`,
+    <div class="hint">For the partner loan, a positive balance means <b>Nate owes Mitch</b>. Use “+ Advance” to add to it and “− Repayment” to pay it down.</div>
+    <div class="li-item" style="margin-top:14px;background:var(--primary-soft);border-color:var(--line-strong)">
+      <b>Repayment plan (optional)</b>
+      <div class="hint" style="margin:4px 0 8px">For a structured loan (e.g. the $40k Nate ↔ Mitch loan). We work out the monthly payment; if a payment is missed it stays in the balance and the remaining payments increase to still finish on time.</div>
+      <div class="frow" style="margin-bottom:0">
+        <div class="field"><label>Loan amount ($)</label><input type="number" step="0.01" id="l_principal" value="${esc(l.plan?l.plan.principal:'')}" placeholder="40000" oninput="updPlanPreview()"></div>
+        <div class="field"><label>Interest % per year (simple)</label><input type="number" step="0.1" id="l_rate" value="${esc(l.plan?l.plan.ratePct:'')}" placeholder="10" oninput="updPlanPreview()"></div>
+        <div class="field"><label>Term (years)</label><input type="number" step="0.5" id="l_years" value="${esc(l.plan?l.plan.years:'')}" placeholder="5" oninput="updPlanPreview()"></div>
+        <div class="field"><label>First payment date</label><input type="date" id="l_start" value="${esc(l.plan?l.plan.startDate:todayISO())}"></div>
+      </div>
+      <div id="planPreview" class="hint" style="margin-top:8px"></div>
+    </div>`,
     [ id?{label:'Delete',cls:'danger',act:async()=>{ if(confirm('Delete loan and its history?')){ await delRow('loans',id); DB.loans=DB.loans.filter(x=>x.id!==id); DB.loanEntries=DB.loanEntries.filter(x=>x.loanId!==id); closeModal(); rerenderFin(); }}}:null,
       {label:'Save loan',cls:'btn',act:async()=>{
         const name=val('l_name').trim(); if(!name){ toast('Name required'); return; }
         const ex=id?DB.loans.find(x=>x.id===id):null;
-        const obj={id:id||uid(),name,type:val('l_type'),openingBalance:parseFloat(val('l_open'))||0,notes:val('l_notes'),ownerId:ex?ex.ownerId:me.id,ownerName:ex?ex.ownerName:me.name};
+        const P=parseFloat(val('l_principal'))||0;
+        let plan=null;
+        if(P>0){ const rate=parseFloat(val('l_rate'))||0, yrs=parseFloat(val('l_years'))||0;
+          const total=P+P*(rate/100)*yrs; const months=Math.round(yrs*12)||1;
+          plan={principal:P,ratePct:rate,years:yrs,termMonths:months,startDate:val('l_start')||todayISO(),total:r2(total),monthlyBase:r2(total/months)};
+        }
+        const obj={id:id||uid(),name,type:val('l_type'),notes:val('l_notes'),plan,
+          openingBalance: plan ? plan.total : (parseFloat(val('l_open'))||0),
+          ownerId:ex?ex.ownerId:me.id,ownerName:ex?ex.ownerName:me.name};
         try{ await upsertLoan(obj); }catch(e){ return toast('Save failed: '+e.message); }
         if(ex) Object.assign(ex,obj); else DB.loans.push(obj); closeModal(); rerenderFin();
       }} ]);
+  updPlanPreview();
+}
+function updPlanPreview(){
+  const el=document.getElementById('planPreview'); if(!el) return;
+  const P=parseFloat(val('l_principal'))||0, rate=parseFloat(val('l_rate'))||0, yrs=parseFloat(val('l_years'))||0;
+  if(!(P>0&&yrs>0)){ el.textContent='Leave blank for a simple loan (just a balance).'; return; }
+  const total=P+P*(rate/100)*yrs; const months=Math.round(yrs*12)||1;
+  el.innerHTML=`= ${money(total)} total over ${months} months · base payment <b>${money(total/months)}/mo</b>. Saving sets the balance owing to ${money(total)}.`;
+}
+function planStatus(l){
+  const p=l.plan; if(!p) return null;
+  const outstanding=Math.max(0,loanBalance(l.id));
+  const start=new Date((p.startDate||todayISO())+'T00:00:00'); const now=new Date();
+  let elapsed=(now.getFullYear()-start.getFullYear())*12+(now.getMonth()-start.getMonth());
+  elapsed=Math.max(0,Math.min(p.termMonths,elapsed));
+  const monthsRemaining=Math.max(1,p.termMonths-elapsed);
+  const dueThisMonth=Math.min(outstanding, outstanding/monthsRemaining);
+  const paid=(p.total||0)-outstanding;
+  const expectedPaid=Math.min(p.total, (p.monthlyBase||0)*elapsed);
+  const behind=Math.max(0, expectedPaid-paid);
+  return {outstanding,monthsRemaining,dueThisMonth:r2(dueThisMonth),paid:r2(paid),total:p.total,monthlyBase:p.monthlyBase,behind:r2(behind)};
 }
 function openLoanEntry(loanId,kind){
   modal(kind==='advance'?'Add advance (increase owed)':'Record repayment',`
@@ -1596,12 +1641,17 @@ function openLoanEntry(loanId,kind){
 }
 function loanCard(l){
   const bal=loanBalance(l.id);
+  const ps=l.plan?planStatus(l):null;
   const entries=DB.loanEntries.filter(e=>e.loanId===l.id).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
   return `<div style="border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:10px;background:#fff">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">
       <div><div class="t-name" style="font-size:15px">${esc(l.name)}</div>${l.notes?`<div class="muted" style="font-size:12px">${esc(l.notes)}</div>`:''}</div>
       <div style="text-align:right"><div class="muted" style="font-size:11px">Owing</div><div style="font-family:'Space Grotesk';font-weight:800;font-size:20px;color:${bal>0.005?'var(--danger)':'var(--ok)'}">${money(bal)}</div></div>
     </div>
+    ${ps?`<div style="margin-top:10px;padding:12px;background:var(--primary-soft);border-radius:10px;font-size:13px;line-height:1.7">
+      <div style="font-weight:700">This month's payment: ${money(ps.dueThisMonth)}${ps.behind>0.5?` <span style="color:var(--danger)">↑ increased — behind by ${money(ps.behind)}</span>`:` <span class="muted">(base ${money(ps.monthlyBase)})</span>`}</div>
+      <div class="muted">Repaid ${money(ps.paid)} of ${money(ps.total)} · ${ps.monthsRemaining} month${ps.monthsRemaining==1?'':'s'} left</div>
+    </div>`:''}
     <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn line sm" onclick="openLoanEntry('${l.id}','repayment')">− Repayment</button>
       ${l.type==='partner'?`<button class="btn line sm" onclick="openLoanEntry('${l.id}','advance')">+ Advance</button>`:''}
