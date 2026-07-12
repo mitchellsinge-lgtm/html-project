@@ -330,7 +330,7 @@ table.inv-items td{padding:9px 12px;border-bottom:1px solid #eee;font-size:12px}
    MIH CRM — CLOUD (Supabase, shared workspace, Google sign-in)
    ===================================================================== */
 const CFG_KEY='mih_sb_cfg';
-const APP_VERSION='2026.06.29-19';   /* bump this when deploying; phones auto-refresh to match */
+const APP_VERSION='2026.06.29-20';   /* bump this when deploying; phones auto-refresh to match */
 const GST_DIVISOR=11;
 const CAL_SCOPE='https://www.googleapis.com/auth/calendar';
 const OAUTH_SCOPES='https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/gmail.send';
@@ -347,7 +347,7 @@ const DEFAULT_SETTINGS={
   calendarEmbed:'', googleCalendarId:'', lastSync:'', reviewUrl:'https://g.page/r/CbVjKnqoixi-EAE/review'
 };
 let sb=null, me=null;
-let DB={customers:[],jobs:[],invoices:[],expenses:[],loans:[],loanEntries:[],members:[],settings:{...DEFAULT_SETTINGS},counters:{invoice:2},financialsReady:false};
+let DB={customers:[],jobs:[],invoices:[],expenses:[],loans:[],loanEntries:[],members:[],settings:{...DEFAULT_SETTINGS},counters:{invoice:2,quote:0},financialsReady:false};
 const EXP_CATS=['Materials','Subcontractor','Fuel','Vehicle','Tools & Equipment','Subscriptions','Insurance','Phone & Internet','Marketing','Office','Bank/Fees','Other'];
 const GAuth={token:null,connected:false,calendars:[],needReconnect:false};
 
@@ -458,7 +458,8 @@ function renderUserChip(){
       <div class="ohead">Create</div>
       <button onclick="closeOptions();openJob()">📅 Schedule job</button>
       <button onclick="closeOptions();openCustomer()">➕ Add customer</button>
-      <button onclick="closeOptions();openInvoice()">🧾 New invoice</button>
+      <button onclick="closeOptions();invMode='invoice';openInvoice(null,null,null,'invoice')">🧾 New invoice</button>
+      <button onclick="closeOptions();invMode='quote';openInvoice(null,null,null,'quote')">❝ New quote</button>
       <button onclick="closeOptions();openExpense()">＄ Add expense</button>
       <div class="optsep"></div>
       <button onclick="closeOptions();go('financials')">＄ Financials</button>
@@ -488,8 +489,8 @@ const rowToLoan=r=>({id:r.id,name:r.name,type:r.type||'business',openingBalance:
 const loanToRow=l=>({id:l.id,name:l.name,type:l.type||'business',opening_balance:l.openingBalance||0,notes:l.notes||'',owner_id:l.ownerId,owner_name:l.ownerName,updated_at:new Date().toISOString()});
 const rowToLE=r=>({id:r.id,loanId:r.loan_id,date:r.date,kind:r.kind||'repayment',amount:Number(r.amount)||0,note:r.note||'',ownerId:r.owner_id,ownerName:r.owner_name});
 const leToRow=x=>({id:x.id,loan_id:x.loanId,date:x.date||null,kind:x.kind||'repayment',amount:x.amount||0,note:x.note||'',owner_id:x.ownerId,owner_name:x.ownerName});
-const rowToInv=r=>({id:r.id,number:r.number,date:r.date,customerId:r.customer_id,project:r.project,commenced:r.commenced,completed:r.completed,status:r.status,lines:r.lines||[],bank:r.bank||null,sentAt:r.sent_at||null,ownerId:r.owner_id,ownerName:r.owner_name});
-const invToRow=i=>({id:i.id,number:i.number,date:i.date||null,customer_id:i.customerId||null,project:i.project,commenced:i.commenced||null,completed:i.completed||null,status:i.status,lines:i.lines,bank:i.bank||null,sent_at:i.sentAt||null,owner_id:i.ownerId,owner_name:i.ownerName,updated_at:new Date().toISOString()});
+const rowToInv=r=>({id:r.id,number:r.number,date:r.date,customerId:r.customer_id,project:r.project,commenced:r.commenced,completed:r.completed,status:r.status,lines:r.lines||[],bank:r.bank||null,sentAt:r.sent_at||null,type:r.type||'invoice',ownerId:r.owner_id,ownerName:r.owner_name});
+const invToRow=i=>({id:i.id,number:i.number,date:i.date||null,customer_id:i.customerId||null,project:i.project,commenced:i.commenced||null,completed:i.completed||null,status:i.status,lines:i.lines,bank:i.bank||null,sent_at:i.sentAt||null,type:i.type||'invoice',owner_id:i.ownerId,owner_name:i.ownerName,updated_at:new Date().toISOString()});
 
 async function loadMembers(){
   const {data,error}=await sb.from('members').select('*');
@@ -507,8 +508,8 @@ async function loadAll(){
   DB.jobs=(js.data||[]).map(rowToJob);
   DB.invoices=(iv.data||[]).map(rowToInv);
   DB.settings=Object.assign({...DEFAULT_SETTINGS},(st&&st.data&&st.data.data)||{});
-  const maxN=DB.invoices.reduce((m,i)=>{const x=/MIH-(\d+)/.exec(i.number||'');return x?Math.max(m,+x[1]):m;},2);
-  DB.counters.invoice=maxN;
+  DB.counters.invoice=DB.invoices.reduce((m,i)=>{const x=/MIH-(\d+)/.exec(i.number||'');return x?Math.max(m,+x[1]):m;},2);
+  DB.counters.quote=DB.invoices.reduce((m,i)=>{const x=/QUO-(\d+)/.exec(i.number||'');return x?Math.max(m,+x[1]):m;},0);
   await loadFinancials();
 }
 async function loadFinancials(){
@@ -542,7 +543,7 @@ async function receiptUrl(path){ if(!path) return ''; const {data,error}=await s
 async function upsertInv(i){
   const row=invToRow(i);
   // tolerate optional columns that may not be migrated yet (bank, sent_at, job_id)
-  const optional=['bank','sent_at','job_id'];
+  const optional=['bank','sent_at','job_id','type'];
   for(let n=0;n<4;n++){
     const {error}=await sb.from('invoices').upsert(row);
     if(!error) return;
@@ -582,7 +583,7 @@ function emptyState(ic,t,s){ return `<div class="empty"><div class="big">${ic}</
 function stat(lbl,v,sub,ic){ return `<div class="card stat"><div class="ic">${ic}</div><div class="lbl">${lbl}</div><div class="val">${v}</div><div class="sub">${sub}</div></div>`; }
 function viewDashboard(){
   document.getElementById('topAction').innerHTML=filterSeg();
-  const jobs=mineOnly(DB.jobs), invs=mineOnly(DB.invoices);
+  const jobs=mineOnly(DB.jobs), invs=mineOnly(DB.invoices).filter(i=>i.type!=='quote');
   const upcoming=jobs.filter(j=>j.date>=todayISO()&&j.status!=='done').sort((a,b)=>(a.date||'').localeCompare(b.date||''));
   const unpaid=invs.filter(i=>i.status!=='paid');
   const outstanding=unpaid.reduce((s,i)=>s+invTotal(i),0);
@@ -618,7 +619,7 @@ function viewDashboard(){
     ${sentInvoicesHtml()}
   </div>`;
 }
-function sentInvoices(){ return mineOnly(DB.invoices).filter(i=>i.sentAt||i.status==='sent'||i.status==='paid').sort((a,b)=>(b.sentAt||b.date||'').localeCompare(a.sentAt||a.date||'')); }
+function sentInvoices(){ return mineOnly(DB.invoices).filter(i=>i.type!=='quote' && (i.sentAt||i.status==='sent'||i.status==='paid')).sort((a,b)=>(b.sentAt||b.date||'').localeCompare(a.sentAt||a.date||'')); }
 function fmtSent(iso){ if(!iso) return '—'; const d=new Date(iso); return d.toLocaleString('en-AU',{day:'2-digit',month:'short',year:'2-digit',hour:'2-digit',minute:'2-digit'}); }
 function invDesc(i){ if(i.project) return i.project; const l=(i.lines||[])[0]; return l&&l.desc?l.desc:'Invoice'; }
 function sentInvoicesHtml(){
@@ -926,13 +927,18 @@ document.addEventListener('click',e=>{ const r=document.getElementById('custResu
    ===================================================================== */
 function invTotal(i){ return (i.lines||[]).reduce((s,l)=>s+(Number(l.qty)||0)*(Number(l.price)||0),0); }
 function invGST(i){ return invTotal(i)/GST_DIVISOR; }
-function invBadge(s){ return {draft:'<span class="badge gray">Draft</span>',sent:'<span class="badge amber">Sent</span>',paid:'<span class="badge green">Paid</span>'}[s]||''; }
+function invBadge(s){ return {draft:'<span class="badge gray">Draft</span>',sent:'<span class="badge amber">Sent</span>',paid:'<span class="badge green">Paid</span>',accepted:'<span class="badge green">Accepted</span>',declined:'<span class="badge red">Declined</span>'}[s]||''; }
+let invMode='invoice';
+function invModeSeg(){ return `<div class="seg"><button class="${invMode==='invoice'?'on':''}" onclick="invMode='invoice';render()">Invoices</button><button class="${invMode==='quote'?'on':''}" onclick="invMode='quote';render()">Quotes</button></div>`; }
 function viewInvoices(){
-  document.getElementById('topAction').innerHTML=filterSeg()+`<button class="btn" style="margin-left:12px" onclick="openInvoice()">+ New invoice</button>`;
-  const list=mineOnly([...DB.invoices]).reverse();
+  const q=invMode==='quote';
+  document.getElementById('viewTitle').textContent=q?'Quotes':'Invoices';
+  document.getElementById('viewSub').textContent=q?'Create and send quotes':'Create and manage invoices';
+  document.getElementById('topAction').innerHTML=invModeSeg()+` <button class="btn" style="margin-left:10px" onclick="openInvoice(null,null,null,'${invMode}')">+ New ${q?'quote':'invoice'}</button>`;
+  const list=mineOnly(DB.invoices.filter(i=> q ? i.type==='quote' : i.type!=='quote')).reverse();
   const c=document.getElementById('content');
-  if(!list.length){ c.innerHTML=`<div class="card">${emptyState('▣','No invoices yet','Create your first MIH-branded invoice.')}</div>`; return; }
-  c.innerHTML=`<div class="card"><table><thead><tr><th>Invoice</th><th>Customer</th><th>Status</th><th>By</th><th style="text-align:right">Total</th><th></th></tr></thead><tbody>${list.map(i=>`
+  if(!list.length){ c.innerHTML=`<div class="card">${emptyState('▣','No '+(q?'quotes':'invoices')+' yet','Create your first '+(q?'quote':'MIH invoice')+'.')}</div>`; return; }
+  c.innerHTML=`<div class="card"><table><thead><tr><th>${q?'Quote':'Invoice'}</th><th>Customer</th><th>Status</th><th>By</th><th style="text-align:right">Total</th><th></th></tr></thead><tbody>${list.map(i=>`
     <tr>
       <td><div class="t-name">${esc(i.number)}</div><div class="muted" style="font-size:11px">${fmtDate(i.date)}</div></td>
       <td>${esc(custName(i.customerId))}${i.project?`<div class="muted" style="font-size:11.5px">${esc(i.project)}</div>`:''}</td>
@@ -940,24 +946,29 @@ function viewInvoices(){
       <td>${ownerTag(i)}</td>
       <td style="text-align:right" class="t-name">${money(invTotal(i))}</td>
       <td style="text-align:right;white-space:nowrap">
-        <button class="btn ghost sm" onclick="previewInvoice('${i.id}')">View / Print</button>
+        <button class="btn ghost sm" onclick="previewInvoice('${i.id}')">View</button>
         <button class="btn line sm" onclick="openInvoice('${i.id}')">Edit</button>
       </td></tr>`).join('')}</tbody></table></div>`;
 }
 function nextInvNumber(){ return 'MIH-'+String(DB.counters.invoice+1).padStart(4,'0'); }
+function nextQuoteNumber(){ return 'QUO-'+String((DB.counters.quote||0)+1).padStart(4,'0'); }
 let editingLines=[];
 function openInvoiceFromJob(job){
   if(!job) return;
   openInvoice(null, job.customerId, {project:job.title, completed:job.date, lines:[{desc:job.title, qty:1, price:Number(job.value)||0}]});
 }
-function openInvoice(id,presetCust,prefill){
-  const inv=id?DB.invoices.find(x=>x.id===id):{number:nextInvNumber(),date:todayISO(),customerId:presetCust||'',project:(prefill&&prefill.project)||'',commenced:'',completed:(prefill&&prefill.completed)||'',status:'draft',lines:(prefill&&prefill.lines&&prefill.lines.length)?prefill.lines:[{desc:'',qty:1,price:0}]};
+function openInvoice(id,presetCust,prefill,forceType){
+  const existing=id?DB.invoices.find(x=>x.id===id):null;
+  const type=existing?(existing.type||'invoice'):(forceType||invMode||'invoice');
+  const q=type==='quote';
+  const inv=existing||{number:(q?nextQuoteNumber():nextInvNumber()),date:todayISO(),customerId:presetCust||'',project:(prefill&&prefill.project)||'',commenced:'',completed:(prefill&&prefill.completed)||'',status:'draft',type,lines:(prefill&&prefill.lines&&prefill.lines.length)?prefill.lines:[{desc:'',qty:1,price:0}]};
   const selCust=inv.customerId?custById(inv.customerId):null;
   const selName=selCust?esc(selCust.name):'';
   editingLines=JSON.parse(JSON.stringify(inv.lines&&inv.lines.length?inv.lines:[{desc:'',qty:1,price:0}]));
-  modal(`${id?'Edit':'New'} invoice`,`
+  modal(`${id?'Edit':'New'} ${q?'quote':'invoice'}`,`
+    <input type="hidden" id="i_type" value="${esc(type)}">
     <div class="frow">
-      <div class="field"><label>Invoice number</label><input id="i_number" value="${esc(inv.number)}"></div>
+      <div class="field"><label>${q?'Quote':'Invoice'} number</label><input id="i_number" value="${esc(inv.number)}"></div>
       <div class="field"><label>Date</label><input type="date" id="i_date" value="${esc(inv.date)}"></div>
       <div class="field full"><label>Customer *</label>
         <div class="cust-pick">
@@ -984,7 +995,8 @@ function openInvoice(id,presetCust,prefill){
       <div class="field"><label>Status</label><select id="i_status">
         <option value="draft" ${inv.status==='draft'?'selected':''}>Draft</option>
         <option value="sent" ${inv.status==='sent'?'selected':''}>Sent</option>
-        <option value="paid" ${inv.status==='paid'?'selected':''}>Paid</option></select></div>
+        ${q?`<option value="accepted" ${inv.status==='accepted'?'selected':''}>Accepted</option><option value="declined" ${inv.status==='declined'?'selected':''}>Declined</option>`:`<option value="paid" ${inv.status==='paid'?'selected':''}>Paid</option>`}
+      </select></div>
     </div>
     <label style="margin-bottom:8px;display:block">Itemised works &amp; materials</label>
     <div id="liRows"></div>
@@ -992,7 +1004,7 @@ function openInvoice(id,presetCust,prefill){
     <div class="totbox" id="liTot"></div>
     <div class="field full" style="margin-top:18px"><label>Pay to (bank account on invoice)</label>
       <select id="i_bank">${bankOptions(inv.bank, inv.ownerName||me.name)}</select></div>`,
-    [ id?{label:'Delete',cls:'danger',act:async()=>{ if(confirm('Delete this invoice?')){ await delRow('invoices',id); DB.invoices=DB.invoices.filter(x=>x.id!==id); closeModal(); render(); }}}:null,
+    [ id?{label:'Delete',cls:'danger',act:async()=>{ if(confirm('Delete this '+(q?'quote':'invoice')+'?')){ await delRow('invoices',id); DB.invoices=DB.invoices.filter(x=>x.id!==id); closeModal(); render(); }}}:null,
       {label:'Save & preview',cls:'btn',act:()=>saveInvoice(id)} ],'wide');
   renderLines();
 }
@@ -1061,14 +1073,20 @@ async function saveInvoice(id){
   if(!lines.length){ toast('Add at least one line item'); return; }
   const ex=id?DB.invoices.find(x=>x.id===id):null;
   const bank=bankList()[parseInt(val('i_bank'))||0]||null;
-  const obj={id:id||uid(),number:val('i_number'),date:val('i_date'),customerId,project:val('i_project'),commenced:val('i_comm'),completed:val('i_comp'),status:val('i_status'),lines,bank,
+  const type=val('i_type')||'invoice';
+  const obj={id:id||uid(),number:val('i_number'),date:val('i_date'),customerId,project:val('i_project'),commenced:val('i_comm'),completed:val('i_comp'),status:val('i_status'),lines,bank,type,
     ownerId:ex?ex.ownerId:me.id, ownerName:ex?ex.ownerName:me.name};
   try{ await upsertInv(obj); }catch(e){ return toast('Save failed: '+e.message); }
-  if(id) Object.assign(ex,obj); else { DB.invoices.push(obj); const m=/MIH-(\d+)/.exec(obj.number); if(m) DB.counters.invoice=Math.max(DB.counters.invoice,+m[1]); }
-  closeModal(); go('invoices'); previewInvoice(obj.id); toast('Invoice saved');
+  if(id){ Object.assign(ex,obj); }
+  else { DB.invoices.push(obj);
+    if(type==='quote'){ const m=/QUO-(\d+)/.exec(obj.number); if(m) DB.counters.quote=Math.max(DB.counters.quote||0,+m[1]); }
+    else { const m=/MIH-(\d+)/.exec(obj.number); if(m) DB.counters.invoice=Math.max(DB.counters.invoice,+m[1]); }
+  }
+  invMode=type; closeModal(); go('invoices'); previewInvoice(obj.id); toast((type==='quote'?'Quote':'Invoice')+' saved');
 }
 function invoiceDocHtml(id){
   const i=DB.invoices.find(x=>x.id===id); const c=custById(i.customerId)||{}; const s=DB.settings;
+  const q=i.type==='quote';
   const total=invTotal(i),gst=invGST(i);
   const arr=bankList();
   const first=(i.ownerName||'').toLowerCase().split(' ')[0];
@@ -1080,12 +1098,12 @@ function invoiceDocHtml(id){
       <div class="lhs"><img src="milogo.png" onerror="this.style.display='none'">
         <div><div class="co">${esc(s.businessName)}</div><div class="tag">${esc(s.tagline)}</div>
           <div class="ci">ABN ${esc(s.abn||'62 834 287 138')}<br>Mobile: ${esc(s.mobile)}<br>Email: ${esc(s.email)}<br>Website: ${esc(s.website)}</div></div></div>
-      <div class="inv-stamp"><div class="t">INVOICE</div><div class="n">${esc(i.number)}</div><div class="d">${fmtDate(i.date)}</div></div>
+      <div class="inv-stamp"><div class="t">${q?'QUOTE':'INVOICE'}</div><div class="n">${esc(i.number)}</div><div class="d">${fmtDate(i.date)}</div></div>
     </div>
     <div class="inv-accent"></div>
     <div class="inv-body">
       <div class="inv-cols">
-        <div class="inv-panel"><div class="ph">Invoice To</div><div class="pb">
+        <div class="inv-panel"><div class="ph">${q?'Quote For':'Invoice To'}</div><div class="pb">
           <div class="big">${esc(c.name||'—')}</div>${c.address?esc(c.address).replace(/, /g,'<br>'):''}
           ${c.abn?`<div style="margin-top:6px">ABN: ${esc(c.abn)}</div>`:''}</div></div>
         <div class="inv-panel"><div class="ph">Project Details</div><div class="pb"><div class="inv-kv">
@@ -1094,18 +1112,20 @@ function invoiceDocHtml(id){
           ${i.completed?`<b>Work Completed:</b><span>${fmtDate(i.completed)}</span>`:''}
         </div></div></div>
       </div>
-      <div class="inv-sec-title">Itemised Works and Materials</div>
+      <div class="inv-sec-title">${q?'Quoted Works and Materials':'Itemised Works and Materials'}</div>
       <table class="inv-items"><thead><tr><th style="width:50px">QTY</th><th>Description</th><th class="r" style="width:110px">Each</th><th class="r" style="width:110px">Price</th></tr></thead>
       <tbody>${i.lines.map(l=>`<tr><td>${esc(l.qty)}</td><td>${esc(l.desc)}</td><td class="r">${money(l.price)}</td><td class="r">${money((Number(l.qty)||0)*(Number(l.price)||0))}</td></tr>`).join('')}</tbody></table>
       <div class="inv-foot-cols">
-        <div class="inv-panel"><div class="ph">Payment Details</div><div class="pb"><div class="inv-kv">
-          <b>Account Name</b><span>${esc(pay.name)}</span><b>BSB</b><span>${esc(pay.bsb)}</span>
-          <b>Account Number</b><span>${esc(pay.account)}</span><b>Reference</b><span>${esc(i.number)}</span>
-        </div></div></div>
+        ${q
+          ? `<div class="inv-panel"><div class="ph">How to proceed</div><div class="pb" style="font-size:12px;line-height:1.6">This quote is valid for 30 days. To go ahead, simply reply to accept and we’ll get you booked in. Prices include GST.</div></div>`
+          : `<div class="inv-panel"><div class="ph">Payment Details</div><div class="pb"><div class="inv-kv">
+              <b>Account Name</b><span>${esc(pay.name)}</span><b>BSB</b><span>${esc(pay.bsb)}</span>
+              <b>Account Number</b><span>${esc(pay.account)}</span><b>Reference</b><span>${esc(i.number)}</span>
+            </div></div></div>`}
         <div>
           <div style="display:flex;justify-content:space-between;font-size:12px;color:#555;padding:2px 4px"><span>Subtotal (GST Inc)</span><span>${money(total)}</span></div>
           <div style="display:flex;justify-content:space-between;font-size:12px;color:#555;padding:2px 4px 10px"><span>GST Included</span><span>${money(gst)}</span></div>
-          <div class="inv-total"><span class="l">TOTAL DUE</span><span class="v">${money(total)}</span></div>
+          <div class="inv-total"><span class="l">${q?'QUOTE TOTAL':'TOTAL DUE'}</span><span class="v">${money(total)}</span></div>
         </div>
       </div>
     </div>
@@ -1113,13 +1133,20 @@ function invoiceDocHtml(id){
     <div class="inv-thanks">Thank you for choosing ${esc(s.businessName)}</div>
   </div>`;
 }
+function convertQuoteToInvoice(id){
+  const qte=DB.invoices.find(x=>x.id===id); if(!qte) return;
+  closeModal(); invMode='invoice';
+  openInvoice(null, qte.customerId, {project:qte.project, lines:JSON.parse(JSON.stringify(qte.lines||[]))}, 'invoice');
+  toast('New invoice from quote — review & save');
+}
 function previewInvoice(id){
-  const i=DB.invoices.find(x=>x.id===id);
-  modal('Invoice '+i.number,invoiceDocHtml(id),
+  const i=DB.invoices.find(x=>x.id===id); const q=i.type==='quote';
+  modal((q?'Quote ':'Invoice ')+i.number,invoiceDocHtml(id),
     [ {label:'Edit',cls:'line',act:()=>{ closeModal(); openInvoice(id); }},
-      {label:'📄 Save PDF to records',cls:'line',act:()=>saveInvoicePdf(id)},
-      {label:'📧 Email to customer',cls:'line',act:()=>emailInvoice(id)},
-      {label:'🖨 Print',cls:'btn',act:()=>printInvoice()} ],'wide');
+      q?{label:'➜ Convert to invoice',cls:'line',act:()=>convertQuoteToInvoice(id)}:null,
+      {label:'📄 Save PDF',cls:'line',act:()=>saveInvoicePdf(id)},
+      {label:(q?'📧 Email quote':'📧 Email to customer'),cls:'line',act:()=>emailInvoice(id)},
+      {label:'🖨 Print',cls:'btn',act:()=>printInvoice()} ].filter(Boolean),'wide');
 }
 async function invoicePdf(id){
   if(!window.html2canvas || !window.jspdf) throw new Error('PDF library not loaded');
@@ -1162,7 +1189,7 @@ function b64url(s){
   return btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 }
 function invoiceEmailHtml(i,c){
-  const s=DB.settings; const total=invTotal(i),gst=invGST(i);
+  const s=DB.settings; const q=i.type==='quote'; const total=invTotal(i),gst=invGST(i);
   const arr=bankList(); const first=(i.ownerName||'').toLowerCase().split(' ')[0];
   const pay=(i.bank&&i.bank.account)?i.bank:(arr.find(a=>(a.name||'').toLowerCase().includes(first))||arr[0]||{name:s.bankName,bsb:s.bsb,account:s.accountNumber});
   const rows=i.lines.map(l=>`<tr><td style="padding:7px 8px;border-bottom:1px solid #eee">${esc(l.desc)}</td><td style="padding:7px 8px;border-bottom:1px solid #eee;text-align:center">${esc(l.qty)}</td><td style="padding:7px 8px;border-bottom:1px solid #eee;text-align:right">${money((Number(l.qty)||0)*(Number(l.price)||0))}</td></tr>`).join('');
@@ -1180,33 +1207,36 @@ function invoiceEmailHtml(i,c){
     <div style="height:4px;background:#7c3aed"></div>
     <div style="padding:24px;border:1px solid #eee;border-top:0;border-radius:0 0 10px 10px">
       <p style="font-size:14px;margin:0 0 12px">Hi ${esc(c.name||'there')},</p>
-      <p style="font-size:14px;line-height:1.55;margin:0 0 16px">Thanks very much for choosing ${esc(s.businessName)}. Please find your invoice below${i.project?` for <b>${esc(i.project)}</b>`:''}.</p>
-      <div style="font-size:13px;margin:0 0 10px"><b>Invoice:</b> ${esc(i.number)} &nbsp;·&nbsp; <b>Date:</b> ${fmtDate(i.date)}</div>
+      <p style="font-size:14px;line-height:1.55;margin:0 0 16px">Thanks very much for ${q?'the opportunity to quote':'choosing '+esc(s.businessName)}. Please find your ${q?'quote':'invoice'} below${i.project?` for <b>${esc(i.project)}</b>`:''}.</p>
+      <div style="font-size:13px;margin:0 0 10px"><b>${q?'Quote':'Invoice'}:</b> ${esc(i.number)} &nbsp;·&nbsp; <b>Date:</b> ${fmtDate(i.date)}</div>
       <table style="width:100%;border-collapse:collapse;font-size:13px;margin:6px 0">
         <thead><tr style="background:#1a1726;color:#ffffff"><th style="padding:8px;text-align:left">Description</th><th style="padding:8px">Qty</th><th style="padding:8px;text-align:right">Price</th></tr></thead>
         <tbody>${rows}</tbody></table>
-      <div style="text-align:right;font-size:17px;font-weight:800;margin:12px 0 2px;color:#7c3aed">Total Due: ${money(total)}</div>
+      <div style="text-align:right;font-size:17px;font-weight:800;margin:12px 0 2px;color:#7c3aed">${q?'Quote Total':'Total Due'}: ${money(total)}</div>
       <div style="font-size:11px;color:#777;text-align:right;margin-bottom:10px">Includes GST ${money(gst)}</div>
-      <div style="margin:16px 0;padding:14px;background:#f7f5fb;border-radius:8px;font-size:13px;line-height:1.7">
+      ${q
+        ? `<div style="margin:16px 0;padding:14px;background:#f7f5fb;border-radius:8px;font-size:13px;line-height:1.7">This quote is valid for 30 days. To go ahead, just reply to this email to accept and we’ll get you booked in.</div>`
+        : `<div style="margin:16px 0;padding:14px;background:#f7f5fb;border-radius:8px;font-size:13px;line-height:1.7">
         <div style="font-weight:700;margin-bottom:4px">Payment details</div>
         Account Name: ${esc(pay.name||'')}<br>BSB: ${esc(pay.bsb||'')}<br>Account Number: ${esc(pay.account||'')}<br>Reference: ${esc(i.number)}
-      </div>
-      ${review}
+      </div>`}
+      ${q?'':review}
       <p style="font-size:13px;color:#555;margin:16px 0 0">Any questions, just reply to this email or call ${esc(s.mobile)}.</p>
       <p style="font-size:13px;color:#555;margin:18px 0 0">Kind regards,<br><b>${esc(me&&me.name?me.name:s.businessName)}</b><br>${esc(s.businessName)}${s.abn?' · ABN '+esc(s.abn):''}</p>
     </div></div>`;
 }
 function invoiceEmailText(i,c){
-  const s=DB.settings; const total=invTotal(i),gst=invGST(i);
+  const s=DB.settings; const q=i.type==='quote'; const total=invTotal(i),gst=invGST(i);
   const arr=bankList(); const first=(i.ownerName||'').toLowerCase().split(' ')[0];
   const pay=(i.bank&&i.bank.account)?i.bank:(arr.find(a=>(a.name||'').toLowerCase().includes(first))||arr[0]||{name:s.bankName,bsb:s.bsb,account:s.accountNumber});
-  return `Hi ${c.name||'there'},\n\nThanks very much for choosing ${s.businessName}.${i.project?' Invoice for '+i.project+'.':''}\n\n`
-    +`Invoice ${i.number} — ${fmtDate(i.date)}\n`
+  return `Hi ${c.name||'there'},\n\n${q?'Thanks for the opportunity to quote.':'Thanks very much for choosing '+s.businessName+'.'}${i.project?' '+(q?'Quote':'Invoice')+' for '+i.project+'.':''}\n\n`
+    +`${q?'Quote':'Invoice'} ${i.number} — ${fmtDate(i.date)}\n`
     +i.lines.map(l=>`  ${l.qty} x ${l.desc} — ${money((Number(l.qty)||0)*(Number(l.price)||0))}`).join('\n')
-    +`\n\nTotal Due: ${money(total)} (incl. GST ${money(gst)})\n\n`
-    +`Payment details:\n  Account Name: ${pay.name||''}\n  BSB: ${pay.bsb||''}\n  Account Number: ${pay.account||''}\n  Reference: ${i.number}\n\n`
-    +`The invoice is also attached as a PDF.\n\n`
-    +`Happy with our work? A quick review really helps: ${s.reviewUrl||'https://g.page/r/CbVjKnqoixi-EAE/review'}\n\n`
+    +`\n\n${q?'Quote Total':'Total Due'}: ${money(total)} (incl. GST ${money(gst)})\n\n`
+    +(q?`This quote is valid for 30 days. To go ahead, just reply to accept.\n\n`
+        :`Payment details:\n  Account Name: ${pay.name||''}\n  BSB: ${pay.bsb||''}\n  Account Number: ${pay.account||''}\n  Reference: ${i.number}\n\n`)
+    +`The ${q?'quote':'invoice'} is also attached as a PDF.\n\n`
+    +(q?'':`Happy with our work? A quick review really helps: ${s.reviewUrl||'https://g.page/r/CbVjKnqoixi-EAE/review'}\n\n`)
     +`Any questions, just reply to this email or call ${s.mobile}.\n\nKind regards,\n${(me&&me.name)||s.businessName}\n${s.businessName}${s.abn?' · ABN '+s.abn:''}`;
 }
 async function gmailSend(to,subject,html,text,pdfB64,pdfName){
@@ -1251,15 +1281,16 @@ function mailtoInvoice(i,c){
 }
 function emailInvoice(id){
   const i=DB.invoices.find(x=>x.id===id); if(!i) return;
+  const q=i.type==='quote';
   const c=custById(i.customerId);
-  if(!c){ toast('No customer on this invoice'); return; }
-  modal('Send invoice '+i.number,`
+  if(!c){ toast('No customer on this '+(q?'quote':'invoice')); return; }
+  modal('Send '+(q?'quote ':'invoice ')+i.number,`
     <div class="field full"><label>Send to — ${esc(c.name)}'s email</label>
       <input id="em_to" type="email" inputmode="email" value="${esc(c.email||'')}" placeholder="customer@email.com"></div>
     <div class="hint" style="margin-top:8px">${c.email?'This is the email saved on '+esc(c.name)+'’s profile — please check it’s correct.':'⚠ No email is saved for '+esc(c.name)+' yet — add one above.'} Any change here is saved to their profile.</div>
-    <div class="hint" style="margin-top:12px">Sending from <b>${esc(me.email)}</b> · Total ${money(invTotal(i))}${DB.settings.reviewUrl?' · review link included':''}</div>`,
+    <div class="hint" style="margin-top:12px">Sending from <b>${esc(me.email)}</b> · Total ${money(invTotal(i))}${DB.settings.reviewUrl&&!q?' · review link included':''}</div>`,
     [ {label:'Cancel',cls:'line',act:()=>closeModal()},
-      {label:'📧 Send invoice',cls:'btn',act:()=>doSendInvoice(i.id)} ]);
+      {label:'📧 Send '+(q?'quote':'invoice'),cls:'btn',act:()=>doSendInvoice(i.id)} ]);
   setTimeout(()=>{ const el=document.getElementById('em_to'); if(el&&!el.value) el.focus(); },50);
 }
 async function doSendInvoice(invId){
@@ -1278,11 +1309,12 @@ async function doSendInvoice(invId){
   try{ pdf=await invoicePdf(invId); }catch(e){ console.warn('PDF generation failed, sending without attachment:',e); }
   toast('Sending…');
   try{
-    await gmailSend(to,'Invoice '+i.number+' from '+DB.settings.businessName,invoiceEmailHtml(i,c),invoiceEmailText(i,c),pdf?pdf.b64:null,'Invoice-'+i.number+'.pdf');
+    const q=i.type==='quote'; const label=q?'Quote':'Invoice';
+    await gmailSend(to,label+' '+i.number+' from '+DB.settings.businessName,invoiceEmailHtml(i,c),invoiceEmailText(i,c),pdf?pdf.b64:null,label+'-'+i.number+'.pdf');
     i.sentAt=new Date().toISOString(); if(i.status==='draft') i.status='sent';
     try{ await upsertInv(i); }catch(e){ console.warn(e); }
     if(pdf) storeInvoicePdf(invId, pdf.blob); // keep a permanent copy in records
-    toast('Invoice emailed to '+to+(pdf?' (PDF attached & saved)':''));
+    toast(label+' emailed to '+to+(pdf?' (PDF attached & saved)':''));
     if(currentView==='invoices'||currentView==='customers') render();
   }catch(e){ console.error(e); if(confirm('Couldn’t send to:\n'+to+'\n\n'+(e.message||'').slice(0,200)+'\n\nOpen your mail app instead?')) mailtoInvoice(i,c); }
 }
