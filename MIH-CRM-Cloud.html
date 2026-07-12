@@ -330,7 +330,7 @@ table.inv-items td{padding:9px 12px;border-bottom:1px solid #eee;font-size:12px}
    MIH CRM — CLOUD (Supabase, shared workspace, Google sign-in)
    ===================================================================== */
 const CFG_KEY='mih_sb_cfg';
-const APP_VERSION='2026.06.29-24';   /* bump this when deploying; phones auto-refresh to match */
+const APP_VERSION='2026.06.29-25';   /* bump this when deploying; phones auto-refresh to match */
 const GST_DIVISOR=11;
 const CAL_SCOPE='https://www.googleapis.com/auth/calendar';
 const OAUTH_SCOPES='https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/spreadsheets';
@@ -485,8 +485,8 @@ const rowToCust=r=>({id:r.id,name:r.name,contact:r.contact,phone:r.phone,email:r
 const custToRow=c=>({id:c.id,name:c.name,contact:c.contact,phone:c.phone,email:c.email,abn:c.abn,address:c.address,notes:c.notes,owner_id:c.ownerId,owner_name:c.ownerName,updated_at:new Date().toISOString()});
 const rowToJob=r=>({id:r.id,title:r.title,customerId:r.customer_id,date:r.date,time:r.time,duration:Number(r.duration)||2,status:r.status,notes:r.notes,value:(r.value!=null?Number(r.value):null),googleEventId:r.google_event_id,calendarId:r.calendar_id,source:r.source,ownerId:r.owner_id,ownerName:r.owner_name});
 const jobToRow=j=>({id:j.id,title:j.title,customer_id:j.customerId||null,date:j.date||null,time:j.time||null,duration:j.duration||2,status:j.status,notes:j.notes,value:(j.value!=null&&j.value!==''?Number(j.value):null),google_event_id:j.googleEventId||null,calendar_id:j.calendarId||null,source:j.source||'local',owner_id:j.ownerId,owner_name:j.ownerName,updated_at:new Date().toISOString()});
-const rowToExp=r=>({id:r.id,jobId:r.job_id,date:r.date,category:r.category,description:r.description,amount:Number(r.amount)||0,gstInc:r.gst_inc!==false,recurring:r.recurring||'',receiptPath:r.receipt_path||'',ownerId:r.owner_id,ownerName:r.owner_name});
-const expToRow=e=>({id:e.id,job_id:e.jobId||null,date:e.date||null,category:e.category,description:e.description,amount:e.amount||0,gst_inc:e.gstInc!==false,recurring:e.recurring||null,receipt_path:e.receiptPath||null,owner_id:e.ownerId,owner_name:e.ownerName,updated_at:new Date().toISOString()});
+const rowToExp=r=>({id:r.id,jobId:r.job_id,date:r.date,category:r.category,description:r.description,amount:Number(r.amount)||0,gstInc:r.gst_inc!==false,recurring:r.recurring||'',receiptPath:r.receipt_path||'',shared:r.shared===true,paidBy:r.paid_by||'',ownerId:r.owner_id,ownerName:r.owner_name});
+const expToRow=e=>({id:e.id,job_id:e.jobId||null,date:e.date||null,category:e.category,description:e.description,amount:e.amount||0,gst_inc:e.gstInc!==false,recurring:e.recurring||null,receipt_path:e.receiptPath||null,shared:!!e.shared,paid_by:e.paidBy||null,owner_id:e.ownerId,owner_name:e.ownerName,updated_at:new Date().toISOString()});
 const rowToLoan=r=>({id:r.id,name:r.name,type:r.type||'business',openingBalance:Number(r.opening_balance)||0,notes:r.notes||'',plan:r.plan||null,ownerId:r.owner_id,ownerName:r.owner_name});
 const loanToRow=l=>({id:l.id,name:l.name,type:l.type||'business',opening_balance:l.openingBalance||0,notes:l.notes||'',plan:l.plan||null,owner_id:l.ownerId,owner_name:l.ownerName,updated_at:new Date().toISOString()});
 const rowToLE=r=>({id:r.id,loanId:r.loan_id,date:r.date,kind:r.kind||'repayment',amount:Number(r.amount)||0,note:r.note||'',ownerId:r.owner_id,ownerName:r.owner_name});
@@ -532,7 +532,12 @@ async function upsertJob(j){
   if(error && /value/i.test(error.message||'')){ delete row.value; const r2=await sb.from('jobs').upsert(row); error=r2.error; }
   if(error) throw error;
 }
-async function upsertExp(e){ const {error}=await sb.from('expenses').upsert(expToRow(e)); if(error)throw error; }
+async function upsertExp(e){
+  const row=expToRow(e); const optional=['shared','paid_by'];
+  for(let n=0;n<3;n++){ const {error}=await sb.from('expenses').upsert(row); if(!error) return;
+    const miss=optional.find(c=>(c in row)&&(error.message||'').includes(c)); if(miss){ delete row[miss]; continue; } throw error; }
+  throw new Error('Expense save failed (schema)');
+}
 async function upsertLoan(l){
   const row=loanToRow(l);
   let {error}=await sb.from('loans').upsert(row);
@@ -1543,12 +1548,20 @@ function openExpense(id,presetJobId){
         <input type="file" accept="image/*" capture="environment" id="e_receipt" onchange="onReceiptPick(this)">
         <div id="receiptPrev" class="hint" style="margin-top:6px">${e.receiptPath?'📎 Receipt attached — pick again to replace':''}</div>
       </div>
+    </div>
+    <div class="li-item" style="margin-top:6px;background:var(--primary-soft);border-color:var(--line-strong)">
+      <label style="display:flex;align-items:center;gap:9px;cursor:pointer;font-size:13.5px"><input type="checkbox" id="e_shared" style="width:auto" ${e.shared?'checked':''} onchange="document.getElementById('paidByRow').style.display=this.checked?'':'none'"> This is a <b>shared business expense</b> (e.g. Google Ads, IG reels) — track who fronted it</label>
+      <div id="paidByRow" class="frow" style="margin:8px 0 0;display:${e.shared?'':'none'}">
+        <div class="field"><label>Paid by (whose money)</label><select id="e_paidby">${DB.members.map(m=>`<option ${((e.paidBy||me.name)===m.name)?'selected':''}>${esc(m.name)}</option>`).join('')}</select></div>
+      </div>
     </div>`,
     [ id?{label:'Delete',cls:'danger',act:async()=>{ if(confirm('Delete expense?')){ await delRow('expenses',id); DB.expenses=DB.expenses.filter(x=>x.id!==id); closeModal(); rerenderFin(); }}}:null,
       {label:'Save expense',cls:'btn',act:async()=>{
         const amt=parseFloat(val('e_amt')); if(!(amt>0)){ toast('Enter an amount'); return; }
         const ex=id?DB.expenses.find(x=>x.id===id):null;
+        const shared=document.getElementById('e_shared').checked;
         const obj={id:id||uid(),date:val('e_date'),amount:amt,category:val('e_cat'),gstInc:val('e_gst')==='1',description:val('e_desc'),jobId:val('e_job'),recurring:val('e_rec'),receiptPath:receiptTmp?receiptTmp.path:'',
+          shared, paidBy: shared?(val('e_paidby')||me.name):'',
           ownerId:ex?ex.ownerId:me.id, ownerName:ex?ex.ownerName:me.name};
         try{ await upsertExp(obj); }catch(err){ return toast('Save failed: '+err.message); }
         if(ex) Object.assign(ex,obj); else DB.expenses.push(obj);
@@ -1721,8 +1734,17 @@ function sumSheetRows(){
     ['Outstanding (unpaid invoices)',r2(outstanding)],['Business loans owing',r2(bizDebt)],['Partner loan — Nate owes Mitch',r2(partnerBal)]];
 }
 function expSheetRows(){
-  const rows=[['Date','Category','Description','Job','Amount','GST inc','Recurring','Receipt','By']];
-  [...DB.expenses].sort((a,b)=>(a.date||'').localeCompare(b.date||'')).forEach(e=>rows.push([e.date||'',e.category||'',e.description||'',(e.jobId?(DB.jobs.find(j=>j.id===e.jobId)||{}).title||'':''),r2(e.amount),e.gstInc?'Yes':'No',e.recurring||'',e.receiptPath?'Yes':'',e.ownerName||'']));
+  const rows=[['Date','Category','Description','Job','Amount','GST inc','Recurring','Shared','Paid by','Receipt','Recorded by']];
+  [...DB.expenses].sort((a,b)=>(a.date||'').localeCompare(b.date||'')).forEach(e=>rows.push([e.date||'',e.category||'',e.description||'',(e.jobId?(DB.jobs.find(j=>j.id===e.jobId)||{}).title||'':''),r2(e.amount),e.gstInc?'Yes':'No',e.recurring||'',e.shared?'Yes':'',e.paidBy||'',e.receiptPath?'Yes':'',e.ownerName||'']));
+  return rows;
+}
+function sharedSheetRows(){
+  const {shared,totals,total}=sharedLedger();
+  const rows=[['Shared expenses — who fronted what',''],[]];
+  DB.members.forEach(m=>rows.push([m.name+' fronted',r2(totals[m.name]||0)]));
+  rows.push(['Total fronted (business owes)',r2(total)]); rows.push([]);
+  rows.push(['Date','Description','Category','Paid by','Amount']);
+  [...shared].sort((a,b)=>(a.date||'').localeCompare(b.date||'')).forEach(e=>rows.push([e.date||'',e.description||'',e.category||'',e.paidBy||e.ownerName||'',r2(e.amount)]));
   return rows;
 }
 function invSheetRows(type){
@@ -1744,9 +1766,10 @@ async function sheetsSync(){
   if(!GAuth.token){ toast('Reconnect Google to sync the sheet'); go('settings'); return; }
   sheetSyncing=true; updateSheetStatus('Syncing…');
   try{
-    await ensureTabs(id,['Summary','Expenses','Invoices','Quotes','Loans']);
+    await ensureTabs(id,['Summary','Expenses','Shared','Invoices','Quotes','Loans']);
     await writeTab(id,'Summary',sumSheetRows());
     await writeTab(id,'Expenses',expSheetRows());
+    await writeTab(id,'Shared',sharedSheetRows());
     await writeTab(id,'Invoices',invSheetRows('invoice'));
     await writeTab(id,'Quotes',invSheetRows('quote'));
     await writeTab(id,'Loans',loanSheetRows());
@@ -1756,6 +1779,27 @@ async function sheetsSync(){
   finally{ sheetSyncing=false; updateSheetStatus(); }
 }
 function updateSheetStatus(msg){ const el=document.getElementById('sheetStatus'); if(el) el.textContent=msg||(DB.settings.lastSheetSync?'Last synced '+new Date(DB.settings.lastSheetSync).toLocaleString('en-AU'):'Not synced yet'); }
+/* ---- shared partner-expense ledger ---- */
+function sharedLedger(){
+  const shared=DB.expenses.filter(e=>e.shared);
+  const totals={}; DB.members.forEach(m=>totals[m.name]=0);
+  shared.forEach(e=>{ const who=e.paidBy||e.ownerName||'—'; totals[who]=(totals[who]||0)+e.amount; });
+  return {shared, totals, total:shared.reduce((s,e)=>s+e.amount,0)};
+}
+function sharedLedgerHtml(){
+  const {shared,totals,total}=sharedLedger();
+  if(!shared.length) return `<div class="hint">No shared expenses yet. When adding an expense, tick <b>“shared business expense”</b> (e.g. Google Ads, IG reels) and pick who paid — the running balance shows here.</div>`;
+  const rows=DB.members.map(m=>`<div style="display:flex;justify-content:space-between;font-size:13.5px;padding:4px 0"><span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${esc(m.color||'#7c3aed')};margin-right:6px"></span>${esc(m.name)} has fronted</span><b>${money(totals[m.name]||0)}</b></div>`).join('');
+  let balance='';
+  if(DB.members.length===2){ const a=DB.members[0], b=DB.members[1]; const diff=(totals[a.name]||0)-(totals[b.name]||0);
+    balance=Math.abs(diff)<0.005 ? 'You’re square — both fronted the same.' : `To even it up now, <b>${esc(diff>0?b.name:a.name)}</b> owes <b>${esc(diff>0?a.name:b.name)}</b> ${money(Math.abs(diff)/2)}. (Or the business repays each of you what you’ve fronted.)`;
+  }
+  const list=[...shared].sort((x,y)=>(y.date||'').localeCompare(x.date||'')).slice(0,60).map(e=>`<tr><td>${fmtDate(e.date)}</td><td><div class="t-name">${esc(e.description||e.category)}</div><div class="muted" style="font-size:11px">${esc(e.category)}</div></td><td>${esc(e.paidBy||e.ownerName||'—')}</td><td style="text-align:right;white-space:nowrap">${e.receiptPath?`<button class="btn line sm" onclick="viewReceipt('${esc(e.receiptPath)}')">🧾</button> `:''}<span class="t-name">${money(e.amount)}</span></td><td style="text-align:right"><button class="btn line sm" onclick="openExpense('${e.id}')">Edit</button></td></tr>`).join('');
+  return `${rows}
+    <div style="display:flex;justify-content:space-between;font-weight:800;border-top:2px solid var(--ink);margin-top:6px;padding-top:8px"><span>Total fronted (business owes partners)</span><span>${money(total)}</span></div>
+    <div class="hint" style="margin-top:8px">${balance}</div>
+    <table style="margin-top:12px"><thead><tr><th>Date</th><th>Expense</th><th>Paid by</th><th style="text-align:right">Amount</th><th></th></tr></thead><tbody>${list}</tbody></table>`;
+}
 function viewFinancials(){
   document.getElementById('topAction').innerHTML='';
   const c=document.getElementById('content');
@@ -1786,6 +1830,10 @@ function viewFinancials(){
    <div class="card pad" style="margin-bottom:18px">
      <div class="section-head"><h2>Business loans${bizLoans.length?` · owing ${money(bizDebt)}`:''}</h2><button class="btn ghost sm" onclick="openLoan()">+ Add loan</button></div>
      ${bizLoans.length?bizLoans.map(loanCard).join(''):`<div class="hint">No business loans. Add tool/vehicle finance with “+ Add loan”.</div>`}
+   </div>
+   <div class="card pad" style="margin-bottom:18px">
+     <div class="section-head"><h2>Shared expenses · Nate ↔ Mitch</h2><button class="btn ghost sm" onclick="openExpense()">+ Add</button></div>
+     ${sharedLedgerHtml()}
    </div>
    <div class="card pad" style="margin-bottom:18px">
      <div class="section-head"><h2>Recurring / ongoing costs</h2><button class="btn ghost sm" onclick="openExpense()">+ Add cost</button></div>
