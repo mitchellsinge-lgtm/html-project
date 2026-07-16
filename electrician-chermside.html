@@ -111,6 +111,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
   /* Services list */
   .services-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; margin-top: 2rem; }
+  .service-card { scroll-margin-top: 90px; }
   .service-card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 1.4rem; transition: transform 0.2s, box-shadow 0.2s; }
   .service-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
   .service-card h3 { font-size: 1.1rem; margin-bottom: 0.4rem; color: var(--primary); }
@@ -140,6 +141,38 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   .footer-nav { margin: 1.2rem 0; }
   .footer-nav a { margin: 0 0.6rem; }
   .footer-bottom { margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); font-size: 0.85rem; }
+
+  /* Inline quote form */
+  .quote-section { background: var(--bg-2); padding: 4rem 0; }
+  .quote-card {
+    max-width: 620px; margin: 0 auto;
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 20px; padding: 2.2rem; box-shadow: var(--shadow);
+  }
+  .quote-card h2 { margin-bottom: 0.5rem; }
+  .quote-card .lead { margin-bottom: 1.6rem; }
+  .quote-form { display: flex; flex-direction: column; gap: 0.85rem; }
+  .quote-form label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--text); margin-bottom: 0.3rem; }
+  .quote-form input, .quote-form select, .quote-form textarea {
+    width: 100%; padding: 0.75rem 0.95rem; border: 1px solid var(--line);
+    border-radius: 10px; font-family: inherit; font-size: 0.95rem;
+    background: #fff; color: var(--text); transition: border 0.2s;
+  }
+  .quote-form input:focus, .quote-form select:focus, .quote-form textarea:focus {
+    outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft);
+  }
+  .quote-form textarea { resize: vertical; min-height: 90px; }
+  .quote-form .row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; }
+  @media (max-width: 500px) { .quote-form .row { grid-template-columns: 1fr; } }
+  .quote-form button {
+    background: var(--primary); color: #fff; border: 0; padding: 0.9rem 1.4rem;
+    border-radius: 999px; font-weight: 700; font-size: 1rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    transition: background 0.2s, transform 0.15s; margin-top: 0.4rem;
+  }
+  .quote-form button:hover { background: var(--primary-hover); transform: translateY(-1px); }
+  .quote-form button:disabled { opacity: 0.6; cursor: not-allowed; }
+  .form-status { font-size: 0.9rem; text-align: center; margin-top: 0.5rem; min-height: 1.2rem; }
 </style>
 </head>
 <body>
@@ -162,7 +195,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         <span>Smart Home &middot; AV &middot; Electrical</span>
       </span>
     </a>
-    <a href="index.html#quote-form" class="nav-cta">Get a Quote</a>
+    <a href="#quote" class="nav-cta">Get a Quote</a>
   </div>
 </header>
 
@@ -172,7 +205,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     <h1>Chermside &amp; North Brisbane <span>electrician + AV.</span></h1>
     <p class="hero-lead">Massive Integrated Homes covers all of North Brisbane from Chermside outward. Licensed electricians, CCTV, TV antenna repair, mesh WiFi, home theatre, smart home. One team, one number, one quote — no juggling three different tradies.</p>
     <div class="hero-cta">
-      <a href="index.html#quote-form" class="btn btn-primary">
+      <a href="#quote" class="btn btn-primary">
         Get a Free Quote
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
       </a>
@@ -198,27 +231,27 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     <h2>What we do in <span>Chermside</span></h2>
     <p class="lead">Chermside is established Brisbane — homes needing electrical modernisation, older antennas needing repair, CCTV upgrades on family homes, and modern AV additions. All of it, one team.</p>
     <div class="services-list">
-        <div class="service-card">
+        <div class="service-card" id="electrical">
           <h3>Electrical Work</h3>
           <p>Powerpoints, switchboard upgrades, downlights, ceiling fans, compliance.</p>
         </div>
-        <div class="service-card">
+        <div class="service-card" id="cctv">
           <h3>CCTV Installation</h3>
           <p>4K Hikvision/Dahua systems, night vision, mobile app. From $1,799.</p>
         </div>
-        <div class="service-card">
+        <div class="service-card" id="antenna">
           <h3>TV Antenna Repair</h3>
           <p>Fix pixelated channels. Repair, re-tune, replace. From $189 diagnosed.</p>
         </div>
-        <div class="service-card">
+        <div class="service-card" id="tv-mounts">
           <h3>TV Wall Mounting</h3>
           <p>Bracket, mount, cable conceal. Any TV, any wall. From $189.</p>
         </div>
-        <div class="service-card">
+        <div class="service-card" id="wifi">
           <h3>Mesh WiFi Installation</h3>
           <p>Kill dead spots. Whole-home Ubiquiti or Nest coverage. From $599.</p>
         </div>
-        <div class="service-card">
+        <div class="service-card" id="smoke-alarms">
           <h3>Smoke Alarm Compliance</h3>
           <p>QLD interconnected photoelectric alarms for sales &amp; rentals.</p>
         </div>
@@ -257,10 +290,62 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     <h2>Nearby suburbs we service</h2>
     <p class="lead">Along with Chermside, we regularly work across Aspley, Kedron, Stafford, Wavell Heights, Nundah, Everton Park, Chermside West, Geebung, Zillmere, Albany Creek. Same day-of-week bookings available for most postcodes within a 20 km radius.</p>
     <div style="margin-top: 2rem;">
-      <a href="index.html#quote-form" class="btn btn-primary" style="background: var(--primary); color: #fff;">
+      <a href="#quote" class="btn btn-primary" style="background: var(--primary); color: #fff;">
         Get Your Free Quote
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
       </a>
+    </div>
+  </div>
+</section>
+
+
+<section class="quote-section" id="quote">
+  <div class="container">
+    <div class="quote-card">
+      <h2>Get your free Chermside quote</h2>
+      <p class="lead" style="color:var(--muted);">Fill in a few details and we'll come back same-day during business hours. No obligation, no pressure.</p>
+      <form class="quote-form enquiry-form" action="https://formspree.io/f/maqagaoz" method="POST">
+        <div class="row">
+          <div>
+            <label for="qf-name">Name</label>
+            <input id="qf-name" name="name" type="text" placeholder="Your name" autocomplete="name" required>
+          </div>
+          <div>
+            <label for="qf-phone">Phone</label>
+            <input id="qf-phone" name="phone" type="tel" placeholder="0400 000 000" autocomplete="tel" required>
+          </div>
+        </div>
+        <div>
+          <label for="qf-email">Email (optional)</label>
+          <input id="qf-email" name="email" type="email" placeholder="you@example.com" autocomplete="email">
+        </div>
+        <div>
+          <label for="qf-service">What do you need?</label>
+          <select id="qf-service" name="service" required>
+            <option value="" disabled selected>Choose one&hellip;</option>
+            <option>Electrical work</option>
+            <option>CCTV / security</option>
+            <option>TV antenna repair</option>
+            <option>TV wall mounting</option>
+            <option>Mesh WiFi setup</option>
+            <option>Smoke alarm compliance</option>
+            <option>Smart home / automation</option>
+            <option>Not sure &mdash; I need advice</option>
+          </select>
+        </div>
+        <div>
+          <label for="qf-msg">Job details (optional)</label>
+          <textarea id="qf-msg" name="message" placeholder="Suburb, timing, brief description"></textarea>
+        </div>
+        <input type="hidden" name="_subject" value="New quote request from Chermside page">
+        <input type="hidden" name="_source_page" value="Chermside">
+        <input type="text" name="_gotcha" style="display:none" tabindex="-1" autocomplete="off">
+        <button type="submit">
+          Send my free quote request
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+        <p class="form-status" aria-live="polite"></p>
+      </form>
     </div>
   </div>
 </section>
@@ -275,7 +360,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
       <a href="index.html#gallery">Our Work</a>
       <a href="index.html#faq">FAQ</a>
       <a href="automation.html">MIH Automation</a>
-      <a href="index.html#quote-form">Contact</a>
+      <a href="#quote">Contact</a>
     </div>
     <div class="footer-bottom">
       &copy; 2026 Massive Integrated Homes &middot; QBCC Licensed &middot; Fully Insured
