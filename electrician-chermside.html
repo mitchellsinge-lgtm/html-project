@@ -173,6 +173,71 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   .quote-form button:hover { background: var(--primary-hover); transform: translateY(-1px); }
   .quote-form button:disabled { opacity: 0.6; cursor: not-allowed; }
   .form-status { font-size: 0.9rem; text-align: center; margin-top: 0.5rem; min-height: 1.2rem; }
+
+
+  /* Hamburger + slide-in menu */
+  .menu-btn {
+    background: none; border: 0; cursor: pointer;
+    width: 42px; height: 42px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text); transition: background 0.15s;
+  }
+  .menu-btn:hover { background: var(--primary-soft); }
+  .menu-btn svg { width: 22px; height: 22px; }
+  .menu-overlay {
+    position: fixed; inset: 0;
+    background: rgba(10,10,20,0.55);
+    z-index: 998;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.25s;
+  }
+  .menu-overlay.open { opacity: 1; pointer-events: auto; }
+  .menu-panel {
+    position: fixed; top: 0; right: 0; height: 100vh;
+    width: min(320px, 88vw);
+    background: #fff;
+    z-index: 999;
+    padding: 1.4rem 1.4rem 2rem;
+    transform: translateX(100%);
+    transition: transform 0.3s cubic-bezier(.4,.0,.2,1);
+    box-shadow: -10px 0 40px rgba(0,0,0,0.15);
+    display: flex; flex-direction: column;
+  }
+  .menu-panel.open { transform: translateX(0); }
+  .menu-close {
+    align-self: flex-end;
+    background: none; border: 0; cursor: pointer;
+    width: 40px; height: 40px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--muted); transition: background 0.15s;
+  }
+  .menu-close:hover { background: var(--primary-soft); color: var(--text); }
+  .menu-links { list-style: none; padding: 1rem 0; margin: 0; }
+  .menu-links li { margin: 0; }
+  .menu-links a {
+    display: block; padding: 0.95rem 0.5rem;
+    color: var(--text); font-weight: 600; font-size: 1.05rem;
+    border-bottom: 1px solid var(--line);
+    transition: color 0.15s, padding 0.15s;
+  }
+  .menu-links a:hover { color: var(--primary); padding-left: 0.75rem; }
+  .menu-footer {
+    margin-top: auto; padding-top: 1rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.85rem; color: var(--muted);
+  }
+  .menu-footer a { color: var(--primary); font-weight: 600; }
+
+  /* Fix contact card overflow on mobile */
+  .local-card > div { min-width: 0; flex: 1; }
+  .local-card .local-name { word-wrap: break-word; overflow-wrap: break-word; }
+  .local-card .local-role { word-wrap: break-word; overflow-wrap: break-word; }
+  .local-card .local-email { word-break: break-all; overflow-wrap: anywhere; font-size: 0.85rem; }
+  @media (max-width: 500px) {
+    .local-card { padding: 1.2rem; gap: 0.85rem; }
+    .avatar { width: 46px; height: 46px; font-size: 1.15rem; }
+    .local-card .local-email { font-size: 0.78rem; }
+  }
 </style>
 
 <!-- Meta Pixel Code -->
@@ -205,9 +270,37 @@ src="https://www.facebook.com/tr?id=909922201469376&ev=PageView&noscript=1"
         <span>Smart Home &middot; AV &middot; Electrical</span>
       </span>
     </a>
-    <a href="#quote" class="nav-cta">Get a Quote</a>
+    <button class="menu-btn" id="menuBtn" aria-label="Open menu" aria-expanded="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="4" y1="7" x2="20" y2="7"/>
+        <line x1="4" y1="12" x2="20" y2="12"/>
+        <line x1="4" y1="17" x2="20" y2="17"/>
+      </svg>
+    </button>
   </div>
 </header>
+
+<!-- Slide-in menu -->
+<div class="menu-overlay" id="menuOverlay"></div>
+<aside class="menu-panel" id="menuPanel" aria-hidden="true">
+  <button class="menu-close" id="menuClose" aria-label="Close menu">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+  </button>
+  <ul class="menu-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="index.html#services">Services</a></li>
+    <li><a href="index.html#gallery">Our Work</a></li>
+    <li><a href="index.html#reviews">Reviews</a></li>
+    <li><a href="index.html#faq">FAQ</a></li>
+    <li><a href="automation.html">MIH Automation</a></li>
+    <li><a href="#quote">Get a Quote</a></li>
+  </ul>
+  <div class="menu-footer">
+    <p>Call anytime: <a href="tel:+61480568180">0480 568 180</a></p>
+    <p style="margin-top: 0.4rem;">Servicing all of Brisbane &amp; the Gold Coast</p>
+  </div>
+</aside>
+
 
 <section class="hero">
   <div class="container hero-inner">
@@ -434,6 +527,41 @@ src="https://www.facebook.com/tr?id=909922201469376&ev=PageView&noscript=1"
       });
     });
   });
+</script>
+
+<script>
+  // Slide-in menu toggle
+  (function() {
+    var btn = document.getElementById('menuBtn');
+    var closeBtn = document.getElementById('menuClose');
+    var panel = document.getElementById('menuPanel');
+    var overlay = document.getElementById('menuOverlay');
+    if (!btn || !panel) return;
+    function openMenu() {
+      panel.classList.add('open');
+      overlay.classList.add('open');
+      btn.setAttribute('aria-expanded', 'true');
+      panel.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeMenu() {
+      panel.classList.remove('open');
+      overlay.classList.remove('open');
+      btn.setAttribute('aria-expanded', 'false');
+      panel.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+    btn.addEventListener('click', openMenu);
+    closeBtn.addEventListener('click', closeMenu);
+    overlay.addEventListener('click', closeMenu);
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeMenu();
+    });
+    // Close menu when clicking a menu link
+    document.querySelectorAll('.menu-links a').forEach(function(a) {
+      a.addEventListener('click', closeMenu);
+    });
+  })();
 </script>
 
 </body>

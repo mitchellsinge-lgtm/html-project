@@ -87,8 +87,9 @@ src="https://www.facebook.com/tr?id=909922201469376&ev=PageView&noscript=1"
     position: sticky; top: 0; z-index: 100;
   }
   .header-inner {
-    display: flex; align-items: center; gap: 0.7rem;
+    display: flex; align-items: center; gap: 0.7rem; justify-content: space-between;
   }
+  .brand-block { display: flex; align-items: center; gap: 0.7rem; }
   .logo-mark {
     width: 44px; height: 44px; border-radius: 50%;
     background: #000 url('milogo.png') center/cover no-repeat;
@@ -101,9 +102,65 @@ src="https://www.facebook.com/tr?id=909922201469376&ev=PageView&noscript=1"
   .logo-text strong { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1rem; }
   .logo-text span { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
 
-  /* Hero — full purple, focused on the form */
+  /* Hamburger + slide-in menu */
+  .menu-btn {
+    background: none; border: 0; cursor: pointer;
+    width: 42px; height: 42px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text); transition: background 0.15s;
+  }
+  .menu-btn:hover { background: var(--primary-soft); }
+  .menu-btn svg { width: 22px; height: 22px; }
+  .menu-overlay {
+    position: fixed; inset: 0;
+    background: rgba(10,10,20,0.55);
+    z-index: 998;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.25s;
+  }
+  .menu-overlay.open { opacity: 1; pointer-events: auto; }
+  .menu-panel {
+    position: fixed; top: 0; right: 0; height: 100vh;
+    width: min(320px, 88vw);
+    background: #fff;
+    z-index: 999;
+    padding: 1.4rem 1.4rem 2rem;
+    transform: translateX(100%);
+    transition: transform 0.3s cubic-bezier(.4,.0,.2,1);
+    box-shadow: -10px 0 40px rgba(0,0,0,0.15);
+    display: flex; flex-direction: column;
+  }
+  .menu-panel.open { transform: translateX(0); }
+  .menu-close {
+    align-self: flex-end;
+    background: none; border: 0; cursor: pointer;
+    width: 40px; height: 40px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--muted); transition: background 0.15s;
+  }
+  .menu-close:hover { background: var(--primary-soft); color: var(--text); }
+  .menu-links { list-style: none; padding: 1rem 0; }
+  .menu-links li { margin: 0; }
+  .menu-links a {
+    display: block; padding: 0.95rem 0.5rem;
+    color: var(--text); font-weight: 600; font-size: 1.05rem;
+    border-bottom: 1px solid var(--line);
+    transition: color 0.15s, padding 0.15s;
+  }
+  .menu-links a:hover { color: var(--primary); padding-left: 0.75rem; }
+  .menu-footer {
+    margin-top: auto; padding-top: 1rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.85rem; color: var(--muted);
+  }
+  .menu-footer a { color: var(--primary); font-weight: 600; }
+
+  /* Hero — full purple with photo background */
   .hero {
-    background: linear-gradient(135deg, #1a0f3a 0%, #4c1d95 45%, #7c3aed 100%);
+    background:
+      linear-gradient(135deg, rgba(26,15,58,0.82) 0%, rgba(76,29,149,0.72) 45%, rgba(124,58,237,0.62) 100%),
+      url('photos/tv-mounts/20251229_154507 - Copy.jpg') center/cover no-repeat;
+    background-color: #1a0f3a;
     color: #fff;
     padding: 2.5rem 0 4rem;
     position: relative;
@@ -111,11 +168,13 @@ src="https://www.facebook.com/tr?id=909922201469376&ev=PageView&noscript=1"
   }
   .hero::before {
     content: ""; position: absolute; inset: 0;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='104' viewBox='0 0 120 104'><polygon points='60,4 116,32 116,72 60,100 4,72 4,32' fill='none' stroke='%23a855f7' stroke-opacity='0.15' stroke-width='1.5'/></svg>");
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='104' viewBox='0 0 120 104'><polygon points='60,4 116,32 116,72 60,100 4,72 4,32' fill='none' stroke='%23a855f7' stroke-opacity='0.18' stroke-width='1.5'/></svg>");
     background-size: 120px 104px;
     pointer-events: none;
   }
   .hero-inner { position: relative; z-index: 1; }
+  .hero h1 { text-shadow: 0 2px 18px rgba(0,0,0,0.4); }
+  .hero-lead { text-shadow: 0 1px 12px rgba(0,0,0,0.35); }
   .hero h1 {
     font-size: clamp(2rem, 6vw, 2.8rem);
     margin-bottom: 0.9rem;
@@ -260,13 +319,43 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
 <header>
   <div class="container header-inner">
-    <span class="logo-mark" role="img" aria-label="MIH logo"></span>
-    <span class="logo-text">
-      <strong>Massive Integrated Homes</strong>
-      <span>Brisbane &middot; Gold Coast</span>
-    </span>
+    <a href="index.html" class="brand-block" style="text-decoration:none; color:inherit;">
+      <span class="logo-mark" role="img" aria-label="MIH logo"></span>
+      <span class="logo-text">
+        <strong>Massive Integrated Homes</strong>
+        <span>Brisbane &middot; Gold Coast</span>
+      </span>
+    </a>
+    <button class="menu-btn" id="menuBtn" aria-label="Open menu" aria-expanded="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="4" y1="7" x2="20" y2="7"/>
+        <line x1="4" y1="12" x2="20" y2="12"/>
+        <line x1="4" y1="17" x2="20" y2="17"/>
+      </svg>
+    </button>
   </div>
 </header>
+
+<!-- Slide-in menu -->
+<div class="menu-overlay" id="menuOverlay"></div>
+<aside class="menu-panel" id="menuPanel" aria-hidden="true">
+  <button class="menu-close" id="menuClose" aria-label="Close menu">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+  </button>
+  <ul class="menu-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="index.html#services">Services</a></li>
+    <li><a href="index.html#gallery">Our Work</a></li>
+    <li><a href="index.html#reviews">Reviews</a></li>
+    <li><a href="index.html#faq">FAQ</a></li>
+    <li><a href="automation.html">MIH Automation</a></li>
+    <li><a href="index.html#contact">Contact</a></li>
+  </ul>
+  <div class="menu-footer">
+    <p>Call anytime: <a href="tel:+61480568180">0480 568 180</a></p>
+    <p style="margin-top: 0.4rem;">Servicing all of Brisbane &amp; the Gold Coast</p>
+  </div>
+</aside>
 
 <section class="hero">
   <div class="container hero-inner">
@@ -357,6 +446,34 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 </footer>
 
 <script>
+  // Slide-in menu toggle
+  (function() {
+    var btn = document.getElementById('menuBtn');
+    var closeBtn = document.getElementById('menuClose');
+    var panel = document.getElementById('menuPanel');
+    var overlay = document.getElementById('menuOverlay');
+    function openMenu() {
+      panel.classList.add('open');
+      overlay.classList.add('open');
+      btn.setAttribute('aria-expanded', 'true');
+      panel.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeMenu() {
+      panel.classList.remove('open');
+      overlay.classList.remove('open');
+      btn.setAttribute('aria-expanded', 'false');
+      panel.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+    btn.addEventListener('click', openMenu);
+    closeBtn.addEventListener('click', closeMenu);
+    overlay.addEventListener('click', closeMenu);
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeMenu();
+    });
+  })();
+
   // Enquiry form handler — fires Google Ads + Meta Pixel Lead events on success
   document.querySelectorAll('form.enquiry-form').forEach(function(form) {
     form.addEventListener('submit', function(e) {
