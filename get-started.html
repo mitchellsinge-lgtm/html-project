@@ -502,6 +502,15 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           if (typeof fbq === 'function') {
             fbq('track', 'Lead');
           }
+          // Update URL with ?submitted=1 so Meta Custom Conversion (URL-based) can detect it
+          try {
+            var newUrl = window.location.pathname + '?submitted=1';
+            window.history.pushState({submitted: true}, '', newUrl);
+            // Fire fresh PageView so Meta records the new URL
+            if (typeof fbq === 'function') {
+              fbq('track', 'PageView');
+            }
+          } catch (e) { /* ignore if history API unsupported */ }
         } else {
           response.json().then(function(d) {
             if (status) {
