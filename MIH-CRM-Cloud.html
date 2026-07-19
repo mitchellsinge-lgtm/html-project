@@ -330,7 +330,7 @@ table.inv-items td{padding:9px 12px;border-bottom:1px solid #eee;font-size:12px}
    MIH CRM — CLOUD (Supabase, shared workspace, Google sign-in)
    ===================================================================== */
 const CFG_KEY='mih_sb_cfg';
-const APP_VERSION='2026.06.29-25';   /* bump this when deploying; phones auto-refresh to match */
+const APP_VERSION='2026.06.29-26';   /* bump this when deploying; phones auto-refresh to match */
 const GST_DIVISOR=11;
 const CAL_SCOPE='https://www.googleapis.com/auth/calendar';
 const OAUTH_SCOPES='https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/spreadsheets';
@@ -377,8 +377,17 @@ async function boot(){
   catch(e){ hide('loading'); return showConfig('Could not initialise — check your URL and key.'); }
   // capture provider_token returned in the URL hash right after Google redirect
   const { data:{ session } } = await sb.auth.getSession();
-  sb.auth.onAuthStateChange((_e,s)=>{ if(s){ onSignedIn(s);} else { showLogin(); } });
-  if(session){ onSignedIn(session); } else { hide('loading'); showLogin(); }
+  sb.auth.onAuthStateChange((_e,s)=> maybeSignIn(s));
+  if(session) maybeSignIn(session); else { hide('loading'); showLogin(); }
+}
+let appReady=false;
+async function maybeSignIn(s){
+  if(!s){ appReady=false; hide('loading'); showLogin(); return; }
+  // keep the Google token fresh, but DON'T rebuild the UI on every token refresh (that was closing open forms)
+  if(s.provider_token){ GAuth.token=s.provider_token; GAuth.connected=true; GAuth.needReconnect=false; try{ saveGTok(s.provider_token); }catch(e){} }
+  if(appReady) return;
+  appReady=true;
+  await onSignedIn(s);
 }
 function getCfg(){ try{ return JSON.parse(localStorage.getItem(CFG_KEY)||'null'); }catch(e){ return null; } }
 function hide(id){ const e=document.getElementById(id); if(e) e.classList.add('hidden'); }
@@ -447,7 +456,7 @@ async function onSignedIn(session){
     hide('loading'); show('appRoot');
     renderUserChip();
     render();
-  }catch(e){ console.error(e); hide('loading'); showLogin('Could not load your workspace: '+(e.message||e)); }
+  }catch(e){ console.error(e); appReady=false; hide('loading'); showLogin('Could not load your workspace: '+(e.message||e)); }
 }
 function renderUserChip(){
   document.getElementById('userChip').innerHTML=`
@@ -965,17 +974,43 @@ function viewInvoices(){
 function nextInvNumber(){ return 'MIH-'+String(DB.counters.invoice+1).padStart(4,'0'); }
 function nextQuoteNumber(){ return 'QUO-'+String((DB.counters.quote||0)+1).padStart(4,'0'); }
 let editingLines=[];
+let invDraftActive=false, draftTimer=null;
+function saveInvoiceDraft(){
+  if(!invDraftActive || !document.getElementById('i_number')) return;
+  try{ localStorage.setItem('mih_inv_draft', JSON.stringify({
+    type:val('i_type'),number:val('i_number'),date:val('i_date'),
+    customerId:val('j_custId'),custSearch:val('j_custsearch'),
+    project:val('i_project'),commenced:val('i_comm'),completed:val('i_comp'),
+    status:val('i_status'),bankIndex:val('i_bank'),lines:editingLines,ts:Date.now()
+  })); }catch(e){}
+}
+function loadInvoiceDraft(){ try{ return JSON.parse(localStorage.getItem('mih_inv_draft')||'null'); }catch(e){ return null; } }
+function clearInvoiceDraft(){ invDraftActive=false; try{ localStorage.removeItem('mih_inv_draft'); }catch(e){} }
+document.addEventListener('input',()=>{ if(invDraftActive){ clearTimeout(draftTimer); draftTimer=setTimeout(saveInvoiceDraft,600); } });
 function openInvoiceFromJob(job){
   if(!job) return;
   openInvoice(null, job.customerId, {project:job.title, completed:job.date, lines:[{desc:job.title, qty:1, price:Number(job.value)||0}]});
 }
 function openInvoice(id,presetCust,prefill,forceType){
   const existing=id?DB.invoices.find(x=>x.id===id):null;
-  const type=existing?(existing.type||'invoice'):(forceType||invMode||'invoice');
+  // offer to restore an unsaved draft when starting a NEW invoice/quote of the same kind
+  let dr=null;
+  if(!id){
+    const d=loadInvoiceDraft();
+    const hasContent=d && ((d.lines&&d.lines.some(l=>(l.desc||'').trim()||Number(l.price)))||(d.project||'').trim()||d.customerId);
+    if(hasContent && (d.type||'invoice')===(forceType||invMode||'invoice')){
+      if(confirm('You have an unsaved '+((d.type==='quote')?'quote':'invoice')+' from '+new Date(d.ts).toLocaleString('en-AU')+'. Restore it?')) dr=d;
+      else clearInvoiceDraft();
+    }
+  }
+  const type=existing?(existing.type||'invoice'):(dr?dr.type:(forceType||invMode||'invoice'));
   const q=type==='quote';
-  const inv=existing||{number:(q?nextQuoteNumber():nextInvNumber()),date:todayISO(),customerId:presetCust||'',project:(prefill&&prefill.project)||'',commenced:'',completed:(prefill&&prefill.completed)||'',status:'draft',type,lines:(prefill&&prefill.lines&&prefill.lines.length)?prefill.lines:[{desc:'',qty:1,price:0}]};
+  const inv=existing || (dr
+    ? {number:dr.number,date:dr.date,customerId:dr.customerId,project:dr.project,commenced:dr.commenced,completed:dr.completed,status:dr.status,type,lines:dr.lines}
+    : {number:(q?nextQuoteNumber():nextInvNumber()),date:todayISO(),customerId:presetCust||'',project:(prefill&&prefill.project)||'',commenced:'',completed:(prefill&&prefill.completed)||'',status:'draft',type,lines:(prefill&&prefill.lines&&prefill.lines.length)?prefill.lines:[{desc:'',qty:1,price:0}]});
+  invDraftActive = !id;   // auto-save drafts only when creating new
   const selCust=inv.customerId?custById(inv.customerId):null;
-  const selName=selCust?esc(selCust.name):'';
+  const selName=selCust?esc(selCust.name):(dr&&dr.custSearch?esc(dr.custSearch):'');
   editingLines=JSON.parse(JSON.stringify(inv.lines&&inv.lines.length?inv.lines:[{desc:'',qty:1,price:0}]));
   modal(`${id?'Edit':'New'} ${q?'quote':'invoice'}`,`
     <input type="hidden" id="i_type" value="${esc(type)}">
@@ -1019,6 +1054,7 @@ function openInvoice(id,presetCust,prefill,forceType){
     [ id?{label:'Delete',cls:'danger',act:async()=>{ if(confirm('Delete this '+(q?'quote':'invoice')+'?')){ await delRow('invoices',id); DB.invoices=DB.invoices.filter(x=>x.id!==id); closeModal(); render(); }}}:null,
       {label:'Save & preview',cls:'btn',act:()=>saveInvoice(id)} ],'wide');
   renderLines();
+  if(dr && dr.bankIndex!=null){ const bs=document.getElementById('i_bank'); if(bs) bs.value=dr.bankIndex; }
 }
 function lineRowHtml(l,idx){
   return `<div class="li-item">
@@ -1094,6 +1130,7 @@ async function saveInvoice(id){
     if(type==='quote'){ const m=/QUO-(\d+)/.exec(obj.number); if(m) DB.counters.quote=Math.max(DB.counters.quote||0,+m[1]); }
     else { const m=/MIH-(\d+)/.exec(obj.number); if(m) DB.counters.invoice=Math.max(DB.counters.invoice,+m[1]); }
   }
+  clearInvoiceDraft();
   invMode=type; closeModal(); go('invoices'); previewInvoice(obj.id); toast((type==='quote'?'Quote':'Invoice')+' saved');
 }
 function invoiceDocHtml(id){
