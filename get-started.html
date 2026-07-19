@@ -206,6 +206,31 @@ src="https://www.facebook.com/tr?id=27592303160400799&ev=PageView&noscript=1"
   }
   .chip svg { color: #c084fc; }
 
+  /* Review card — social proof next to form */
+  .review-card {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 16px;
+    padding: 1.1rem 1.2rem;
+    margin-top: 1.4rem;
+    backdrop-filter: blur(6px);
+  }
+  .review-stars { color: #ffc83d; font-size: 0.95rem; letter-spacing: 2px; margin-bottom: 0.5rem; }
+  .review-text { color: #fff; font-size: 0.98rem; line-height: 1.5; margin-bottom: 0.7rem; }
+  .review-author { display: flex; align-items: center; gap: 0.55rem; }
+  .review-avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: #7c3aed; color: #fff; font-weight: 700; font-size: 0.9rem;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .review-meta { font-size: 0.8rem; color: rgba(255,255,255,0.75); }
+  .review-meta strong { color: #fff; font-weight: 600; }
+  .review-google { display: inline-flex; align-items: center; gap: 0.3rem; margin-left: auto; font-size: 0.75rem; color: rgba(255,255,255,0.85); font-weight: 600; }
+  .review-photo { width: 100%; border-radius: 12px; margin-bottom: 0.8rem; display: block; aspect-ratio: 4/3; object-fit: cover; }
+  a.review-card { display: block; text-decoration: none; transition: background 0.2s, border-color 0.2s; }
+  a.review-card:hover { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.3); }
+  .review-cta-hint { font-size: 0.72rem; color: rgba(255,255,255,0.6); text-align: center; margin-top: 0.6rem; }
+
   /* Inline form card */
   .quote-card {
     background: #fff;
@@ -431,6 +456,21 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <p class="form-status" aria-live="polite"></p>
       </form>
     </div>
+
+    <a href="https://g.page/r/CbVjKnqoixi-EAE" target="_blank" rel="noopener" class="review-card">
+      <img src="photos/tv-mounts/frame-tv-install.jpg" alt="Samsung Frame TV wall mounted with zero visible cables, Brisbane" class="review-photo" loading="lazy">
+      <div class="review-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+      <p class="review-text">"Mitch did an absolutely fantastic job installing and setting up my Samsung Frame TV. Zero visible cables &mdash; I am so happy."</p>
+      <div class="review-author">
+        <span class="review-avatar">D</span>
+        <span class="review-meta"><strong>Dom M.</strong><br>Verified Google review</span>
+        <span class="review-google">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          Google
+        </span>
+      </div>
+      <div class="review-cta-hint">Tap to read all our Google reviews &rarr;</div>
+    </a>
 
     <p class="call-alt">Prefer to talk? <a href="tel:+61480568180">Call 0480 568 180</a></p>
   </div>
