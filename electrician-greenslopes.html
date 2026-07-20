@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Greenslopes Electrician | Massive Integrated Homes</title>
-<meta name="description" content="Licensed electrician based in Greenslopes. Switchboard upgrades, powerpoints, LED, ceiling fans, TV mounts, smoke alarm compliance. Same-day service.">
-<meta name="keywords" content="electrician greenslopes, greenslopes electrician, switchboard upgrade greenslopes, tv wall mounting greenslopes, led downlights greenslopes, ceiling fan installer greenslopes, smoke alarm compliance greenslopes, holland park electrician, coorparoo electrician">
-<meta property="og:title" content="Greenslopes Electrician | Massive Integrated Homes">
-<meta property="og:description" content="Licensed electrician based in Greenslopes. Switchboard upgrades, powerpoints, LED, ceiling fans, TV mounts, smoke alarm compliance. Same-day service.">
+<title>Smart Home, CCTV &amp; Electrical Greenslopes | Massive Integrated Homes</title>
+<meta name="description" content="Greenslopes smart home automation, CCTV & security cameras, and licensed electrical. Home automation, security, TV mounting with recessed powerpoint finish, switchboards & more. Same-day local service.">
+<meta name="keywords" content="smart home greenslopes, home automation greenslopes, cctv greenslopes, security cameras greenslopes, security camera installation greenslopes, electrician greenslopes, tv mounting greenslopes, recessed powerpoint tv greenslopes, switchboard upgrade greenslopes, holland park smart home, coorparoo cctv">
+<meta property="og:title" content="Smart Home, CCTV &amp; Electrical Greenslopes | Massive Integrated Homes">
+<meta property="og:description" content="Greenslopes smart home automation, CCTV & security cameras, and licensed electrical. Home automation, security, TV mounting with recessed powerpoint finish, switchboards & more. Same-day local service.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://massiveintegratedhomes.com.au/electrician-greenslopes.html">
 <link rel="canonical" href="https://massiveintegratedhomes.com.au/electrician-greenslopes.html">
@@ -47,7 +47,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   "areaServed": {"@type": "Place", "name": "Greenslopes, Brisbane, QLD"},
   "priceRange": "$$",
   "image": "https://massiveintegratedhomes.com.au/milogo.png",
-  "description": "Licensed electrician based in Greenslopes. Switchboard upgrades, powerpoints, LED, ceiling fans, TV mounts, smoke alarm compliance. Same-day service."
+  "description": "Greenslopes smart home automation, CCTV and security cameras, plus licensed electrical work. Home automation, security cameras, TV mounting with recessed powerpoint finish, switchboard upgrades and smoke alarm compliance. Same-day local service."
 }
 </script>
 
@@ -85,7 +85,13 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   .nav-cta:hover { background: var(--primary-hover); }
 
   /* Hero */
-  .hero { background: linear-gradient(135deg, #1a0f3a 0%, #4c1d95 45%, #7c3aed 100%); color: #fff; padding: 4rem 0 5rem; position: relative; overflow: hidden; }
+  .hero {
+    background:
+      linear-gradient(135deg, rgba(26,15,58,0.93) 0%, rgba(76,29,149,0.88) 45%, rgba(124,58,237,0.80) 100%),
+      url('photos/tv-mounts/greenslopes1.jpeg') center/cover no-repeat;
+    background-color: #1a0f3a;
+    color: #fff; padding: 3.5rem 0 4rem; position: relative; overflow: hidden;
+  }
   .hero::before {
     content: ""; position: absolute; inset: 0;
     background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='104' viewBox='0 0 120 104'><polygon points='60,4 116,32 116,72 60,100 4,72 4,32' fill='none' stroke='%23a855f7' stroke-opacity='0.14' stroke-width='1.5'/></svg>");
@@ -103,6 +109,22 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   .btn-secondary { background: rgba(255,255,255,0.14); color: #fff; border: 1px solid rgba(255,255,255,0.3); }
   .btn-secondary:hover { background: rgba(255,255,255,0.22); }
 
+  /* Hero split layout — copy left, live quote form right */
+  .hero-grid { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 2.5rem; align-items: center; }
+  .hero-points { list-style: none; margin: 1.4rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.55rem; }
+  .hero-points li { position: relative; padding-left: 1.7rem; color: rgba(255,255,255,0.92); font-weight: 500; }
+  .hero-points li::before { content: "\2713"; position: absolute; left: 0; color: #c084fc; font-weight: 800; }
+  .hero-form .quote-card { margin: 0; max-width: none; background: #fff; box-shadow: 0 24px 60px rgba(0,0,0,0.4); }
+  .hero-form .quote-card h2 { color: var(--text); font-size: 1.4rem; }
+  .quote-sub { color: var(--muted); font-size: 0.92rem; margin-bottom: 1.1rem; }
+  @media (max-width: 820px) {
+    .hero-grid { grid-template-columns: 1fr; gap: 1.3rem; }
+    .hero-points { display: none; }
+    .hero { padding: 1.8rem 0 2.5rem; }
+    .hero h1 { margin-bottom: 0.7rem; }
+    .hero-lead { font-size: 1rem; margin-bottom: 0; }
+  }
+
   /* Sections */
   section { padding: 4rem 0; }
   section h2 { font-size: 2rem; margin-bottom: 1.2rem; }
@@ -119,7 +141,24 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
   /* Local card */
   .local-block { background: var(--bg-2); padding: 3rem 0; }
-  .local-card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 1.5rem; display: flex; gap: 1.2rem; align-items: flex-start; box-shadow: var(--shadow); max-width: 560px; }
+  .local-card {
+    background: linear-gradient(#fff, #fff) padding-box, linear-gradient(135deg, #a855f7, #7c3aed) border-box;
+    border: 1.5px solid transparent; border-radius: 16px; padding: 1.5rem 1.7rem;
+    display: flex; gap: 1.2rem; align-items: flex-start;
+    box-shadow: 0 14px 44px rgba(124,58,237,0.42), 0 0 70px rgba(168,85,247,0.28);
+    max-width: 560px; position: relative;
+  }
+  .review-card-inline {
+    margin-top: 1.4rem; max-width: 560px;
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 14px; padding: 1.2rem 1.4rem; box-shadow: var(--shadow);
+  }
+  .review-card-inline .review-photo { width: 100%; height: auto; border-radius: 10px; margin-bottom: 0.9rem; display: block; background: #0a0a14; }
+  .review-card-inline .stars { color: #f5b301; letter-spacing: 2px; font-size: 1rem; }
+  .review-card-inline p { margin: 0.5rem 0 0.7rem; color: var(--text); font-style: italic; }
+  .review-card-inline .r-author { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; color: var(--muted); }
+  .review-card-inline .r-author strong { color: var(--text); }
+  .review-card-inline .g-badge { display: inline-flex; align-items: center; gap: 0.25rem; margin-left: auto; font-weight: 600; color: var(--muted); }
   .local-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; max-width: 720px; }
   .local-cards .local-card { max-width: none; }
   .avatar { width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-family: 'Space Grotesk', sans-serif; font-size: 1.4rem; flex-shrink: 0; }
@@ -343,20 +382,65 @@ src="https://www.facebook.com/tr?id=27592303160400799&ev=PageView&noscript=1"
 </aside>
 
 
-<section class="hero">
-  <div class="container hero-inner">
-    <span class="hero-badge">Servicing Greenslopes &amp; nearby</span>
-    <h1>Your Greenslopes <span>local electrician.</span></h1>
-    <p class="hero-lead">Massive Integrated Homes is based right here in Greenslopes. Mitch is a licensed QBCC electrician living locally — same-day response, no callout surcharges, no travel time on the invoice. Trusted for renovations, upgrades and smart home retrofits across Greenslopes and the inner south.</p>
-    <div class="hero-cta">
-      <a href="#quote" class="btn btn-primary">
-        Get a Free Quote
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-      </a>
-      <a href="tel:+61490792415" class="btn btn-secondary">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-        Call 0490 792 415
-      </a>
+<section class="hero" id="quote">
+  <div class="container hero-inner hero-grid">
+    <div class="hero-copy">
+      <span class="hero-badge">Servicing Greenslopes &amp; nearby</span>
+      <h1>Greenslopes smart home, CCTV &amp; <span>electrical.</span></h1>
+      <p class="hero-lead">Local, licensed &amp; based right here in Greenslopes. Smart home automation, security cameras and all the electrical behind them — same-day, no callout fee.</p>
+      <ul class="hero-points">
+        <li>QBCC licensed &amp; fully insured</li>
+        <li>Same-day local response — no travel surcharge</li>
+        <li>Free quotes, no obligation</li>
+      </ul>
+    </div>
+    <div class="hero-form">
+      <div class="quote-card">
+        <h2>Get your free quote</h2>
+        <p class="quote-sub">Quick reply, same-day during business hours. No obligation.</p>
+        <form class="quote-form enquiry-form" action="https://formspree.io/f/maqagaoz" method="POST">
+          <div class="row">
+            <div>
+              <label for="qf-name">Name</label>
+              <input id="qf-name" name="name" type="text" placeholder="Your name" autocomplete="name" autofocus required>
+            </div>
+            <div>
+              <label for="qf-phone">Phone</label>
+              <input id="qf-phone" name="phone" type="tel" placeholder="0400 000 000" autocomplete="tel" required>
+            </div>
+          </div>
+          <div>
+            <label for="qf-email">Email (optional)</label>
+            <input id="qf-email" name="email" type="email" placeholder="you@example.com" autocomplete="email">
+          </div>
+          <div>
+            <label for="qf-service">What do you need?</label>
+            <select id="qf-service" name="service" required>
+              <option value="" disabled selected>Choose one&hellip;</option>
+              <option>Smart home automation</option>
+              <option>CCTV / security cameras</option>
+              <option>TV mounting (recessed finish)</option>
+              <option>General electrical</option>
+              <option>Switchboard upgrade</option>
+              <option>Powerpoint installation / relocation</option>
+              <option>Smoke alarm compliance</option>
+              <option>Not sure &mdash; I need advice</option>
+            </select>
+          </div>
+          <div>
+            <label for="qf-msg">Job details (optional)</label>
+            <textarea id="qf-msg" name="message" placeholder="Suburb, timing, brief description"></textarea>
+          </div>
+          <input type="hidden" name="_subject" value="New quote request from Greenslopes page">
+          <input type="hidden" name="_source_page" value="Greenslopes">
+          <input type="text" name="_gotcha" style="display:none" tabindex="-1" autocomplete="off">
+          <button type="submit">
+            Send my free quote request
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </button>
+          <p class="form-status" aria-live="polite"></p>
+        </form>
+      </div>
     </div>
   </div>
 </section>
@@ -373,27 +457,27 @@ src="https://www.facebook.com/tr?id=27592303160400799&ev=PageView&noscript=1"
 <section>
   <div class="container">
     <h2>What we do in <span>Greenslopes</span></h2>
-    <p class="lead">Greenslopes is renovation country. Older character homes getting upgraded, new bathrooms, kitchen makeovers — all need electrical work done right. We're built for exactly that.</p>
+    <p class="lead">From smart home automation and security cameras to switchboards and that flush, cable-free TV finish — one local licensed team for the tech and the electrical behind it.</p>
     <div class="services-list">
+        <div class="service-card" id="smart-home">
+          <h3>Smart Home Automation</h3>
+          <p>Lighting, blinds, climate &amp; entertainment — controlled from one simple app. Retrofit or new build.</p>
+        </div>
+        <div class="service-card" id="cctv">
+          <h3>CCTV &amp; Security Cameras</h3>
+          <p>HD cameras, video doorbells &amp; monitoring you can check from your phone, anywhere.</p>
+        </div>
+        <div class="service-card" id="tv-mounts">
+          <h3>TV Mounting — Recessed Finish</h3>
+          <p>That flush, cable-free look. We relocate the powerpoint &amp; fit a recessed power/HDMI box behind the screen. From $229.</p>
+        </div>
         <div class="service-card" id="electrical">
           <h3>General Electrical</h3>
-          <p>Powerpoints, downlights, switchboard upgrades, ceiling fans, safety switches.</p>
+          <p>Powerpoints, LED downlights, ceiling fans &amp; safety switches — all your everyday electrical.</p>
         </div>
         <div class="service-card" id="switchboard">
           <h3>Switchboard Upgrades</h3>
           <p>Replace old fuse boxes with modern RCD-protected boards. From $1,499.</p>
-        </div>
-        <div class="service-card" id="tv-mounts">
-          <h3>TV Wall Mounting</h3>
-          <p>Perfect for renovations. Bracket, mount, cable conceal. From $229.</p>
-        </div>
-        <div class="service-card" id="led-downlights">
-          <h3>LED Downlight Upgrade</h3>
-          <p>Replace halogens with dimmable LEDs. Save 80% on energy. From $79/light.</p>
-        </div>
-        <div class="service-card" id="ceiling-fans">
-          <h3>Ceiling Fan Installation</h3>
-          <p>DC-motor, smart-home ready fans. From $249 at existing wired location.</p>
         </div>
         <div class="service-card" id="smoke-alarms">
           <h3>Smoke Alarm Compliance</h3>
@@ -409,14 +493,26 @@ src="https://www.facebook.com/tr?id=27592303160400799&ev=PageView&noscript=1"
     <p class="lead">Mitch lives in Greenslopes. When you book with us, you get a local electrician who can drop by same-day for most jobs. No 40-minute travel charge tacked on the invoice, no waiting a week for a booking. Just local, licensed, done properly.</p>
     
       <div class="local-card">
-        <div class="avatar" style="background: var(--primary);">M</div>
         <div>
-          <div class="local-name">Mitch — Electrician</div>
+          <div class="local-name">Mitch — Electrician &amp; Smart Home Installer</div>
           <div class="local-role">Based in Greenslopes. Fast response times across Greenslopes.</div>
           <a href="tel:+61490792415" class="local-phone">0490 792 415</a>
           <a href="mailto:mitchell@massiveintegratedhomes.com.au" class="local-email">mitchell@massiveintegratedhomes.com.au</a>
         </div>
       </div>
+
+      <a href="https://g.page/r/CbVjKnqoixi-EAE" target="_blank" rel="noopener" class="review-card-inline">
+        <img src="photos/tv-mounts/frame-tv-install.jpg" alt="Samsung Frame TV wall mounted with zero visible cables in Greenslopes" class="review-photo" loading="lazy">
+        <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <p>"Mitch did an absolutely fantastic job installing and setting up my Samsung Frame TV. Zero visible cables &mdash; I am so happy."</p>
+        <div class="r-author">
+          <strong>Dom M.</strong>
+          <span class="g-badge">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            Verified Google review
+          </span>
+        </div>
+      </a>
   </div>
 </section>
 
@@ -433,57 +529,6 @@ src="https://www.facebook.com/tr?id=27592303160400799&ev=PageView&noscript=1"
   </div>
 </section>
 
-
-<section class="quote-section" id="quote">
-  <div class="container">
-    <div class="quote-card">
-      <h2>Get your free Greenslopes quote</h2>
-      <p class="lead" style="color:var(--muted);">Fill in a few details and we'll come back same-day during business hours. No obligation, no pressure.</p>
-      <form class="quote-form enquiry-form" action="https://formspree.io/f/maqagaoz" method="POST">
-        <div class="row">
-          <div>
-            <label for="qf-name">Name</label>
-            <input id="qf-name" name="name" type="text" placeholder="Your name" autocomplete="name" required>
-          </div>
-          <div>
-            <label for="qf-phone">Phone</label>
-            <input id="qf-phone" name="phone" type="tel" placeholder="0400 000 000" autocomplete="tel" required>
-          </div>
-        </div>
-        <div>
-          <label for="qf-email">Email (optional)</label>
-          <input id="qf-email" name="email" type="email" placeholder="you@example.com" autocomplete="email">
-        </div>
-        <div>
-          <label for="qf-service">What do you need?</label>
-          <select id="qf-service" name="service" required>
-            <option value="" disabled selected>Choose one&hellip;</option>
-            <option>General electrical</option>
-            <option>Switchboard upgrade</option>
-            <option>TV wall mounting</option>
-            <option>LED downlight upgrade</option>
-            <option>Ceiling fan installation</option>
-            <option>Powerpoint installation</option>
-            <option>Smoke alarm compliance</option>
-            <option>Not sure &mdash; I need advice</option>
-          </select>
-        </div>
-        <div>
-          <label for="qf-msg">Job details (optional)</label>
-          <textarea id="qf-msg" name="message" placeholder="Suburb, timing, brief description"></textarea>
-        </div>
-        <input type="hidden" name="_subject" value="New quote request from Greenslopes page">
-        <input type="hidden" name="_source_page" value="Greenslopes">
-        <input type="text" name="_gotcha" style="display:none" tabindex="-1" autocomplete="off">
-        <button type="submit">
-          Send my free quote request
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-        </button>
-        <p class="form-status" aria-live="polite"></p>
-      </form>
-    </div>
-  </div>
-</section>
 
 <footer>
   <div class="container">
