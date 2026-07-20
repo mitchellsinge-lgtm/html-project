@@ -128,8 +128,49 @@ src="https://www.facebook.com/tr?id=27592303160400799&ev=PageView&noscript=1"/><
   .footer-nav { margin:1.2rem 0; }
   .footer-nav a { margin:0 0.6rem; }
   .footer-bottom { margin-top:1.5rem; padding-top:1.5rem; border-top:1px solid rgba(255,255,255,0.1); font-size:0.85rem; }
+
+  /* Floating green call button — stays in view as the page scrolls */
+  .float-call {
+    position: fixed;
+    top: 45%;
+    right: 1.25rem;
+    z-index: 200;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #25D366;
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.95rem;
+    padding: 0.75rem 1.15rem;
+    border-radius: 999px;
+    box-shadow: 0 6px 20px rgba(37,211,102,0.45);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    animation: fcPulse 2.4s ease-in-out infinite;
+  }
+  .float-call:hover { transform: scale(1.06); box-shadow: 0 8px 26px rgba(37,211,102,0.65); }
+  .float-call svg { width: 20px; height: 20px; flex-shrink: 0; }
+  .float-call .fc-label { white-space: nowrap; }
+  @keyframes fcPulse {
+    0%, 100% { box-shadow: 0 6px 20px rgba(37,211,102,0.45); }
+    50% { box-shadow: 0 8px 30px rgba(37,211,102,0.8); }
+  }
+  @media (max-width: 700px) {
+    .float-call {
+      top: auto; bottom: 1.1rem; right: 1.1rem;
+      width: 58px; height: 58px; padding: 0;
+      justify-content: center; border-radius: 50%;
+    }
+    .float-call .fc-label { display: none; }
+    .float-call svg { width: 24px; height: 24px; }
+  }
 </style>
 </head>
+<a href="tel:+61480568180" class="float-call" aria-label="Call Massive Integrated Homes on 0480 568 180" onclick="if(window.fbq)fbq('track','Contact');">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+  <span class="fc-label">Call now</span>
+</a>
+
 <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-N8W8ZQDS" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <header>
   <div class="container nav">
