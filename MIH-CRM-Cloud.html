@@ -330,7 +330,7 @@ table.inv-items td{padding:9px 12px;border-bottom:1px solid #eee;font-size:12px}
    MIH CRM — CLOUD (Supabase, shared workspace, Google sign-in)
    ===================================================================== */
 const CFG_KEY='mih_sb_cfg';
-const APP_VERSION='2026.06.29-26';   /* bump this when deploying; phones auto-refresh to match */
+const APP_VERSION='2026.06.29-29';   /* bump this when deploying; phones auto-refresh to match */
 const GST_DIVISOR=11;
 const CAL_SCOPE='https://www.googleapis.com/auth/calendar';
 const OAUTH_SCOPES='https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/spreadsheets';
@@ -349,7 +349,7 @@ const DEFAULT_SETTINGS={
 };
 const DEFAULT_SHEET='1ZHmpAxzOo2GPfGIzrReMztPKNP3MBYi23neekylLZjc';
 let sb=null, me=null;
-let DB={customers:[],jobs:[],invoices:[],expenses:[],loans:[],loanEntries:[],members:[],settings:{...DEFAULT_SETTINGS},counters:{invoice:2,quote:0},financialsReady:false};
+let DB={customers:[],jobs:[],invoices:[],expenses:[],loans:[],loanEntries:[],parts:[],members:[],settings:{...DEFAULT_SETTINGS},counters:{invoice:2,quote:0},financialsReady:false};
 const EXP_CATS=['Materials','Subcontractor','Fuel','Vehicle','Tools & Equipment','Subscriptions','Insurance','Phone & Internet','Marketing','Office','Bank/Fees','Other'];
 const GAuth={token:null,connected:false,calendars:[],needReconnect:false};
 
@@ -499,6 +499,8 @@ const expToRow=e=>({id:e.id,job_id:e.jobId||null,date:e.date||null,category:e.ca
 const rowToLoan=r=>({id:r.id,name:r.name,type:r.type||'business',openingBalance:Number(r.opening_balance)||0,notes:r.notes||'',plan:r.plan||null,ownerId:r.owner_id,ownerName:r.owner_name});
 const loanToRow=l=>({id:l.id,name:l.name,type:l.type||'business',opening_balance:l.openingBalance||0,notes:l.notes||'',plan:l.plan||null,owner_id:l.ownerId,owner_name:l.ownerName,updated_at:new Date().toISOString()});
 const rowToLE=r=>({id:r.id,loanId:r.loan_id,date:r.date,kind:r.kind||'repayment',amount:Number(r.amount)||0,note:r.note||'',ownerId:r.owner_id,ownerName:r.owner_name});
+const rowToPart=r=>({id:r.id,name:r.name||'',price:Number(r.price)||0,category:r.category||'',notes:r.notes||'',ownerId:r.owner_id,ownerName:r.owner_name});
+const partToRow=p=>({id:p.id,name:p.name,price:p.price||0,category:p.category||'',notes:p.notes||'',owner_id:p.ownerId,owner_name:p.ownerName,updated_at:new Date().toISOString()});
 const leToRow=x=>({id:x.id,loan_id:x.loanId,date:x.date||null,kind:x.kind||'repayment',amount:x.amount||0,note:x.note||'',owner_id:x.ownerId,owner_name:x.ownerName});
 const rowToInv=r=>({id:r.id,number:r.number,date:r.date,customerId:r.customer_id,project:r.project,commenced:r.commenced,completed:r.completed,status:r.status,lines:r.lines||[],bank:r.bank||null,sentAt:r.sent_at||null,type:r.type||'invoice',ownerId:r.owner_id,ownerName:r.owner_name});
 const invToRow=i=>({id:i.id,number:i.number,date:i.date||null,customer_id:i.customerId||null,project:i.project,commenced:i.commenced||null,completed:i.completed||null,status:i.status,lines:i.lines,bank:i.bank||null,sent_at:i.sentAt||null,type:i.type||'invoice',owner_id:i.ownerId,owner_name:i.ownerName,updated_at:new Date().toISOString()});
@@ -524,7 +526,7 @@ async function loadAll(){
   await loadFinancials();
 }
 async function loadFinancials(){
-  DB.expenses=[];DB.loans=[];DB.loanEntries=[];DB.financialsReady=false;
+  DB.expenses=[];DB.loans=[];DB.loanEntries=[];DB.parts=[];DB.financialsReady=false;
   try{
     const [ex,ln,le]=await Promise.all([sb.from('expenses').select('*'),sb.from('loans').select('*'),sb.from('loan_entries').select('*')]);
     if(ex.error) return; // financials tables not created yet
@@ -533,7 +535,9 @@ async function loadFinancials(){
     DB.loanEntries=(le.error?[]:(le.data||[])).map(rowToLE);
     DB.financialsReady=true;
   }catch(e){ DB.financialsReady=false; }
+  try{ const pr=await sb.from('parts').select('*'); if(!pr.error) DB.parts=(pr.data||[]).map(rowToPart); }catch(e){}
 }
+async function upsertPart(p){ const {error}=await sb.from('parts').upsert(partToRow(p)); if(error)throw error; }
 async function upsertCust(c){ const {error}=await sb.from('customers').upsert(custToRow(c)); if(error)throw error; }
 async function upsertJob(j){
   const row=jobToRow(j);
@@ -659,14 +663,27 @@ function sentInvoicesHtml(){
 /* =====================================================================
    CUSTOMERS
    ===================================================================== */
+let custQuery='';
 function viewCustomers(){
   document.getElementById('topAction').innerHTML=filterSeg()+`<button class="btn" style="margin-left:12px" onclick="openCustomer()">+ Add customer</button>`;
-  const list=mineOnly([...DB.customers]).sort((a,b)=>a.name.localeCompare(b.name));
-  const c=document.getElementById('content');
-  if(!list.length){ c.innerHTML=`<div class="card">${emptyState('◍','No customers yet','Add your first client to get started.')}</div>`; return; }
-  c.innerHTML=`<div class="card"><table><thead><tr><th>Name</th><th>Contact</th><th>Address</th><th>Added by</th><th></th></tr></thead><tbody>${list.map(c=>{
-    const jobs=DB.jobs.filter(j=>j.customerId===c.id).length;
-    return `<tr>
+  document.getElementById('content').innerHTML=`
+    <div class="card pad" style="margin-bottom:14px">
+      <input id="custSearchBox" type="search" autocomplete="off" placeholder="🔍  Search customers by name, phone, address or email…" value="${esc(custQuery)}" oninput="custQuery=this.value;renderCustomerList()">
+    </div>
+    <div id="custList"></div>`;
+  renderCustomerList();
+  const box=document.getElementById('custSearchBox'); if(box && custQuery){ box.focus(); box.setSelectionRange(box.value.length,box.value.length); }
+}
+function renderCustomerList(){
+  const el=document.getElementById('custList'); if(!el) return;
+  if(!DB.customers.length){ el.innerHTML=`<div class="card">${emptyState('◍','No customers yet','Add your first client to get started.')}</div>`; return; }
+  const term=(custQuery||'').trim().toLowerCase();
+  let list=mineOnly([...DB.customers]);
+  if(term) list=list.filter(c=>[c.name,c.contact,c.phone,c.email,c.address].some(f=>(f||'').toLowerCase().includes(term)));
+  list=list.sort((a,b)=>a.name.localeCompare(b.name));
+  if(!list.length){ el.innerHTML=`<div class="card">${emptyState('🔍','No matches','No customers match “'+esc(custQuery)+'”.')}</div>`; return; }
+  el.innerHTML=`<div class="card"><table><thead><tr><th>Name (${list.length})</th><th>Contact</th><th>Address</th><th>Added by</th><th></th></tr></thead><tbody>${list.map(c=>`
+    <tr>
       <td><div class="t-name">${esc(c.name)}</div>${c.contact?`<div class="muted" style="font-size:11.5px">${esc(c.contact)}</div>`:''}</td>
       <td>${c.phone?`<div>${esc(c.phone)}</div>`:''}${c.email?`<div class="muted" style="font-size:11.5px">${esc(c.email)}</div>`:''}</td>
       <td>${c.address?`<span class="muted">${esc(c.address)}</span>`:'<span class="muted">—</span>'}</td>
@@ -675,8 +692,7 @@ function viewCustomers(){
         ${c.address?`<button class="btn line sm" title="Open in Google Maps" onclick="openMap('${c.id}')">📍 Map</button>`:''}
         <button class="btn ghost sm" onclick="openInvoice(null,'${c.id}')">Invoice</button>
         <button class="btn line sm" onclick="openCustomer('${c.id}')">Edit</button>
-      </td></tr>`;
-  }).join('')}</tbody></table></div>`;
+      </td></tr>`).join('')}</tbody></table></div>`;
 }
 function openMap(id){ const c=custById(id); if(c&&c.address) window.open('https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(c.address),'_blank'); }
 function openCustomer(id){
@@ -969,6 +985,7 @@ function viewInvoices(){
       <td style="text-align:right;white-space:nowrap">
         <button class="btn ghost sm" onclick="previewInvoice('${i.id}')">View</button>
         <button class="btn line sm" onclick="openInvoice('${i.id}')">Edit</button>
+        ${(!q && i.status!=='paid')?`<button class="btn line sm" onclick="completeInvoice('${i.id}')">✓ Complete</button>`:''}
       </td></tr>`).join('')}</tbody></table></div>`;
 }
 function nextInvNumber(){ return 'MIH-'+String(DB.counters.invoice+1).padStart(4,'0'); }
@@ -1046,6 +1063,10 @@ function openInvoice(id,presetCust,prefill,forceType){
       </select></div>
     </div>
     <label style="margin-bottom:8px;display:block">Itemised works &amp; materials</label>
+    <div class="cust-pick" style="margin-bottom:10px">
+      <input id="i_partsearch" autocomplete="off" placeholder="🔍 Add a saved part as a line (from your price list)…" oninput="invPartSearch(this.value)" onfocus="invPartSearch(this.value)">
+      <div id="i_partresults" class="search-results hidden"></div>
+    </div>
     <div id="liRows"></div>
     <button class="btn ghost sm" onclick="addLine()" style="margin-top:4px">+ Add line</button>
     <div class="totbox" id="liTot"></div>
@@ -1133,9 +1154,13 @@ async function saveInvoice(id){
   clearInvoiceDraft();
   invMode=type; closeModal(); go('invoices'); previewInvoice(obj.id); toast((type==='quote'?'Quote':'Invoice')+' saved');
 }
+function docContact(i){
+  const owner=DB.members.find(m=>m.name===(i&&i.ownerName));
+  return { email:(owner&&owner.contact_email)||DB.settings.email, phone:(owner&&owner.contact_phone)||DB.settings.mobile };
+}
 function invoiceDocHtml(id){
   const i=DB.invoices.find(x=>x.id===id); const c=custById(i.customerId)||{}; const s=DB.settings;
-  const q=i.type==='quote';
+  const q=i.type==='quote'; const contact=docContact(i);
   const total=invTotal(i),gst=invGST(i);
   const arr=bankList();
   const first=(i.ownerName||'').toLowerCase().split(' ')[0];
@@ -1146,7 +1171,7 @@ function invoiceDocHtml(id){
     <div class="inv-head">
       <div class="lhs"><img src="milogo.png" onerror="this.style.display='none'">
         <div><div class="co">${esc(s.businessName)}</div><div class="tag">${esc(s.tagline)}</div>
-          <div class="ci">ABN ${esc(s.abn||'62 834 287 138')}<br>Mobile: ${esc(s.mobile)}<br>Email: ${esc(s.email)}<br>Website: ${esc(s.website)}</div></div></div>
+          <div class="ci">ABN ${esc(s.abn||'62 834 287 138')}<br>Mobile: ${esc(contact.phone)}<br>Email: ${esc(contact.email)}<br>Website: ${esc(s.website)}</div></div></div>
       <div class="inv-stamp"><div class="t">${q?'QUOTE':'INVOICE'}</div><div class="n">${esc(i.number)}</div><div class="d">${fmtDate(i.date)}</div></div>
     </div>
     <div class="inv-accent"></div>
@@ -1238,7 +1263,7 @@ function b64url(s){
   return btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 }
 function invoiceEmailHtml(i,c){
-  const s=DB.settings; const q=i.type==='quote'; const total=invTotal(i),gst=invGST(i);
+  const s=DB.settings; const q=i.type==='quote'; const total=invTotal(i),gst=invGST(i); const contact=docContact(i);
   const arr=bankList(); const first=(i.ownerName||'').toLowerCase().split(' ')[0];
   const pay=(i.bank&&i.bank.account)?i.bank:(arr.find(a=>(a.name||'').toLowerCase().includes(first))||arr[0]||{name:s.bankName,bsb:s.bsb,account:s.accountNumber});
   const rows=i.lines.map(l=>`<tr><td style="padding:7px 8px;border-bottom:1px solid #eee">${esc(l.desc)}</td><td style="padding:7px 8px;border-bottom:1px solid #eee;text-align:center">${esc(l.qty)}</td><td style="padding:7px 8px;border-bottom:1px solid #eee;text-align:right">${money((Number(l.qty)||0)*(Number(l.price)||0))}</td></tr>`).join('');
@@ -1270,12 +1295,12 @@ function invoiceEmailHtml(i,c){
         Account Name: ${esc(pay.name||'')}<br>BSB: ${esc(pay.bsb||'')}<br>Account Number: ${esc(pay.account||'')}<br>Reference: ${esc(i.number)}
       </div>`}
       ${q?'':review}
-      <p style="font-size:13px;color:#555;margin:16px 0 0">Any questions, just reply to this email or call ${esc(s.mobile)}.</p>
+      <p style="font-size:13px;color:#555;margin:16px 0 0">Any questions, just reply to this email or call ${esc(contact.phone)}.</p>
       <p style="font-size:13px;color:#555;margin:18px 0 0">Kind regards,<br><b>${esc(me&&me.name?me.name:s.businessName)}</b><br>${esc(s.businessName)}${s.abn?' · ABN '+esc(s.abn):''}</p>
     </div></div>`;
 }
 function invoiceEmailText(i,c){
-  const s=DB.settings; const q=i.type==='quote'; const total=invTotal(i),gst=invGST(i);
+  const s=DB.settings; const q=i.type==='quote'; const total=invTotal(i),gst=invGST(i); const contact=docContact(i);
   const arr=bankList(); const first=(i.ownerName||'').toLowerCase().split(' ')[0];
   const pay=(i.bank&&i.bank.account)?i.bank:(arr.find(a=>(a.name||'').toLowerCase().includes(first))||arr[0]||{name:s.bankName,bsb:s.bsb,account:s.accountNumber});
   return `Hi ${c.name||'there'},\n\n${q?'Thanks for the opportunity to quote.':'Thanks very much for choosing '+s.businessName+'.'}${i.project?' '+(q?'Quote':'Invoice')+' for '+i.project+'.':''}\n\n`
@@ -1286,7 +1311,7 @@ function invoiceEmailText(i,c){
         :`Payment details:\n  Account Name: ${pay.name||''}\n  BSB: ${pay.bsb||''}\n  Account Number: ${pay.account||''}\n  Reference: ${i.number}\n\n`)
     +`The ${q?'quote':'invoice'} is also attached as a PDF.\n\n`
     +(q?'':`Happy with our work? A quick review really helps: ${s.reviewUrl||'https://g.page/r/CbVjKnqoixi-EAE/review'}\n\n`)
-    +`Any questions, just reply to this email or call ${s.mobile}.\n\nKind regards,\n${(me&&me.name)||s.businessName}\n${s.businessName}${s.abn?' · ABN '+s.abn:''}`;
+    +`Any questions, just reply to this email or call ${contact.phone}.\n\nKind regards,\n${(me&&me.name)||s.businessName}\n${s.businessName}${s.abn?' · ABN '+s.abn:''}`;
 }
 async function gmailSend(to,subject,html,text,pdfB64,pdfName){
   // proven simple structure (From = signed-in account, HTML body + optional PDF).
@@ -1376,7 +1401,17 @@ function printInvoice(){
    ===================================================================== */
 function viewSettings(){
   const s=DB.settings;
+  const myMember=DB.members.find(m=>(m.email||'').toLowerCase()===(me.email||'').toLowerCase())||{};
   document.getElementById('content').innerHTML=`
+  <div class="card pad" style="margin-bottom:18px">
+    <div class="section-head"><h2>My contact details <span class="muted" style="font-size:12px;font-weight:400">(shown on invoices &amp; quotes YOU create)</span></h2></div>
+    <div class="frow">
+      <div class="field"><label>My mobile</label><input id="my_phone" value="${esc(myMember.contact_phone||'')}" placeholder="0400 000 000"></div>
+      <div class="field"><label>My contact email</label><input id="my_email" value="${esc(myMember.contact_email||'')}" placeholder="you@massiveintegratedhomes.com.au"></div>
+    </div>
+    <button class="btn" onclick="saveMyContact()">Save my details</button>
+    <div class="hint" style="margin-top:8px">Signed in as <b>${esc(me.name)}</b>. If left blank, documents fall back to the business email/mobile below.</div>
+  </div>
   <div class="grid" style="grid-template-columns:1fr 1fr;align-items:start">
     <div class="card pad">
       <div class="section-head"><h2>Business details</h2></div>
@@ -1433,6 +1468,15 @@ function collectBanks(){
 }
 function addBankRow(){ collectBanks(); DB.settings.bankAccounts=bankList().concat([{label:'',name:'',bsb:'',account:''}]); renderBankList(); }
 function removeBankRow(i){ collectBanks(); const arr=bankList().slice(); arr.splice(i,1); DB.settings.bankAccounts=arr.length?arr:[{label:'',name:'',bsb:'',account:''}]; renderBankList(); }
+async function saveMyContact(){
+  const contact_email=val('my_email').trim(), contact_phone=val('my_phone').trim();
+  try{
+    const {error}=await sb.from('members').update({contact_email,contact_phone}).eq('email', me.email);
+    if(error) throw error;
+    const m=DB.members.find(x=>(x.email||'').toLowerCase()===me.email.toLowerCase()); if(m){ m.contact_email=contact_email; m.contact_phone=contact_phone; }
+    toast('Your contact details saved');
+  }catch(e){ console.error(e); toast(/column|schema/i.test(e.message||'')?'Run migration-member-contact.sql in Supabase first':'Save failed: '+(e.message||'')); }
+}
 async function saveSettings(){
   collectBanks(); const first=bankList()[0]||{};
   Object.assign(DB.settings,{businessName:val('s_name'),tagline:val('s_tag'),mobile:val('s_mobile'),abn:val('s_abn'),
@@ -1562,13 +1606,19 @@ function loanBalance(loanId){
 }
 
 let receiptTmp=null;
-function openExpense(id,presetJobId){
+function openExpense(id,presetJobId,presetDesc){
   if(!DB.financialsReady) return toast('Run financials-schema.sql in Supabase first');
-  const e=id?DB.expenses.find(x=>x.id===id):{date:todayISO(),gstInc:true,recurring:'',category:'Materials',jobId:presetJobId||''};
+  const e=id?DB.expenses.find(x=>x.id===id):{date:todayISO(),gstInc:true,recurring:'',category:'Materials',jobId:presetJobId||'',description:presetDesc||''};
   receiptTmp=e.receiptPath?{path:e.receiptPath}:null;
   const jobOpts=[...DB.jobs].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(j=>`<option value="${j.id}" ${j.id===e.jobId?'selected':''}>${esc(j.title)} (${fmtDate(j.date)})</option>`).join('');
   const catOpts=EXP_CATS.map(c=>`<option ${c===e.category?'selected':''}>${c}</option>`).join('');
   modal(`${id?'Edit':'Add'} expense`,`
+    <div class="field full" style="margin-bottom:12px"><label>Find a saved part <span class="hint">(fills description &amp; price)</span></label>
+      <div class="cust-pick">
+        <input id="e_partsearch" autocomplete="off" placeholder="🔍 Search your parts / price list…" oninput="expPartSearch(this.value)" onfocus="expPartSearch(this.value)">
+        <div id="e_partresults" class="search-results hidden"></div>
+      </div>
+    </div>
     <div class="frow">
       <div class="field"><label>Date</label><input type="date" id="e_date" value="${esc(e.date)}"></div>
       <div class="field"><label>Amount ($)</label><input type="number" inputmode="decimal" step="0.01" id="e_amt" value="${esc(e.amount||'')}" placeholder="0.00"></div>
@@ -1591,7 +1641,8 @@ function openExpense(id,presetJobId){
       <div id="paidByRow" class="frow" style="margin:8px 0 0;display:${e.shared?'':'none'}">
         <div class="field"><label>Paid by (whose money)</label><select id="e_paidby">${DB.members.map(m=>`<option ${((e.paidBy||me.name)===m.name)?'selected':''}>${esc(m.name)}</option>`).join('')}</select></div>
       </div>
-    </div>`,
+    </div>
+    <label style="display:flex;align-items:center;gap:9px;cursor:pointer;font-size:13px;margin-top:8px"><input type="checkbox" id="e_savepart" style="width:auto"> 💾 Save this to my parts / price list for reuse</label>`,
     [ id?{label:'Delete',cls:'danger',act:async()=>{ if(confirm('Delete expense?')){ await delRow('expenses',id); DB.expenses=DB.expenses.filter(x=>x.id!==id); closeModal(); rerenderFin(); }}}:null,
       {label:'Save expense',cls:'btn',act:async()=>{
         const amt=parseFloat(val('e_amt')); if(!(amt>0)){ toast('Enter an amount'); return; }
@@ -1602,6 +1653,13 @@ function openExpense(id,presetJobId){
           ownerId:ex?ex.ownerId:me.id, ownerName:ex?ex.ownerName:me.name};
         try{ await upsertExp(obj); }catch(err){ return toast('Save failed: '+err.message); }
         if(ex) Object.assign(ex,obj); else DB.expenses.push(obj);
+        const sp=document.getElementById('e_savepart');
+        if(sp&&sp.checked&&obj.description.trim()){
+          const exist=DB.parts.find(p=>p.name.toLowerCase()===obj.description.trim().toLowerCase());
+          const part=exist||{id:uid(),ownerId:me.id,ownerName:me.name};
+          Object.assign(part,{name:obj.description.trim(),price:amt,category:obj.category});
+          try{ await upsertPart(part); if(!exist) DB.parts.push(part); }catch(e){}
+        }
         closeModal(); rerenderFin();
       }} ]);
 }
@@ -1612,6 +1670,83 @@ async function onReceiptPick(input){
   catch(e){ if(prev) prev.textContent='Upload failed — '+(e.message||'check the receipts bucket exists'); }
 }
 async function viewReceipt(path){ const url=await receiptUrl(path); if(url) window.open(url,'_blank'); else toast('Could not open receipt'); }
+
+/* ===================== PARTS / PRICE LIST ===================== */
+let partMgrQuery='';
+function openPart(id){
+  if(!DB.financialsReady) return toast('Run financials-schema.sql / migration-parts.sql in Supabase first');
+  const p=id?DB.parts.find(x=>x.id===id):{price:0};
+  modal(`${id?'Edit':'New'} part`,`
+    <div class="frow">
+      <div class="field full"><label>Part / item name *</label><input id="p_name" value="${esc(p.name)}" placeholder="e.g. Arlec LED Strip"></div>
+      <div class="field"><label>Price ($)</label><input type="number" step="0.01" id="p_price" value="${esc(p.price||'')}" placeholder="0.00"></div>
+      <div class="field"><label>Category</label><input id="p_cat" value="${esc(p.category)}" placeholder="e.g. Materials"></div>
+      <div class="field full"><label>Notes</label><input id="p_notes" value="${esc(p.notes)}"></div>
+    </div>`,
+    [ id?{label:'Delete',cls:'danger',act:async()=>{ if(confirm('Delete this part?')){ await delRow('parts',id); DB.parts=DB.parts.filter(x=>x.id!==id); closeModal(); if(currentView==='financials') viewFinancials(); }}}:null,
+      {label:'Save part',cls:'btn',act:async()=>{
+        const name=val('p_name').trim(); if(!name){ toast('Name required'); return; }
+        const ex=id?DB.parts.find(x=>x.id===id):null;
+        const obj={id:id||uid(),name,price:parseFloat(val('p_price'))||0,category:val('p_cat'),notes:val('p_notes'),ownerId:ex?ex.ownerId:me.id,ownerName:ex?ex.ownerName:me.name};
+        try{ await upsertPart(obj); }catch(e){ return toast('Save failed: '+e.message); }
+        if(ex) Object.assign(ex,obj); else DB.parts.push(obj);
+        closeModal(); if(currentView==='financials') viewFinancials();
+      }} ]);
+}
+function partsFilter(){ const term=(partMgrQuery||'').trim().toLowerCase(); let list=[...DB.parts].sort((a,b)=>a.name.localeCompare(b.name)); return term?list.filter(p=>[p.name,p.category].some(f=>(f||'').toLowerCase().includes(term))):list; }
+function partsListHtml(){
+  if(!DB.parts.length) return `<div class="hint">No saved parts yet. Add items you use often (e.g. GPO $32.50, Arlec LED Strip $40.40, TV wall mount $350) — then reuse them on expenses &amp; invoices, and update the price here anytime.</div>`;
+  const filt=partsFilter();
+  if(!filt.length) return `<div class="hint">No parts match “${esc(partMgrQuery)}”.</div>`;
+  return `<table><tbody>${filt.map(p=>`<tr style="cursor:pointer" onclick="openPart('${p.id}')"><td><div class="t-name">${esc(p.name)}</div>${p.category?`<div class="muted" style="font-size:11px">${esc(p.category)}</div>`:''}</td><td style="text-align:right" class="t-name">${money(p.price)}</td><td style="text-align:right"><button class="btn line sm" onclick="event.stopPropagation();openPart('${p.id}')">Edit</button></td></tr>`).join('')}</tbody></table>`;
+}
+function partsCardHtml(){ return `<input id="partMgrSearch" type="search" autocomplete="off" placeholder="🔍 Search parts…" value="${esc(partMgrQuery)}" oninput="partMgrQuery=this.value;renderPartsCard()" style="margin-bottom:10px"><div id="partsCardList">${partsListHtml()}</div>`; }
+function renderPartsCard(){ const el=document.getElementById('partsCardList'); if(el) el.innerHTML=partsListHtml(); }
+/* part search inside the expense modal */
+function expPartSearch(q){
+  const box=document.getElementById('e_partresults'); if(!box) return;
+  const term=(q||'').trim().toLowerCase();
+  let list=DB.parts.slice(); if(term) list=list.filter(p=>[p.name,p.category].some(f=>(f||'').toLowerCase().includes(term)));
+  list=list.sort((a,b)=>a.name.localeCompare(b.name)).slice(0,8);
+  let html=list.map(p=>`<div class="sr-item" onclick="pickExpPart('${p.id}')"><div class="t-name">${esc(p.name)}</div><div class="muted" style="font-size:11px">${esc(p.category||'')}${p.category?' · ':''}${money(p.price)}</div></div>`).join('');
+  html=DB.parts.length?(html||`<div class="sr-item muted">No match.</div>`):`<div class="sr-item muted">No saved parts yet — add them in Financials → Parts.</div>`;
+  box.innerHTML=html; box.classList.remove('hidden');
+}
+function pickExpPart(id){
+  const p=DB.parts.find(x=>x.id===id); if(!p) return;
+  const d=document.getElementById('e_desc'); if(d) d.value=p.name;
+  const a=document.getElementById('e_amt'); if(a) a.value=p.price;
+  if(p.category){ const cat=document.getElementById('e_cat'); if(cat) [...cat.options].forEach(o=>{ if(o.value===p.category||o.text===p.category) cat.value=o.value; }); }
+  const box=document.getElementById('e_partresults'); if(box) box.classList.add('hidden');
+  const s=document.getElementById('e_partsearch'); if(s) s.value=p.name;
+}
+/* part search inside the invoice/quote editor */
+function invPartSearch(q){
+  const box=document.getElementById('i_partresults'); if(!box) return;
+  const term=(q||'').trim().toLowerCase();
+  let list=DB.parts.slice(); if(term) list=list.filter(p=>[p.name,p.category].some(f=>(f||'').toLowerCase().includes(term)));
+  list=list.sort((a,b)=>a.name.localeCompare(b.name)).slice(0,8);
+  let html=list.map(p=>`<div class="sr-item" onclick="addLineFromPart('${p.id}')"><div class="t-name">${esc(p.name)}</div><div class="muted" style="font-size:11px">${money(p.price)}</div></div>`).join('');
+  html=DB.parts.length?(html||`<div class="sr-item muted">No match.</div>`):`<div class="sr-item muted">No saved parts yet — add them in Financials → Parts.</div>`;
+  box.innerHTML=html; box.classList.remove('hidden');
+}
+function addLineFromPart(id){
+  const p=DB.parts.find(x=>x.id===id); if(!p) return;
+  const last=editingLines[editingLines.length-1];
+  if(last && !(last.desc||'').trim() && !Number(last.price)){ last.desc=p.name; last.qty=1; last.price=p.price; }
+  else editingLines.push({desc:p.name,qty:1,price:p.price});
+  renderLines();
+  const box=document.getElementById('i_partresults'); if(box) box.classList.add('hidden');
+  const s=document.getElementById('i_partsearch'); if(s) s.value='';
+  saveInvoiceDraft();
+}
+async function completeInvoice(id){
+  const i=DB.invoices.find(x=>x.id===id); if(!i) return;
+  if(!confirm('Mark '+i.number+' as paid and record the costs for it?')) return;
+  if(i.status!=='paid'){ i.status='paid'; try{ await upsertInv(i); }catch(e){ console.warn(e); } }
+  render();
+  openExpense(null,'', 'Costs for '+i.number+(i.project?' — '+i.project:''));
+}
 
 function openLoan(id){
   if(!DB.financialsReady) return toast('Run financials-schema.sql in Supabase first');
@@ -1875,6 +2010,10 @@ function viewFinancials(){
    <div class="card pad" style="margin-bottom:18px">
      <div class="section-head"><h2>Recurring / ongoing costs</h2><button class="btn ghost sm" onclick="openExpense()">+ Add cost</button></div>
      ${recurringHtml()}
+   </div>
+   <div class="card pad" style="margin-bottom:18px">
+     <div class="section-head"><h2>Parts / price list</h2><button class="btn ghost sm" onclick="openPart()">+ Add part</button></div>
+     ${partsCardHtml()}
    </div>
    <div class="card pad">
      <div class="section-head"><h2>All expenses</h2><div style="display:flex;gap:8px"><button class="btn line sm" onclick="exportExpenses()">⇩ Export CSV</button><button class="btn ghost sm" onclick="openExpense()">+ Add expense</button></div></div>
