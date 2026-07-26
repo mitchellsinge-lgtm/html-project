@@ -330,7 +330,7 @@ table.inv-items td{padding:9px 12px;border-bottom:1px solid #eee;font-size:12px}
    MIH CRM — CLOUD (Supabase, shared workspace, Google sign-in)
    ===================================================================== */
 const CFG_KEY='mih_sb_cfg';
-const APP_VERSION='2026.06.29-29';   /* bump this when deploying; phones auto-refresh to match */
+const APP_VERSION='2026.06.29-30';   /* bump this when deploying; phones auto-refresh to match */
 const GST_DIVISOR=11;
 const CAL_SCOPE='https://www.googleapis.com/auth/calendar';
 const OAUTH_SCOPES='https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/spreadsheets';
@@ -494,8 +494,8 @@ const rowToCust=r=>({id:r.id,name:r.name,contact:r.contact,phone:r.phone,email:r
 const custToRow=c=>({id:c.id,name:c.name,contact:c.contact,phone:c.phone,email:c.email,abn:c.abn,address:c.address,notes:c.notes,owner_id:c.ownerId,owner_name:c.ownerName,updated_at:new Date().toISOString()});
 const rowToJob=r=>({id:r.id,title:r.title,customerId:r.customer_id,date:r.date,time:r.time,duration:Number(r.duration)||2,status:r.status,notes:r.notes,value:(r.value!=null?Number(r.value):null),googleEventId:r.google_event_id,calendarId:r.calendar_id,source:r.source,ownerId:r.owner_id,ownerName:r.owner_name});
 const jobToRow=j=>({id:j.id,title:j.title,customer_id:j.customerId||null,date:j.date||null,time:j.time||null,duration:j.duration||2,status:j.status,notes:j.notes,value:(j.value!=null&&j.value!==''?Number(j.value):null),google_event_id:j.googleEventId||null,calendar_id:j.calendarId||null,source:j.source||'local',owner_id:j.ownerId,owner_name:j.ownerName,updated_at:new Date().toISOString()});
-const rowToExp=r=>({id:r.id,jobId:r.job_id,date:r.date,category:r.category,description:r.description,amount:Number(r.amount)||0,gstInc:r.gst_inc!==false,recurring:r.recurring||'',receiptPath:r.receipt_path||'',shared:r.shared===true,paidBy:r.paid_by||'',ownerId:r.owner_id,ownerName:r.owner_name});
-const expToRow=e=>({id:e.id,job_id:e.jobId||null,date:e.date||null,category:e.category,description:e.description,amount:e.amount||0,gst_inc:e.gstInc!==false,recurring:e.recurring||null,receipt_path:e.receiptPath||null,shared:!!e.shared,paid_by:e.paidBy||null,owner_id:e.ownerId,owner_name:e.ownerName,updated_at:new Date().toISOString()});
+const rowToExp=r=>({id:r.id,jobId:r.job_id,invoiceId:r.invoice_id||'',date:r.date,category:r.category,description:r.description,amount:Number(r.amount)||0,gstInc:r.gst_inc!==false,recurring:r.recurring||'',receiptPath:r.receipt_path||'',shared:r.shared===true,paidBy:r.paid_by||'',ownerId:r.owner_id,ownerName:r.owner_name});
+const expToRow=e=>({id:e.id,job_id:e.jobId||null,invoice_id:e.invoiceId||null,date:e.date||null,category:e.category,description:e.description,amount:e.amount||0,gst_inc:e.gstInc!==false,recurring:e.recurring||null,receipt_path:e.receiptPath||null,shared:!!e.shared,paid_by:e.paidBy||null,owner_id:e.ownerId,owner_name:e.ownerName,updated_at:new Date().toISOString()});
 const rowToLoan=r=>({id:r.id,name:r.name,type:r.type||'business',openingBalance:Number(r.opening_balance)||0,notes:r.notes||'',plan:r.plan||null,ownerId:r.owner_id,ownerName:r.owner_name});
 const loanToRow=l=>({id:l.id,name:l.name,type:l.type||'business',opening_balance:l.openingBalance||0,notes:l.notes||'',plan:l.plan||null,owner_id:l.ownerId,owner_name:l.ownerName,updated_at:new Date().toISOString()});
 const rowToLE=r=>({id:r.id,loanId:r.loan_id,date:r.date,kind:r.kind||'repayment',amount:Number(r.amount)||0,note:r.note||'',ownerId:r.owner_id,ownerName:r.owner_name});
@@ -546,7 +546,7 @@ async function upsertJob(j){
   if(error) throw error;
 }
 async function upsertExp(e){
-  const row=expToRow(e); const optional=['shared','paid_by'];
+  const row=expToRow(e); const optional=['shared','paid_by','invoice_id'];
   for(let n=0;n<3;n++){ const {error}=await sb.from('expenses').upsert(row); if(!error) return;
     const miss=optional.find(c=>(c in row)&&(error.message||'').includes(c)); if(miss){ delete row[miss]; continue; } throw error; }
   throw new Error('Expense save failed (schema)');
@@ -986,6 +986,7 @@ function viewInvoices(){
         <button class="btn ghost sm" onclick="previewInvoice('${i.id}')">View</button>
         <button class="btn line sm" onclick="openInvoice('${i.id}')">Edit</button>
         ${(!q && i.status!=='paid')?`<button class="btn line sm" onclick="completeInvoice('${i.id}')">✓ Complete</button>`:''}
+        ${(!q && (i.status==='paid'||invoiceExpenses(i.id).length))?`<button class="btn line sm" onclick="openInvoiceCosts('${i.id}')">＄ Costs (${invoiceExpenses(i.id).length})</button>`:''}
       </td></tr>`).join('')}</tbody></table></div>`;
 }
 function nextInvNumber(){ return 'MIH-'+String(DB.counters.invoice+1).padStart(4,'0'); }
@@ -1606,9 +1607,9 @@ function loanBalance(loanId){
 }
 
 let receiptTmp=null;
-function openExpense(id,presetJobId,presetDesc){
+function openExpense(id,presetJobId,presetDesc,presetInvoiceId){
   if(!DB.financialsReady) return toast('Run financials-schema.sql in Supabase first');
-  const e=id?DB.expenses.find(x=>x.id===id):{date:todayISO(),gstInc:true,recurring:'',category:'Materials',jobId:presetJobId||'',description:presetDesc||''};
+  const e=id?DB.expenses.find(x=>x.id===id):{date:todayISO(),gstInc:true,recurring:'',category:'Materials',jobId:presetJobId||'',description:presetDesc||'',invoiceId:presetInvoiceId||''};
   receiptTmp=e.receiptPath?{path:e.receiptPath}:null;
   const jobOpts=[...DB.jobs].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(j=>`<option value="${j.id}" ${j.id===e.jobId?'selected':''}>${esc(j.title)} (${fmtDate(j.date)})</option>`).join('');
   const catOpts=EXP_CATS.map(c=>`<option ${c===e.category?'selected':''}>${c}</option>`).join('');
@@ -1649,6 +1650,7 @@ function openExpense(id,presetJobId,presetDesc){
         const ex=id?DB.expenses.find(x=>x.id===id):null;
         const shared=document.getElementById('e_shared').checked;
         const obj={id:id||uid(),date:val('e_date'),amount:amt,category:val('e_cat'),gstInc:val('e_gst')==='1',description:val('e_desc'),jobId:val('e_job'),recurring:val('e_rec'),receiptPath:receiptTmp?receiptTmp.path:'',
+          invoiceId: ex?(ex.invoiceId||''):(e.invoiceId||''),
           shared, paidBy: shared?(val('e_paidby')||me.name):'',
           ownerId:ex?ex.ownerId:me.id, ownerName:ex?ex.ownerName:me.name};
         try{ await upsertExp(obj); }catch(err){ return toast('Save failed: '+err.message); }
@@ -1745,7 +1747,23 @@ async function completeInvoice(id){
   if(!confirm('Mark '+i.number+' as paid and record the costs for it?')) return;
   if(i.status!=='paid'){ i.status='paid'; try{ await upsertInv(i); }catch(e){ console.warn(e); } }
   render();
-  openExpense(null,'', 'Costs for '+i.number+(i.project?' — '+i.project:''));
+  openExpense(null,'', 'Costs for '+i.number+(i.project?' — '+i.project:''), id);
+}
+/* review / edit the costs recorded against an invoice */
+function invoiceExpenses(id){ return DB.expenses.filter(e=>e.invoiceId===id); }
+function openInvoiceCosts(id){
+  const i=DB.invoices.find(x=>x.id===id); if(!i) return;
+  const list=invoiceExpenses(id);
+  const costs=list.reduce((s,e)=>s+e.amount,0), rev=invTotal(i), profit=rev-costs;
+  modal('Costs for '+i.number,`
+    <div style="display:flex;justify-content:space-between;font-size:13.5px;padding:3px 0"><span>Invoice total</span><span>${money(rev)}</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:13.5px;padding:3px 0"><span>Expenses (${list.length})</span><span>−${money(costs)}</span></div>
+    <div style="display:flex;justify-content:space-between;font-weight:800;border-top:1px solid var(--line-strong);padding-top:6px;margin-top:4px"><span>Profit</span><span style="color:${profit>=0?'var(--ok)':'var(--danger)'}">${money(profit)}</span></div>
+    <div style="margin-top:14px">${list.length
+      ? `<table><tbody>${list.sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(e=>`<tr style="cursor:pointer" onclick="closeModal();openExpense('${e.id}')"><td><div class="t-name">${esc(e.description||e.category)}</div><div class="muted" style="font-size:11px">${fmtDate(e.date)} · ${esc(e.category||'')}</div></td><td style="text-align:right" class="t-name">${money(e.amount)}</td><td style="text-align:right"><button class="btn line sm" onclick="event.stopPropagation();closeModal();openExpense('${e.id}')">Edit</button></td></tr>`).join('')}</tbody></table>`
+      : `<div class="hint">No costs recorded against this invoice yet.</div>`}</div>`,
+    [ {label:'+ Add expense',cls:'line',act:()=>{ closeModal(); openExpense(null,'', 'Costs for '+i.number+(i.project?' — '+i.project:''), id); }},
+      {label:'Close',cls:'btn',act:()=>closeModal()} ]);
 }
 
 function openLoan(id){
