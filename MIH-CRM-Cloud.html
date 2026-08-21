@@ -330,7 +330,7 @@ table.inv-items td{padding:9px 12px;border-bottom:1px solid #eee;font-size:12px}
    MIH CRM — CLOUD (Supabase, shared workspace, Google sign-in)
    ===================================================================== */
 const CFG_KEY='mih_sb_cfg';
-const APP_VERSION='2026.06.29-30';   /* bump this when deploying; phones auto-refresh to match */
+const APP_VERSION='2026.06.29-32';   /* bump this when deploying; phones auto-refresh to match */
 const GST_DIVISOR=11;
 const CAL_SCOPE='https://www.googleapis.com/auth/calendar';
 const OAUTH_SCOPES='https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/spreadsheets';
@@ -499,8 +499,8 @@ const expToRow=e=>({id:e.id,job_id:e.jobId||null,invoice_id:e.invoiceId||null,da
 const rowToLoan=r=>({id:r.id,name:r.name,type:r.type||'business',openingBalance:Number(r.opening_balance)||0,notes:r.notes||'',plan:r.plan||null,ownerId:r.owner_id,ownerName:r.owner_name});
 const loanToRow=l=>({id:l.id,name:l.name,type:l.type||'business',opening_balance:l.openingBalance||0,notes:l.notes||'',plan:l.plan||null,owner_id:l.ownerId,owner_name:l.ownerName,updated_at:new Date().toISOString()});
 const rowToLE=r=>({id:r.id,loanId:r.loan_id,date:r.date,kind:r.kind||'repayment',amount:Number(r.amount)||0,note:r.note||'',ownerId:r.owner_id,ownerName:r.owner_name});
-const rowToPart=r=>({id:r.id,name:r.name||'',price:Number(r.price)||0,category:r.category||'',notes:r.notes||'',ownerId:r.owner_id,ownerName:r.owner_name});
-const partToRow=p=>({id:p.id,name:p.name,price:p.price||0,category:p.category||'',notes:p.notes||'',owner_id:p.ownerId,owner_name:p.ownerName,updated_at:new Date().toISOString()});
+const rowToPart=r=>({id:r.id,name:r.name||'',price:Number(r.price)||0,unit:r.unit||'',category:r.category||'',notes:r.notes||'',ownerId:r.owner_id,ownerName:r.owner_name});
+const partToRow=p=>({id:p.id,name:p.name,price:p.price||0,unit:p.unit||'',category:p.category||'',notes:p.notes||'',owner_id:p.ownerId,owner_name:p.ownerName,updated_at:new Date().toISOString()});
 const leToRow=x=>({id:x.id,loan_id:x.loanId,date:x.date||null,kind:x.kind||'repayment',amount:x.amount||0,note:x.note||'',owner_id:x.ownerId,owner_name:x.ownerName});
 const rowToInv=r=>({id:r.id,number:r.number,date:r.date,customerId:r.customer_id,project:r.project,commenced:r.commenced,completed:r.completed,status:r.status,lines:r.lines||[],bank:r.bank||null,sentAt:r.sent_at||null,type:r.type||'invoice',ownerId:r.owner_id,ownerName:r.owner_name});
 const invToRow=i=>({id:i.id,number:i.number,date:i.date||null,customer_id:i.customerId||null,project:i.project,commenced:i.commenced||null,completed:i.completed||null,status:i.status,lines:i.lines,bank:i.bank||null,sent_at:i.sentAt||null,type:i.type||'invoice',owner_id:i.ownerId,owner_name:i.ownerName,updated_at:new Date().toISOString()});
@@ -537,7 +537,12 @@ async function loadFinancials(){
   }catch(e){ DB.financialsReady=false; }
   try{ const pr=await sb.from('parts').select('*'); if(!pr.error) DB.parts=(pr.data||[]).map(rowToPart); }catch(e){}
 }
-async function upsertPart(p){ const {error}=await sb.from('parts').upsert(partToRow(p)); if(error)throw error; }
+async function upsertPart(p){
+  const row=partToRow(p);
+  let {error}=await sb.from('parts').upsert(row);
+  if(error && /unit/i.test(error.message||'')){ delete row.unit; const r2=await sb.from('parts').upsert(row); error=r2.error; }
+  if(error) throw error;
+}
 async function upsertCust(c){ const {error}=await sb.from('customers').upsert(custToRow(c)); if(error)throw error; }
 async function upsertJob(j){
   const row=jobToRow(j);
@@ -985,6 +990,7 @@ function viewInvoices(){
       <td style="text-align:right;white-space:nowrap">
         <button class="btn ghost sm" onclick="previewInvoice('${i.id}')">View</button>
         <button class="btn line sm" onclick="openInvoice('${i.id}')">Edit</button>
+        ${q?`<button class="btn line sm" onclick="convertDoc('${i.id}')">➜ To invoice</button>`:''}
         ${(!q && i.status!=='paid')?`<button class="btn line sm" onclick="completeInvoice('${i.id}')">✓ Complete</button>`:''}
         ${(!q && (i.status==='paid'||invoiceExpenses(i.id).length))?`<button class="btn line sm" onclick="openInvoiceCosts('${i.id}')">＄ Costs (${invoiceExpenses(i.id).length})</button>`:''}
       </td></tr>`).join('')}</tbody></table></div>`;
@@ -1065,7 +1071,7 @@ function openInvoice(id,presetCust,prefill,forceType){
     </div>
     <label style="margin-bottom:8px;display:block">Itemised works &amp; materials</label>
     <div class="cust-pick" style="margin-bottom:10px">
-      <input id="i_partsearch" autocomplete="off" placeholder="🔍 Add a saved part as a line (from your price list)…" oninput="invPartSearch(this.value)" onfocus="invPartSearch(this.value)">
+      <input id="i_partsearch" autocomplete="off" placeholder="🔍 Add a saved part as a line (type 2+ letters)…" oninput="invPartSearch(this.value)">
       <div id="i_partresults" class="search-results hidden"></div>
     </div>
     <div id="liRows"></div>
@@ -1208,17 +1214,35 @@ function invoiceDocHtml(id){
     <div class="inv-thanks">Thank you for choosing ${esc(s.businessName)}</div>
   </div>`;
 }
-function convertQuoteToInvoice(id){
-  const qte=DB.invoices.find(x=>x.id===id); if(!qte) return;
-  closeModal(); invMode='invoice';
-  openInvoice(null, qte.customerId, {project:qte.project, lines:JSON.parse(JSON.stringify(qte.lines||[]))}, 'invoice');
-  toast('New invoice from quote — review & save');
+/* switch a document between quote <-> invoice in place (keeps customer, lines, totals) */
+async function convertDoc(id){
+  const d=DB.invoices.find(x=>x.id===id); if(!d) return;
+  const toInvoice=(d.type==='quote');
+  const newNum=toInvoice?nextInvNumber():nextQuoteNumber();
+  if(!confirm(toInvoice
+    ? 'Turn quote '+d.number+' into invoice '+newNum+'?\n\nIt keeps the customer and all line items, and adds your bank/payment details so the customer can pay.'
+    : 'Turn invoice '+d.number+' back into quote '+newNum+'?\n\nPayment details are removed from the document.')) return;
+  const prev={number:d.number,type:d.type,status:d.status};
+  d.type=toInvoice?'invoice':'quote';
+  d.number=newNum;
+  d.status='draft'; d.sentAt=null;
+  if(toInvoice && !(d.bank&&d.bank.account)){
+    const arr=bankList(); const first=(d.ownerName||me.name||'').toLowerCase().split(' ')[0];
+    d.bank=arr.find(a=>(a.name||'').toLowerCase().includes(first))||arr[0]||null;
+  }
+  try{ await upsertInv(d); }
+  catch(e){ Object.assign(d,prev); return toast('Convert failed: '+(e.message||'')); }
+  if(toInvoice){ const m=/MIH-(\d+)/.exec(newNum); if(m) DB.counters.invoice=Math.max(DB.counters.invoice,+m[1]); }
+  else { const m=/QUO-(\d+)/.exec(newNum); if(m) DB.counters.quote=Math.max(DB.counters.quote||0,+m[1]); }
+  invMode=d.type; closeModal(); go('invoices'); previewInvoice(d.id);
+  toast(toInvoice?('Now invoice '+newNum+' — bank details included'):('Now quote '+newNum));
 }
+function convertQuoteToInvoice(id){ return convertDoc(id); }
 function previewInvoice(id){
   const i=DB.invoices.find(x=>x.id===id); const q=i.type==='quote';
   modal((q?'Quote ':'Invoice ')+i.number,invoiceDocHtml(id),
     [ {label:'Edit',cls:'line',act:()=>{ closeModal(); openInvoice(id); }},
-      q?{label:'➜ Convert to invoice',cls:'line',act:()=>convertQuoteToInvoice(id)}:null,
+      {label:q?'➜ Convert to invoice':'➜ Convert to quote',cls:'line',act:()=>convertDoc(id)},
       {label:'📄 Save PDF',cls:'line',act:()=>saveInvoicePdf(id)},
       {label:(q?'📧 Email quote':'📧 Email to customer'),cls:'line',act:()=>emailInvoice(id)},
       {label:'🖨 Print',cls:'btn',act:()=>printInvoice()} ].filter(Boolean),'wide');
@@ -1614,15 +1638,18 @@ function openExpense(id,presetJobId,presetDesc,presetInvoiceId){
   const jobOpts=[...DB.jobs].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(j=>`<option value="${j.id}" ${j.id===e.jobId?'selected':''}>${esc(j.title)} (${fmtDate(j.date)})</option>`).join('');
   const catOpts=EXP_CATS.map(c=>`<option ${c===e.category?'selected':''}>${c}</option>`).join('');
   modal(`${id?'Edit':'Add'} expense`,`
-    <div class="field full" style="margin-bottom:12px"><label>Find a saved part <span class="hint">(fills description &amp; price)</span></label>
+    <div class="field full" style="margin-bottom:12px"><label>Quick-add a saved part <span class="hint">(type 2+ letters)</span></label>
       <div class="cust-pick">
-        <input id="e_partsearch" autocomplete="off" placeholder="🔍 Search your parts / price list…" oninput="expPartSearch(this.value)" onfocus="expPartSearch(this.value)">
+        <input id="e_partsearch" autocomplete="off" placeholder="🔍 e.g. TPS 2.5mm…" oninput="expPartSearch(this.value)">
         <div id="e_partresults" class="search-results hidden"></div>
       </div>
     </div>
     <div class="frow">
       <div class="field"><label>Date</label><input type="date" id="e_date" value="${esc(e.date)}"></div>
       <div class="field"><label>Amount ($)</label><input type="number" inputmode="decimal" step="0.01" id="e_amt" value="${esc(e.amount||'')}" placeholder="0.00"></div>
+      <div class="field"><label>Qty <span class="hint">(optional)</span></label><input type="number" inputmode="decimal" step="0.01" id="e_qty" placeholder="e.g. 30" oninput="expCalcAmount()"></div>
+      <div class="field"><label>Unit price ($)</label><input type="number" inputmode="decimal" step="0.01" id="e_unitprice" placeholder="e.g. 1.81" oninput="expCalcAmount()"></div>
+      <div class="field full"><div class="hint" id="e_calcHint" style="margin-top:-6px"></div></div>
       <div class="field"><label>Category</label><select id="e_cat">${catOpts}</select></div>
       <div class="field"><label>GST included?</label><select id="e_gst"><option value="1" ${e.gstInc!==false?'selected':''}>Yes (incl. GST)</option><option value="0" ${e.gstInc===false?'selected':''}>No / N/A</option></select></div>
       <div class="field full"><label>Description</label><input id="e_desc" value="${esc(e.description)}" placeholder="e.g. HDMI cables, wall plates, Bunnings"></div>
@@ -1659,7 +1686,8 @@ function openExpense(id,presetJobId,presetDesc,presetInvoiceId){
         if(sp&&sp.checked&&obj.description.trim()){
           const exist=DB.parts.find(p=>p.name.toLowerCase()===obj.description.trim().toLowerCase());
           const part=exist||{id:uid(),ownerId:me.id,ownerName:me.name};
-          Object.assign(part,{name:obj.description.trim(),price:amt,category:obj.category});
+          const unitP=parseFloat(val('e_unitprice'));
+          Object.assign(part,{name:obj.description.trim(),price:(unitP>0?unitP:amt),category:obj.category});
           try{ await upsertPart(part); if(!exist) DB.parts.push(part); }catch(e){}
         }
         closeModal(); rerenderFin();
@@ -1681,7 +1709,8 @@ function openPart(id){
   modal(`${id?'Edit':'New'} part`,`
     <div class="frow">
       <div class="field full"><label>Part / item name *</label><input id="p_name" value="${esc(p.name)}" placeholder="e.g. Arlec LED Strip"></div>
-      <div class="field"><label>Price ($)</label><input type="number" step="0.01" id="p_price" value="${esc(p.price||'')}" placeholder="0.00"></div>
+      <div class="field"><label>Price ($) per unit</label><input type="number" step="0.01" id="p_price" value="${esc(p.price||'')}" placeholder="1.81"></div>
+      <div class="field"><label>Unit</label><input id="p_unit" value="${esc(p.unit||'')}" placeholder="e.g. m, each, roll"></div>
       <div class="field"><label>Category</label><input id="p_cat" value="${esc(p.category)}" placeholder="e.g. Materials"></div>
       <div class="field full"><label>Notes</label><input id="p_notes" value="${esc(p.notes)}"></div>
     </div>`,
@@ -1689,7 +1718,7 @@ function openPart(id){
       {label:'Save part',cls:'btn',act:async()=>{
         const name=val('p_name').trim(); if(!name){ toast('Name required'); return; }
         const ex=id?DB.parts.find(x=>x.id===id):null;
-        const obj={id:id||uid(),name,price:parseFloat(val('p_price'))||0,category:val('p_cat'),notes:val('p_notes'),ownerId:ex?ex.ownerId:me.id,ownerName:ex?ex.ownerName:me.name};
+        const obj={id:id||uid(),name,price:parseFloat(val('p_price'))||0,unit:val('p_unit'),category:val('p_cat'),notes:val('p_notes'),ownerId:ex?ex.ownerId:me.id,ownerName:ex?ex.ownerName:me.name};
         try{ await upsertPart(obj); }catch(e){ return toast('Save failed: '+e.message); }
         if(ex) Object.assign(ex,obj); else DB.parts.push(obj);
         closeModal(); if(currentView==='financials') viewFinancials();
@@ -1700,37 +1729,53 @@ function partsListHtml(){
   if(!DB.parts.length) return `<div class="hint">No saved parts yet. Add items you use often (e.g. GPO $32.50, Arlec LED Strip $40.40, TV wall mount $350) — then reuse them on expenses &amp; invoices, and update the price here anytime.</div>`;
   const filt=partsFilter();
   if(!filt.length) return `<div class="hint">No parts match “${esc(partMgrQuery)}”.</div>`;
-  return `<table><tbody>${filt.map(p=>`<tr style="cursor:pointer" onclick="openPart('${p.id}')"><td><div class="t-name">${esc(p.name)}</div>${p.category?`<div class="muted" style="font-size:11px">${esc(p.category)}</div>`:''}</td><td style="text-align:right" class="t-name">${money(p.price)}</td><td style="text-align:right"><button class="btn line sm" onclick="event.stopPropagation();openPart('${p.id}')">Edit</button></td></tr>`).join('')}</tbody></table>`;
+  return `<table><tbody>${filt.map(p=>`<tr style="cursor:pointer" onclick="openPart('${p.id}')"><td><div class="t-name">${esc(p.name)}</div>${p.category?`<div class="muted" style="font-size:11px">${esc(p.category)}</div>`:''}</td><td style="text-align:right" class="t-name">${money(p.price)}${p.unit?`<div class="muted" style="font-size:11px;font-weight:400">per ${esc(p.unit)}</div>`:''}</td><td style="text-align:right"><button class="btn line sm" onclick="event.stopPropagation();openPart('${p.id}')">Edit</button></td></tr>`).join('')}</tbody></table>`;
 }
 function partsCardHtml(){ return `<input id="partMgrSearch" type="search" autocomplete="off" placeholder="🔍 Search parts…" value="${esc(partMgrQuery)}" oninput="partMgrQuery=this.value;renderPartsCard()" style="margin-bottom:10px"><div id="partsCardList">${partsListHtml()}</div>`; }
 function renderPartsCard(){ const el=document.getElementById('partsCardList'); if(el) el.innerHTML=partsListHtml(); }
 /* part search inside the expense modal */
+function hideExpParts(){ const b=document.getElementById('e_partresults'); if(b) b.classList.add('hidden'); }
 function expPartSearch(q){
   const box=document.getElementById('e_partresults'); if(!box) return;
   const term=(q||'').trim().toLowerCase();
-  let list=DB.parts.slice(); if(term) list=list.filter(p=>[p.name,p.category].some(f=>(f||'').toLowerCase().includes(term)));
-  list=list.sort((a,b)=>a.name.localeCompare(b.name)).slice(0,8);
-  let html=list.map(p=>`<div class="sr-item" onclick="pickExpPart('${p.id}')"><div class="t-name">${esc(p.name)}</div><div class="muted" style="font-size:11px">${esc(p.category||'')}${p.category?' · ':''}${money(p.price)}</div></div>`).join('');
-  html=DB.parts.length?(html||`<div class="sr-item muted">No match.</div>`):`<div class="sr-item muted">No saved parts yet — add them in Financials → Parts.</div>`;
-  box.innerHTML=html; box.classList.remove('hidden');
+  if(term.length<2){ box.classList.add('hidden'); return; }   // only show once you actually type
+  let list=DB.parts.filter(p=>[p.name,p.category].some(f=>(f||'').toLowerCase().includes(term)))
+                   .sort((a,b)=>a.name.localeCompare(b.name)).slice(0,6);
+  if(!list.length){ box.classList.add('hidden'); return; }     // never sit in the way with "no match"
+  box.innerHTML=list.map(p=>`<div class="sr-item" onclick="pickExpPart('${p.id}')"><div class="t-name">${esc(p.name)}</div><div class="muted" style="font-size:11px">${money(p.price)}${p.unit?' / '+esc(p.unit):''}${p.category?' · '+esc(p.category):''}</div></div>`).join('')
+    +`<div class="sr-item muted" style="text-align:center" onclick="hideExpParts()">✕ close</div>`;
+  box.classList.remove('hidden');
 }
 function pickExpPart(id){
   const p=DB.parts.find(x=>x.id===id); if(!p) return;
   const d=document.getElementById('e_desc'); if(d) d.value=p.name;
-  const a=document.getElementById('e_amt'); if(a) a.value=p.price;
+  const u=document.getElementById('e_unitprice'); if(u) u.value=p.price;
+  const qi=document.getElementById('e_qty'); if(qi && !(parseFloat(qi.value)>0)) qi.value=1;
   if(p.category){ const cat=document.getElementById('e_cat'); if(cat) [...cat.options].forEach(o=>{ if(o.value===p.category||o.text===p.category) cat.value=o.value; }); }
-  const box=document.getElementById('e_partresults'); if(box) box.classList.add('hidden');
-  const s=document.getElementById('e_partsearch'); if(s) s.value=p.name;
+  hideExpParts();
+  const s=document.getElementById('e_partsearch'); if(s) s.value='';
+  expCalcAmount();
+}
+/* qty × unit price -> amount (e.g. 30 × TPS 2.5mm @ $1.81 = $54.30) */
+function expCalcAmount(){
+  const qi=document.getElementById('e_qty'), ui=document.getElementById('e_unitprice'), ai=document.getElementById('e_amt');
+  if(!qi||!ui||!ai) return;
+  const q=parseFloat(qi.value), u=parseFloat(ui.value);
+  if(q>0 && u>0){ ai.value=(Math.round(q*u*100)/100); }
+  const hint=document.getElementById('e_calcHint');
+  if(hint) hint.textContent=(q>0&&u>0)?(q+' × '+money(u)+' = '+money(q*u)):'';
 }
 /* part search inside the invoice/quote editor */
 function invPartSearch(q){
   const box=document.getElementById('i_partresults'); if(!box) return;
   const term=(q||'').trim().toLowerCase();
-  let list=DB.parts.slice(); if(term) list=list.filter(p=>[p.name,p.category].some(f=>(f||'').toLowerCase().includes(term)));
-  list=list.sort((a,b)=>a.name.localeCompare(b.name)).slice(0,8);
-  let html=list.map(p=>`<div class="sr-item" onclick="addLineFromPart('${p.id}')"><div class="t-name">${esc(p.name)}</div><div class="muted" style="font-size:11px">${money(p.price)}</div></div>`).join('');
-  html=DB.parts.length?(html||`<div class="sr-item muted">No match.</div>`):`<div class="sr-item muted">No saved parts yet — add them in Financials → Parts.</div>`;
-  box.innerHTML=html; box.classList.remove('hidden');
+  if(term.length<2){ box.classList.add('hidden'); return; }
+  const list=DB.parts.filter(p=>[p.name,p.category].some(f=>(f||'').toLowerCase().includes(term)))
+                     .sort((a,b)=>a.name.localeCompare(b.name)).slice(0,6);
+  if(!list.length){ box.classList.add('hidden'); return; }
+  box.innerHTML=list.map(p=>`<div class="sr-item" onclick="addLineFromPart('${p.id}')"><div class="t-name">${esc(p.name)}</div><div class="muted" style="font-size:11px">${money(p.price)}${p.unit?' / '+esc(p.unit):''}</div></div>`).join('')
+    +`<div class="sr-item muted" style="text-align:center" onclick="document.getElementById('i_partresults').classList.add('hidden')">✕ close</div>`;
+  box.classList.remove('hidden');
 }
 function addLineFromPart(id){
   const p=DB.parts.find(x=>x.id===id); if(!p) return;
