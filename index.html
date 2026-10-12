@@ -2384,6 +2384,49 @@ document.addEventListener('click', function (e) {
   try { (window.dataLayer = window.dataLayer || []).push({ event: name, link_url: href }); } catch (err) {}
 }, true);
 </script>
+<!-- Spam guard for enquiry forms: silently drops bot submissions (so they never reach Formspree, Meta or Google Ads) and checks the phone number looks Australian. Real customers are unaffected. -->
+<script>
+(function () {
+  var loadedAt = Date.now(), humanSeen = false;
+  ['pointerdown', 'touchstart', 'keydown', 'mousemove', 'scroll'].forEach(function (t) {
+    window.addEventListener(t, function () { humanSeen = true; }, { once: true, passive: true });
+  });
+  function auPhoneOk(v) {
+    var d = String(v || '').replace(/[^\d]/g, '');
+    if (d.indexOf('61') === 0 && d.length === 11) d = '0' + d.slice(2);
+    if (!/^0[2-478]\d{8}$/.test(d)) return false;
+    if (/^(\d)\1+$/.test(d.slice(2)) || d === '0400000000') return false;
+    return true;
+  }
+  function looksSpammy(form) {
+    var els = form.querySelectorAll('input[type="text"], input[type="email"], textarea');
+    for (var i = 0; i < els.length; i++) {
+      if (els[i].name === '_gotcha') continue;
+      if (/https?:\/\/|www\.|<a\s|\[url/i.test(els[i].value || '')) return true;
+    }
+    return false;
+  }
+  document.addEventListener('submit', function (e) {
+    var form = e.target;
+    if (!form || !form.classList || !form.classList.contains('enquiry-form')) return;
+    var status = form.querySelector('.form-status');
+    var trap = form.querySelector('input[name="_gotcha"]');
+    var isBot = (trap && trap.value) || (Date.now() - loadedAt < 3000) || !humanSeen || looksSpammy(form);
+    if (isBot) {
+      e.preventDefault(); e.stopImmediatePropagation();
+      try { form.reset(); } catch (err) {}
+      if (status) { status.textContent = 'Thanks! Your enquiry has been sent — we’ll be in touch shortly.'; status.style.color = '#10b981'; }
+      return;
+    }
+    var phone = form.querySelector('input[name="phone"]');
+    if (phone && !auPhoneOk(phone.value)) {
+      e.preventDefault(); e.stopImmediatePropagation();
+      if (status) { status.textContent = 'Please enter a valid Australian phone number, e.g. 0400 000 000.'; status.style.color = '#ef4444'; }
+      try { phone.focus(); } catch (err) {}
+    }
+  }, true);
+})();
+</script>
 </body>
 </html>
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
