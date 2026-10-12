@@ -28,6 +28,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   gtag('js', new Date());
   gtag('config', 'AW-18208823853');
   gtag('config', 'G-S5KWFCL72M');
+  gtag('config', 'G-Z9P8SE0JEV');
 </script>
 
 <!-- Meta Pixel -->
@@ -227,7 +228,7 @@ src="https://www.facebook.com/tr?id=27592303160400799&ev=PageView&noscript=1"/><
       <a href="index.html#faq">FAQ</a>
       <a href="get-started.html">Book a Consultation</a>
     </div>
-    <div class="footer-bottom">&copy; 2026 Massive Integrated Homes &middot; QBCC Licensed &middot; Fully Insured</div>
+    <div class="footer-bottom">&copy; 2026 Massive Integrated Homes &middot; QBCC Licensed &middot; Fully Insured &middot; Electrical Contractor Licence No. 1508151</div>
   </div>
 </footer>
 <script>
@@ -240,6 +241,18 @@ src="https://www.facebook.com/tr?id=27592303160400799&ev=PageView&noscript=1"/><
     document.addEventListener('keydown',function(e){if(e.key==='Escape')closeM();});
     document.querySelectorAll('.menu-links a').forEach(function(a){a.addEventListener('click',closeM);});
   })();
+</script>
+<!-- Lead tracking: every phone or email tap counts as a Contact (Meta) and a GA4 event. One listener covers all tel:/mailto: links, so new buttons are tracked automatically. -->
+<script>
+document.addEventListener('click', function (e) {
+  var a = e.target.closest && e.target.closest('a[href^="tel:"], a[href^="mailto:"]');
+  if (!a) return;
+  var href = a.getAttribute('href');
+  var name = href.indexOf('tel:') === 0 ? 'phone_call_click' : 'email_click';
+  try { if (window.fbq) fbq('track', 'Contact', { content_name: name }); } catch (err) {}
+  try { if (window.gtag) gtag('event', name, { link_url: href, page_path: location.pathname }); } catch (err) {}
+  try { (window.dataLayer = window.dataLayer || []).push({ event: name, link_url: href }); } catch (err) {}
+}, true);
 </script>
 </body>
 </html>

@@ -2156,7 +2156,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </div>
 
     <div class="footer-bottom">
-      <div>&copy; <span id="year">2026</span> Massive Integrated Homes. All rights reserved. &middot; QBCC Licensed &middot; Fully Insured</div>
+      <div>&copy; <span id="year">2026</span> Massive Integrated Homes. All rights reserved. &middot; QBCC Licensed &middot; Fully Insured &middot; Electrical Contractor Licence No. 1508151</div>
       <div>Brisbane &middot; Gold Coast</div>
     </div>
   </div>
@@ -2372,6 +2372,18 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   });
 </script>
 
+<!-- Lead tracking: every phone or email tap counts as a Contact (Meta) and a GA4 event. One listener covers all tel:/mailto: links, so new buttons are tracked automatically. -->
+<script>
+document.addEventListener('click', function (e) {
+  var a = e.target.closest && e.target.closest('a[href^="tel:"], a[href^="mailto:"]');
+  if (!a) return;
+  var href = a.getAttribute('href');
+  var name = href.indexOf('tel:') === 0 ? 'phone_call_click' : 'email_click';
+  try { if (window.fbq) fbq('track', 'Contact', { content_name: name }); } catch (err) {}
+  try { if (window.gtag) gtag('event', name, { link_url: href, page_path: location.pathname }); } catch (err) {}
+  try { (window.dataLayer = window.dataLayer || []).push({ event: name, link_url: href }); } catch (err) {}
+}, true);
+</script>
 </body>
 </html>
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
