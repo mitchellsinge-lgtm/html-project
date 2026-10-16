@@ -174,6 +174,20 @@ textarea{resize:vertical;min-height:64px}
 .ag-date:first-child{margin-top:2px}
 .ag-pasthd{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:700;margin:24px 0 6px;border-top:1px solid var(--line);padding-top:16px}
 .ag-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:9px;cursor:pointer;box-shadow:var(--shadow)}
+/* leads */
+.nbadge{background:#ef4444;color:#fff;border-radius:999px;font-size:10px;font-weight:800;padding:1px 6px;margin-left:6px;line-height:1.5}
+.lead-card{background:#fff;border:1px solid var(--line);border-left:4px solid var(--warn);border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:var(--shadow)}
+.lead-card.due{border-left-color:var(--danger);background:#fffafa}
+.lead-card.quoted{border-left-color:var(--primary)}
+.lead-card.lost{border-left-color:#9ca3af;opacity:.8}
+.lc-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;flex-wrap:wrap}
+.lc-name{font-weight:700;font-size:15px}
+.lc-meta{color:var(--muted);font-size:12.5px;margin-top:2px}
+.lc-msg{margin:9px 0 0;font-size:13px;color:var(--ink-soft);white-space:pre-wrap;word-break:break-word}
+.lc-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:11px}
+.lc-docs{margin-top:8px;font-size:12px;color:var(--muted)}
+.lead-banner{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:12px 14px;margin-bottom:18px}
+.cal-ev.chase{background:#d97706 !important}
 .ag-card:hover{border-color:var(--line-strong)}
 .ag-top{display:flex;align-items:center;gap:10px;margin-bottom:3px}
 .ag-time{font-weight:700;font-size:13px;color:var(--ink-soft)}
@@ -211,6 +225,14 @@ table.inv-items td{padding:9px 12px;border-bottom:1px solid #eee;font-size:12px}
 .inv-total{border:2px solid var(--primary);border-radius:10px;background:#f7f4fc;padding:22px;display:flex;justify-content:space-between;align-items:center}
 .inv-total .l{font-family:'Space Grotesk';font-weight:700;font-size:18px}
 .inv-total .v{font-family:'Space Grotesk';font-weight:800;font-size:24px;color:var(--primary)}
+.inv-total.paid{border-color:#0b8a43;background:#f0fbf4}
+.inv-total.paid .v{color:#0b8a43}
+/* PAID stamp — sits over the payment details panel on a paid invoice */
+.paid-stamp{position:absolute;right:-6px;bottom:6px;transform:rotate(-12deg);border:3px solid #0b8a43;border-radius:10px;
+  padding:6px 18px 7px;color:#0b8a43;background:rgba(255,255,255,.72);text-align:center;pointer-events:none;opacity:.92}
+.paid-stamp .ps-t{font-family:'Space Grotesk';font-weight:800;font-size:34px;line-height:1;letter-spacing:3px}
+.paid-stamp .ps-d{font-family:'Space Grotesk';font-weight:700;font-size:11px;letter-spacing:1px;margin-top:3px}
+@media print{.paid-stamp{opacity:1;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
 .inv-services{background:#0c0b14;color:#fff;margin-top:22px}
 .inv-services .acc{height:4px;background:linear-gradient(90deg,var(--primary),var(--accent))}
 .inv-services .sv{padding:16px 26px}
@@ -289,7 +311,7 @@ table.inv-items td{padding:9px 12px;border-bottom:1px solid #eee;font-size:12px}
     </div>
     <nav class="nav" id="nav">
       <button data-view="dashboard" class="active"><span class="ic">▦</span> Dashboard</button>
-      <button data-view="customers"><span class="ic">◍</span> Customers</button>
+      <button data-view="leads"><span class="ic">☎</span> Leads</button>
       <button data-view="calendar"><span class="ic">▤</span> Calendar &amp; Jobs</button>
       <button data-view="invoices"><span class="ic">▣</span> Invoices</button>
       <button data-view="financials"><span class="ic">＄</span> Financials</button>
@@ -315,7 +337,7 @@ table.inv-items td{padding:9px 12px;border-bottom:1px solid #eee;font-size:12px}
   </div>
   <nav class="mobilenav" id="mobileNav">
     <button data-view="dashboard" class="active"><span class="ic">▦</span>Home</button>
-    <button data-view="customers"><span class="ic">◍</span>Clients</button>
+    <button data-view="leads"><span class="ic">☎</span>Leads</button>
     <button data-view="calendar"><span class="ic">▤</span>Calendar</button>
     <button data-view="invoices"><span class="ic">▣</span>Invoices</button>
     <button data-view="financials"><span class="ic">＄</span>Money</button>
@@ -330,7 +352,7 @@ table.inv-items td{padding:9px 12px;border-bottom:1px solid #eee;font-size:12px}
    MIH CRM — CLOUD (Supabase, shared workspace, Google sign-in)
    ===================================================================== */
 const CFG_KEY='mih_sb_cfg';
-const APP_VERSION='2026.06.29-32';   /* bump this when deploying; phones auto-refresh to match */
+const APP_VERSION='2026.10.16-35';   /* bump this when deploying; phones auto-refresh to match */
 const GST_DIVISOR=11;
 const CAL_SCOPE='https://www.googleapis.com/auth/calendar';
 const OAUTH_SCOPES='https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/spreadsheets';
@@ -456,6 +478,7 @@ async function onSignedIn(session){
     hide('loading'); show('appRoot');
     renderUserChip();
     render();
+    { const n=dueLeads().length; if(n) setTimeout(()=>toast('☎ '+n+' lead'+(n>1?'s':'')+' to chase today'),700); }
   }catch(e){ console.error(e); appReady=false; hide('loading'); showLogin('Could not load your workspace: '+(e.message||e)); }
 }
 function renderUserChip(){
@@ -467,6 +490,7 @@ function renderUserChip(){
     </button>
     <div id="optMenu" class="optmenu hidden">
       <div class="ohead">Create</div>
+      <button onclick="closeOptions();openLead()">☎ New lead</button>
       <button onclick="closeOptions();openJob()">📅 Schedule job</button>
       <button onclick="closeOptions();openCustomer()">➕ Add customer</button>
       <button onclick="closeOptions();invMode='invoice';openInvoice(null,null,null,'invoice')">🧾 New invoice</button>
@@ -490,10 +514,16 @@ document.addEventListener('click',e=>{ const m=document.getElementById('optMenu'
 /* =====================================================================
    DATA LAYER (Supabase)  — mapping snake_case rows <-> app objects
    ===================================================================== */
-const rowToCust=r=>({id:r.id,name:r.name,contact:r.contact,phone:r.phone,email:r.email,abn:r.abn,address:r.address,notes:r.notes,ownerId:r.owner_id,ownerName:r.owner_name});
-const custToRow=c=>({id:c.id,name:c.name,contact:c.contact,phone:c.phone,email:c.email,abn:c.abn,address:c.address,notes:c.notes,owner_id:c.ownerId,owner_name:c.ownerName,updated_at:new Date().toISOString()});
-const rowToJob=r=>({id:r.id,title:r.title,customerId:r.customer_id,date:r.date,time:r.time,duration:Number(r.duration)||2,status:r.status,notes:r.notes,value:(r.value!=null?Number(r.value):null),googleEventId:r.google_event_id,calendarId:r.calendar_id,source:r.source,ownerId:r.owner_id,ownerName:r.owner_name});
-const jobToRow=j=>({id:j.id,title:j.title,customer_id:j.customerId||null,date:j.date||null,time:j.time||null,duration:j.duration||2,status:j.status,notes:j.notes,value:(j.value!=null&&j.value!==''?Number(j.value):null),google_event_id:j.googleEventId||null,calendar_id:j.calendarId||null,source:j.source||'local',owner_id:j.ownerId,owner_name:j.ownerName,updated_at:new Date().toISOString()});
+const rowToCust=r=>({id:r.id,name:r.name,contact:r.contact,phone:r.phone,email:r.email,abn:r.abn,address:r.address,notes:r.notes,archived:r.archived===true,ownerId:r.owner_id,ownerName:r.owner_name});
+const custToRow=c=>({id:c.id,name:c.name,contact:c.contact,phone:c.phone,email:c.email,abn:c.abn,address:c.address,notes:c.notes,archived:!!c.archived,owner_id:c.ownerId,owner_name:c.ownerName,updated_at:new Date().toISOString()});
+const rowToJob=r=>({id:r.id,title:r.title,customerId:r.customer_id,date:r.date,time:r.time,duration:Number(r.duration)||2,status:r.status,notes:r.notes,value:(r.value!=null?Number(r.value):null),
+  stage:r.stage||(r.status==='done'?'done':'booked'),suburb:r.suburb||'',service:r.service||'',leadSource:r.lead_source||'',createdAt:r.created_at||null,
+  followupDate:r.followup_date||null,followupDone:r.followup_done===true,leadEmailId:r.lead_email_id||'',
+  googleEventId:r.google_event_id,calendarId:r.calendar_id,source:r.source,ownerId:r.owner_id,ownerName:r.owner_name});
+const jobToRow=j=>({id:j.id,title:j.title,customer_id:j.customerId||null,date:j.date||null,time:j.time||null,duration:j.duration||2,status:j.status,notes:j.notes,value:(j.value!=null&&j.value!==''?Number(j.value):null),
+  stage:j.stage||'booked',suburb:j.suburb||null,service:j.service||null,lead_source:j.leadSource||null,
+  followup_date:j.followupDate||null,followup_done:!!j.followupDone,lead_email_id:j.leadEmailId||null,
+  google_event_id:j.googleEventId||null,calendar_id:j.calendarId||null,source:j.source||'local',owner_id:j.ownerId,owner_name:j.ownerName,updated_at:new Date().toISOString()});
 const rowToExp=r=>({id:r.id,jobId:r.job_id,invoiceId:r.invoice_id||'',date:r.date,category:r.category,description:r.description,amount:Number(r.amount)||0,gstInc:r.gst_inc!==false,recurring:r.recurring||'',receiptPath:r.receipt_path||'',shared:r.shared===true,paidBy:r.paid_by||'',ownerId:r.owner_id,ownerName:r.owner_name});
 const expToRow=e=>({id:e.id,job_id:e.jobId||null,invoice_id:e.invoiceId||null,date:e.date||null,category:e.category,description:e.description,amount:e.amount||0,gst_inc:e.gstInc!==false,recurring:e.recurring||null,receipt_path:e.receiptPath||null,shared:!!e.shared,paid_by:e.paidBy||null,owner_id:e.ownerId,owner_name:e.ownerName,updated_at:new Date().toISOString()});
 const rowToLoan=r=>({id:r.id,name:r.name,type:r.type||'business',openingBalance:Number(r.opening_balance)||0,notes:r.notes||'',plan:r.plan||null,ownerId:r.owner_id,ownerName:r.owner_name});
@@ -502,8 +532,8 @@ const rowToLE=r=>({id:r.id,loanId:r.loan_id,date:r.date,kind:r.kind||'repayment'
 const rowToPart=r=>({id:r.id,name:r.name||'',price:Number(r.price)||0,unit:r.unit||'',category:r.category||'',notes:r.notes||'',ownerId:r.owner_id,ownerName:r.owner_name});
 const partToRow=p=>({id:p.id,name:p.name,price:p.price||0,unit:p.unit||'',category:p.category||'',notes:p.notes||'',owner_id:p.ownerId,owner_name:p.ownerName,updated_at:new Date().toISOString()});
 const leToRow=x=>({id:x.id,loan_id:x.loanId,date:x.date||null,kind:x.kind||'repayment',amount:x.amount||0,note:x.note||'',owner_id:x.ownerId,owner_name:x.ownerName});
-const rowToInv=r=>({id:r.id,number:r.number,date:r.date,customerId:r.customer_id,project:r.project,commenced:r.commenced,completed:r.completed,status:r.status,lines:r.lines||[],bank:r.bank||null,sentAt:r.sent_at||null,type:r.type||'invoice',ownerId:r.owner_id,ownerName:r.owner_name});
-const invToRow=i=>({id:i.id,number:i.number,date:i.date||null,customer_id:i.customerId||null,project:i.project,commenced:i.commenced||null,completed:i.completed||null,status:i.status,lines:i.lines,bank:i.bank||null,sent_at:i.sentAt||null,type:i.type||'invoice',owner_id:i.ownerId,owner_name:i.ownerName,updated_at:new Date().toISOString()});
+const rowToInv=r=>({id:r.id,number:r.number,date:r.date,customerId:r.customer_id,jobId:r.job_id||'',project:r.project,commenced:r.commenced,completed:r.completed,status:r.status,lines:r.lines||[],bank:r.bank||null,sentAt:r.sent_at||null,paidAt:r.paid_at||null,type:r.type||'invoice',ownerId:r.owner_id,ownerName:r.owner_name});
+const invToRow=i=>({id:i.id,number:i.number,date:i.date||null,customer_id:i.customerId||null,job_id:i.jobId||null,project:i.project,commenced:i.commenced||null,completed:i.completed||null,status:i.status,lines:i.lines,bank:i.bank||null,sent_at:i.sentAt||null,paid_at:i.paidAt||null,type:i.type||'invoice',owner_id:i.ownerId,owner_name:i.ownerName,updated_at:new Date().toISOString()});
 
 async function loadMembers(){
   const {data,error}=await sb.from('members').select('*');
@@ -543,12 +573,25 @@ async function upsertPart(p){
   if(error && /unit/i.test(error.message||'')){ delete row.unit; const r2=await sb.from('parts').upsert(row); error=r2.error; }
   if(error) throw error;
 }
-async function upsertCust(c){ const {error}=await sb.from('customers').upsert(custToRow(c)); if(error)throw error; }
+async function upsertCust(c){
+  const row=custToRow(c);
+  let {error}=await sb.from('customers').upsert(row);
+  if(error && /archived/i.test(error.message||'')){ delete row.archived; const r2=await sb.from('customers').upsert(row); error=r2.error; }
+  if(error) throw error;
+}
 async function upsertJob(j){
   const row=jobToRow(j);
-  let {error}=await sb.from('jobs').upsert(row);
-  if(error && /value/i.test(error.message||'')){ delete row.value; const r2=await sb.from('jobs').upsert(row); error=r2.error; }
-  if(error) throw error;
+  // tolerate columns that may not be migrated yet
+  const optional=['value','stage','suburb','service','lead_source','followup_date','followup_done','lead_email_id'];
+  for(let n=0;n<8;n++){
+    const {error}=await sb.from('jobs').upsert(row);
+    if(!error) return;
+    const msg=error.message||'';
+    const miss=optional.find(col=>(col in row) && msg.includes(col));
+    if(miss){ delete row[miss]; continue; }
+    throw error;
+  }
+  throw new Error('Job save failed (schema)');
 }
 async function upsertExp(e){
   const row=expToRow(e); const optional=['shared','paid_by','invoice_id'];
@@ -573,7 +616,7 @@ async function receiptUrl(path){ if(!path) return ''; const {data,error}=await s
 async function upsertInv(i){
   const row=invToRow(i);
   // tolerate optional columns that may not be migrated yet (bank, sent_at, job_id)
-  const optional=['bank','sent_at','job_id','type'];
+  const optional=['bank','sent_at','paid_at','job_id','type'];
   for(let n=0;n<4;n++){
     const {error}=await sb.from('invoices').upsert(row);
     if(!error) return;
@@ -594,13 +637,14 @@ let currentView='dashboard';
 let ownerFilter='all';
 ['nav','mobileNav'].forEach(navId=>{ const n=document.getElementById(navId); if(n) n.addEventListener('click',e=>{ const b=e.target.closest('button[data-view]'); if(b) go(b.dataset.view); }); });
 function go(v){ currentView=v; document.querySelectorAll('#nav button, #mobileNav button').forEach(b=>b.classList.toggle('active',b.dataset.view===v)); render(); window.scrollTo(0,0); }
-const TITLES={dashboard:['Dashboard',()=> 'Shared workspace · '+DB.members.length+' team members'],customers:['Customers','Your shared client database'],calendar:['Calendar & Jobs','Everyone’s bookings in one place'],invoices:['Invoices','Create and manage invoices'],financials:['Financials','Costs, profit, receipts & loans'],settings:['Settings','Business details & integrations']};
+const TITLES={dashboard:['Dashboard',()=> 'Shared workspace · '+DB.members.length+' team members'],leads:['Leads','Enquiries to chase, quote and book'],customers:['Contacts','Everyone you have worked for'],calendar:['Calendar & Jobs','Everyone’s bookings in one place'],invoices:['Invoices','Create and manage invoices'],financials:['Financials','Costs, profit, receipts & loans'],settings:['Settings','Business details & integrations']};
 function render(){
   const [t,s]=TITLES[currentView];
   document.getElementById('viewTitle').textContent=t;
   document.getElementById('viewSub').textContent=typeof s==='function'?s():s;
   document.getElementById('topAction').innerHTML='';
-  ({dashboard:viewDashboard,customers:viewCustomers,calendar:viewCalendar,invoices:viewInvoices,financials:viewFinancials,settings:viewSettings}[currentView])();
+  ({dashboard:viewDashboard,leads:viewLeads,customers:viewCustomers,calendar:viewCalendar,invoices:viewInvoices,financials:viewFinancials,settings:viewSettings}[currentView])();
+  updateLeadBadge();
 }
 function mineOnly(arr){ return ownerFilter==='mine'?arr.filter(x=>x.ownerId===me.id):arr; }
 function ownerTag(x){ const name=x.ownerName||'—'; return `<span class="owner-tag"><span class="owner-dot" style="background:${esc(ownerColor(x.ownerId)|| '#7c3aed')}"></span>${esc(name)}</span>`; }
@@ -619,8 +663,9 @@ function viewDashboard(){
   const outstanding=unpaid.reduce((s,i)=>s+invTotal(i),0);
   const collected=invs.filter(i=>i.status==='paid').reduce((s,i)=>s+invTotal(i),0);
   document.getElementById('content').innerHTML=`
+  ${leadBannerHtml()}
   <div class="grid stat-grid" style="margin-bottom:22px">
-    ${stat('Customers',mineOnly(DB.customers).length,'in your database','◍')}
+    ${stat('Open leads',openLeads().length,dueLeads().length?dueLeads().length+' to chase now':'all up to date','☎')}
     ${stat('Upcoming jobs',upcoming.length,'scheduled ahead','▤')}
     ${stat('Outstanding',money(outstanding),unpaid.length+' unpaid','▣')}
     ${stat('Collected',money(collected),'paid to date','✓')}
@@ -668,10 +713,22 @@ function sentInvoicesHtml(){
 /* =====================================================================
    CUSTOMERS
    ===================================================================== */
-let custQuery='';
+let custQuery='', showArchived=false;
+async function archiveTvMagic(){
+  const list=DB.customers.filter(c=>!c.archived&&(c.notes||'')==='Imported from TV Magic');
+  if(!list.length||!confirm('Archive '+list.length+' TV Magic contacts? They are hidden, not deleted — searching for one still finds it, and it comes back automatically if you add a lead for them.')) return;
+  try{ for(const c of list){ const u=Object.assign({},c,{archived:true}); await upsertCust(u); c.archived=true; } }
+  catch(e){ return toast('Archive failed: '+e.message+' (run migration-leads.sql first)'); }
+  render(); toast(list.length+' contacts archived');
+}
 function viewCustomers(){
-  document.getElementById('topAction').innerHTML=filterSeg()+`<button class="btn" style="margin-left:12px" onclick="openCustomer()">+ Add customer</button>`;
-  document.getElementById('content').innerHTML=`
+  const nTv=DB.customers.filter(c=>!c.archived&&(c.notes||'')==='Imported from TV Magic').length;
+  const nArch=DB.customers.filter(c=>c.archived).length;
+  document.getElementById('topAction').innerHTML=filterSeg()+`<button class="btn" style="margin-left:12px" onclick="openCustomer()">+ Add contact</button>`;
+  const archBar=(nTv||nArch)?`<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
+      ${nTv?`<button class="btn line sm" onclick="archiveTvMagic()">Archive ${nTv} TV Magic contacts</button>`:''}
+      ${nArch?`<button class="btn ghost sm" onclick="showArchived=!showArchived;viewCustomers()">${showArchived?'Hide':'Show'} archived (${nArch})</button>`:''}</div>`:'';
+  document.getElementById('content').innerHTML=archBar+`
     <div class="card pad" style="margin-bottom:14px">
       <input id="custSearchBox" type="search" autocomplete="off" placeholder="🔍  Search customers by name, phone, address or email…" value="${esc(custQuery)}" oninput="custQuery=this.value;renderCustomerList()">
     </div>
@@ -684,6 +741,7 @@ function renderCustomerList(){
   if(!DB.customers.length){ el.innerHTML=`<div class="card">${emptyState('◍','No customers yet','Add your first client to get started.')}</div>`; return; }
   const term=(custQuery||'').trim().toLowerCase();
   let list=mineOnly([...DB.customers]);
+  if(!term && !showArchived) list=list.filter(c=>!c.archived);       // archived only appear when searched for or toggled on
   if(term) list=list.filter(c=>[c.name,c.contact,c.phone,c.email,c.address].some(f=>(f||'').toLowerCase().includes(term)));
   list=list.sort((a,b)=>a.name.localeCompare(b.name));
   if(!list.length){ el.innerHTML=`<div class="card">${emptyState('🔍','No matches','No customers match “'+esc(custQuery)+'”.')}</div>`; return; }
@@ -724,6 +782,190 @@ function openCustomer(id){
 }
 
 /* =====================================================================
+   LEADS — enquiries that get chased, quoted and booked.
+   A lead is a job with no date.  stage: lead → quoted → booked → done  (or lost)
+   The same job later carries every quote / invoice for that piece of work.
+   ===================================================================== */
+const SERVICES=['EV charger','Electrical work','TV mounting','Home theatre','CCTV & security','Smart home / automation','Wi-Fi & networking','Switchboard / safety','Other'];
+const LEAD_SOURCES=['Website','Google Ads','Facebook / Instagram','Referral','Phone call','Repeat customer','Other'];
+function leadScope(arr){ return ownerFilter==='mine'?arr.filter(x=>x.ownerId===me.id||!x.ownerId):arr; }   // unowned website leads are shared
+function openLeads(){ return leadScope(DB.jobs).filter(j=>!j.date&&(j.stage==='lead'||j.stage==='quoted')); }
+function lostLeads(){ return leadScope(DB.jobs).filter(j=>!j.date&&j.stage==='lost'); }
+function leadDue(j){ return !!(j.followupDate&&!j.followupDone&&j.followupDate<=todayISO()); }
+function dueLeads(){ return openLeads().filter(leadDue).sort((a,b)=>a.followupDate.localeCompare(b.followupDate)); }
+function addDaysISO(n){ const d=new Date(); d.setDate(d.getDate()+n); return isoLocal(d); }
+function daysBetween(a,b){ return Math.round((new Date(b+'T00:00:00')-new Date(a+'T00:00:00'))/864e5); }
+function leadName(j){ const c=custById(j.customerId); return c?c.name:(j.title||'Lead'); }
+function followupLabel(j){
+  if(!j.followupDate||j.followupDone) return '<span class="badge gray">No follow-up set</span>';
+  const n=daysBetween(todayISO(),j.followupDate);
+  if(n<0) return `<span class="badge red">Chase overdue ${-n}d</span>`;
+  if(n===0) return '<span class="badge red">Chase today</span>';
+  if(n===1) return '<span class="badge amber">Chase tomorrow</span>';
+  return `<span class="badge amber">Chase in ${n} days</span>`;
+}
+function leadAge(j){ if(!j.createdAt) return ''; const n=Math.floor((Date.now()-new Date(j.createdAt))/864e5); return n<=0?'today':(n===1?'yesterday':n+' days ago'); }
+function updateLeadBadge(){
+  const n=dueLeads().length;
+  document.querySelectorAll('[data-view="leads"]').forEach(b=>{
+    let s=b.querySelector('.nbadge');
+    if(n){ if(!s){ s=document.createElement('span'); s.className='nbadge'; b.appendChild(s); } s.textContent=n; }
+    else if(s) s.remove();
+  });
+}
+function leadBannerHtml(){
+  const d=dueLeads(); if(!d.length) return '';
+  const names=d.slice(0,3).map(j=>esc(leadName(j))).join(', ')+(d.length>3?' +'+(d.length-3)+' more':'');
+  return `<div class="lead-banner"><div><b>☎ ${d.length} lead${d.length>1?'s':''} to chase</b><div class="muted" style="font-size:12.5px;margin-top:2px">${names}</div></div><button class="btn sm" onclick="go('leads')">Open leads</button></div>`;
+}
+let leadTab='open';
+function viewLeads(){
+  document.getElementById('topAction').innerHTML=filterSeg()+`<button class="btn" style="margin-left:12px" onclick="openLead()">+ New lead</button>`;
+  const open=openLeads(), lost=lostLeads();
+  const seg=`<div class="seg"><button class="${leadTab==='open'?'on':''}" onclick="leadTab='open';viewLeads()">Open (${open.length})</button><button class="${leadTab==='lost'?'on':''}" onclick="leadTab='lost';viewLeads()">Lost (${lost.length})</button></div>`;
+  const tools=`<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px">${seg}<button class="btn line sm" onclick="go('customers')">◍ Contacts</button></div>`;
+  let body='';
+  if(leadTab==='lost') body=lost.length?lost.map(leadCard).join(''):emptyState('☎','No lost leads','Leads you mark lost are kept here.');
+  else if(!open.length) body=emptyState('☎','No open leads','Add one with “+ New lead”. Website enquiries will appear here too.');
+  else body=[...open].sort((a,b)=>{ const x=leadDue(a)?0:1, y=leadDue(b)?0:1; return x-y||(a.followupDate||'9999').localeCompare(b.followupDate||'9999'); }).map(leadCard).join('');
+  document.getElementById('content').innerHTML=tools+body;
+}
+function leadCard(j){
+  const c=custById(j.customerId)||{}; const tel=telLink(c.phone); const lost=j.stage==='lost';
+  const docs=DB.invoices.filter(i=>i.jobId===j.id);
+  const cls='lead-card'+(lost?' lost':(leadDue(j)?' due':(j.stage==='quoted'?' quoted':'')));
+  const meta=[j.service,(j.suburb||c.address||''),j.leadSource&&('via '+j.leadSource),leadAge(j)&&('in '+leadAge(j))].filter(Boolean).map(esc).join(' · ');
+  const acts=[];
+  if(tel){ acts.push(`<a class="btn sm" href="tel:${esc(tel)}">📞 Call</a>`,`<a class="btn line sm" href="sms:${esc(tel)}">💬 Text</a>`); }
+  if(c.email) acts.push(`<a class="btn line sm" href="mailto:${esc(c.email)}">✉ Email</a>`);
+  if(!lost) acts.push(
+    `<button class="btn ghost sm" onclick="chaseLead('${j.id}')">✓ Chased</button>`,
+    `<button class="btn ghost sm" onclick="bookLead('${j.id}')">📅 Book</button>`,
+    `<button class="btn ghost sm" onclick="quoteLead('${j.id}')">＄ Quote</button>`,
+    `<button class="btn line sm" onclick="openLead('${j.id}')">Edit</button>`,
+    `<button class="btn line sm" onclick="loseLead('${j.id}')">Lost</button>`);
+  else acts.push(`<button class="btn ghost sm" onclick="reopenLead('${j.id}')">↺ Reopen</button>`);
+  const docHtml=docs.length?`<div class="lc-docs">${docs.map(d=>`<a href="#" onclick="previewInvoice('${d.id}');return false">${esc(d.number)} · ${d.type==='quote'?'quote':'invoice'} ${money(invTotal(d))}</a> ${invBadge(d.status)}`).join(' &nbsp; ')}</div>`:'';
+  return `<div class="${cls}">
+    <div class="lc-top"><div><div class="lc-name">${esc(c.name||j.title)}</div><div class="lc-meta">${meta}</div></div>
+      <div style="text-align:right">${lost?'<span class="badge gray">Lost</span>':followupLabel(j)}${(j.stage==='quoted'&&!lost)?' <span class="badge purple">Quoted</span>':''}</div></div>
+    ${j.notes?`<div class="lc-msg">${esc(j.notes)}</div>`:''}${docHtml}
+    <div class="lc-actions">${acts.join('')}</div>
+  </div>`;
+}
+/* find an existing contact so a repeat customer never becomes a duplicate */
+function findContactMatch(name,phone,email){
+  const dg=(phone||'').replace(/\D/g,'').slice(-9), em=(email||'').trim().toLowerCase(), nm=(name||'').trim().toLowerCase();
+  return DB.customers.find(c=>{
+    if(dg.length>=8 && (c.phone||'').replace(/\D/g,'').slice(-9)===dg) return true;
+    if(em && (c.email||'').toLowerCase()===em) return true;
+    if(!dg && !em && nm && (c.name||'').toLowerCase()===nm) return true;
+    return false;
+  });
+}
+function leadMatchHint(){
+  const el=document.getElementById('leadMatch'); if(!el) return;
+  const m=findContactMatch(val('l_name'),val('l_phone'),val('l_email'));
+  if(!m || m.id===window._leadCust){ el.innerHTML=''; return; }
+  const jobs=DB.jobs.filter(j=>j.customerId===m.id).length, docs=DB.invoices.filter(i=>i.customerId===m.id).length;
+  el.innerHTML=`<div class="hint" style="background:var(--primary-soft);border-radius:8px;padding:9px 11px;margin-top:10px">🔗 Already in your contacts: <b>${esc(m.name)}</b> — ${jobs} earlier job${jobs===1?'':'s'}, ${docs} quote/invoice${docs===1?'':'s'}. This lead will be added to them, not duplicated.</div>`;
+}
+function openLead(id){
+  const j=id?DB.jobs.find(x=>x.id===id):null; const c=j?(custById(j.customerId)||{}):{};
+  window._leadCust=c.id||'';
+  const cur=(j&&j.leadSource)||'Phone call';
+  const srcs=LEAD_SOURCES.includes(cur)?LEAD_SOURCES:[cur].concat(LEAD_SOURCES);
+  modal(id?'Edit lead':'New lead',`
+    <div class="frow">
+      <div class="field full"><label>Name *</label><input id="l_name" value="${esc(c.name)}" placeholder="e.g. Jayant Raj" oninput="leadMatchHint()"></div>
+      <div class="field"><label>Phone</label><input id="l_phone" type="tel" inputmode="tel" value="${esc(c.phone)}" oninput="leadMatchHint()"></div>
+      <div class="field"><label>Email</label><input id="l_email" type="email" value="${esc(c.email)}" oninput="leadMatchHint()"></div>
+      <div class="field"><label>Suburb</label><input id="l_suburb" value="${esc(j&&j.suburb)}"></div>
+      <div class="field"><label>Service</label><input id="l_service" list="l_services" value="${esc(j&&j.service)}" placeholder="e.g. EV charger"><datalist id="l_services">${SERVICES.map(s=>`<option value="${esc(s)}">`).join('')}</datalist></div>
+      <div class="field"><label>Came from</label><select id="l_source">${srcs.map(s=>`<option ${cur===s?'selected':''}>${esc(s)}</option>`).join('')}</select></div>
+      <div class="field"><label>Chase up on</label><input type="date" id="l_follow" value="${esc((j&&j.followupDate)||addDaysISO(7))}"></div>
+      <div class="field full"><label>What they want / notes</label><textarea id="l_notes" rows="4">${esc(j&&j.notes)}</textarea></div>
+    </div>
+    <div id="leadMatch"></div>
+    <div class="hint">You’ll get a reminder on the Dashboard and Leads tab on the chase date. Default is 7 days.</div>`,
+    [{label:'Save lead',cls:'btn',act:()=>saveLead(id)}]);
+}
+async function saveLead(id){
+  const name=val('l_name').trim(); if(!name){ toast('Name is required'); return; }
+  const phone=val('l_phone').trim(), email=val('l_email').trim(), suburb=val('l_suburb').trim(), service=val('l_service').trim();
+  const ex=id?DB.jobs.find(x=>x.id===id):null;
+  let cust=ex&&ex.customerId?custById(ex.customerId):findContactMatch(name,phone,email);
+  try{
+    if(cust){
+      const upd=Object.assign({},cust); let ch=false;
+      if(ex){ upd.name=name; upd.phone=phone; upd.email=email; ch=true; }                       // editing a lead edits its contact
+      else { if(!upd.phone&&phone){ upd.phone=phone; ch=true; } if(!upd.email&&email){ upd.email=email; ch=true; } }
+      if(upd.archived){ upd.archived=false; ch=true; }                                         // a returning customer comes out of the archive
+      if(ch){ await upsertCust(upd); Object.assign(cust,upd); }
+    } else {
+      cust={id:uid(),name,contact:'',phone,email,abn:'',address:suburb,notes:'',archived:false,ownerId:me.id,ownerName:me.name};
+      await upsertCust(cust); DB.customers.push(cust);
+    }
+  }catch(e){ return toast('Could not save contact: '+e.message); }
+  const follow=val('l_follow');
+  const obj={id:id||uid(),title:(service||'Enquiry')+(suburb?' — '+suburb:''),customerId:cust.id,date:null,time:'',duration:2,status:'quote',notes:val('l_notes'),
+    value:ex?ex.value:null,stage:ex?ex.stage:'lead',suburb,service,leadSource:val('l_source'),leadEmailId:ex?ex.leadEmailId:'',
+    followupDate:follow||null,followupDone:!follow,
+    source:'local',googleEventId:null,calendarId:null,ownerId:ex?ex.ownerId:me.id,ownerName:ex?ex.ownerName:me.name};
+  try{ await upsertJob(obj); }catch(e){ return toast('Save failed: '+e.message); }
+  if(ex) Object.assign(ex,obj); else DB.jobs.push(obj);
+  closeModal(); render(); toast('Lead saved');
+}
+function chaseLead(id){
+  const j=DB.jobs.find(x=>x.id===id); if(!j) return;
+  modal('Chased '+leadName(j),`
+    <div class="field full"><label>What happened? <span class="hint">(optional — added to the notes)</span></label><textarea id="ch_note" rows="3" placeholder="e.g. Left voicemail / Wants a quote after payday"></textarea></div>
+    <div class="field full" style="margin-top:12px"><label>Chase again</label>
+      <select id="ch_next"><option value="3">in 3 days</option><option value="7" selected>in 1 week</option><option value="14">in 2 weeks</option><option value="30">in 1 month</option><option value="0">Don’t chase again</option></select></div>`,
+    [{label:'Save',cls:'btn',act:()=>saveChase(id)}]);
+}
+function stampNote(j,text){ const s=new Date().toLocaleDateString('en-AU',{day:'2-digit',month:'2-digit'}); return (j.notes?j.notes+'\n':'')+'['+s+'] '+text; }
+async function saveChase(id){
+  const j=DB.jobs.find(x=>x.id===id); if(!j) return;
+  const n=parseInt(val('ch_next'))||0, note=val('ch_note').trim();
+  const upd=Object.assign({},j,{notes:stampNote(j,note||'Chased'),followupDate:n?addDaysISO(n):null,followupDone:!n});
+  try{ await upsertJob(upd); }catch(e){ return toast('Save failed: '+e.message); }
+  Object.assign(j,upd); closeModal(); render(); toast(n?'Chase again in '+n+' days':'Follow-up cleared');
+}
+function bookLead(id){ openJob(id); }
+function quoteLead(id){
+  const j=DB.jobs.find(x=>x.id===id); if(!j) return;
+  if(!j.customerId){ toast('Add a contact first'); return openLead(id); }
+  openInvoice(null,j.customerId,{project:j.title,jobId:j.id,lines:[{desc:j.service||j.title,qty:1,price:0}]},'quote');
+}
+async function loseLead(id){
+  const j=DB.jobs.find(x=>x.id===id); if(!j) return;
+  const why=prompt('Why was this lead lost? (optional — e.g. went with someone else, too expensive, not proceeding)'); if(why===null) return;
+  const upd=Object.assign({},j,{stage:'lost',followupDone:true,notes:stampNote(j,'Lost'+(why.trim()?': '+why.trim():''))});
+  try{ await upsertJob(upd); }catch(e){ return toast('Save failed: '+e.message); }
+  Object.assign(j,upd); render(); toast('Marked lost');
+}
+async function reopenLead(id){
+  const j=DB.jobs.find(x=>x.id===id); if(!j) return;
+  const hasQuote=DB.invoices.some(i=>i.jobId===id&&i.type==='quote');
+  const upd=Object.assign({},j,{stage:hasQuote?'quoted':'lead',followupDate:addDaysISO(3),followupDone:false,notes:stampNote(j,'Reopened')});
+  try{ await upsertJob(upd); }catch(e){ return toast('Save failed: '+e.message); }
+  Object.assign(j,upd); leadTab='open'; render(); toast('Lead reopened — chase in 3 days');
+}
+/* quotes & invoices attached to one job (shown inside the job form) */
+function jobDocsHtml(j){
+  const docs=DB.invoices.filter(i=>i.jobId===j.id).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  const rows=docs.length?docs.map(d=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--line);cursor:pointer" onclick="closeModal();previewInvoice('${d.id}')">
+      <span><b>${esc(d.number)}</b> <span class="muted" style="font-size:12px">${d.type==='quote'?'quote':'invoice'} · ${fmtDate(d.date)}</span></span>
+      <span>${money(invTotal(d))} ${invBadge(d.status)}</span></div>`).join(''):`<div class="hint" style="margin:6px 0">Nothing yet for this job.</div>`;
+  const pre=`{project:'${esc(j.title).replace(/'/g,"\\'")}',jobId:'${j.id}',completed:'${esc(j.date||'')}',lines:[{desc:'${esc(j.title).replace(/'/g,"\\'")}',qty:1,price:${Number(j.value)||0}}]}`;
+  return `<div class="li-item" style="margin-top:12px">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><b>Quotes &amp; invoices for this job</b>
+      <span style="display:flex;gap:6px"><button type="button" class="btn line sm" onclick="closeModal();openInvoice(null,'${j.customerId||''}',${pre},'quote')">+ Quote</button><button type="button" class="btn line sm" onclick="closeModal();openInvoice(null,'${j.customerId||''}',${pre},'invoice')">+ Invoice</button></span></div>
+    ${rows}</div>`;
+}
+
+/* =====================================================================
    CALENDAR & JOBS
    ===================================================================== */
 let calYear,calMonth,calMode=null;
@@ -731,7 +973,7 @@ function viewCalendar(){
   const isMobile=window.matchMedia('(max-width:860px)').matches;
   if(calMode===null) calMode=isMobile?'agenda':'month';
   const now=new Date(); if(calYear==null){ calYear=now.getFullYear(); calMonth=now.getMonth(); }
-  document.getElementById('topAction').innerHTML=filterSeg()+`<button class="btn" style="margin-left:12px" onclick="openJob()">+ Schedule job</button>`;
+  document.getElementById('topAction').innerHTML=filterSeg()+`<button class="btn line" style="margin-left:12px" onclick="openLead()">+ New lead</button><button class="btn" style="margin-left:8px" onclick="openJob()">+ Schedule job</button>`;
   const gbtn=GAuth.connected?`<button class="btn ghost sm" onclick="syncNow()">⟳ Sync Google</button>`:`<button class="btn line sm" onclick="reconnectCal()">Connect Google</button>`;
   const toggle=`<div class="seg"><button class="${calMode==='agenda'?'on':''}" onclick="setCalMode('agenda')">List</button><button class="${calMode==='month'?'on':''}" onclick="setCalMode('month')">Month</button></div>`;
   if(calMode==='agenda'){
@@ -759,11 +1001,13 @@ function setCalMode(m){ calMode=m; viewCalendar(); }
 function renderAgenda(){
   const el=document.getElementById('agenda'); if(!el) return;
   const today=todayISO();
-  const jobs=mineOnly([...DB.jobs]).sort((a,b)=>(a.date||'').localeCompare(b.date||'')||(a.time||'').localeCompare(b.time||''));
-  if(!jobs.length){ el.innerHTML=emptyState('▤','No jobs scheduled','Tap “Schedule job” to add one.'); return; }
+  const jobs=mineOnly(DB.jobs.filter(j=>j.date)).sort((a,b)=>(a.date||'').localeCompare(b.date||'')||(a.time||'').localeCompare(b.time||''));
+  const due=dueLeads();
+  const chaseHtml=due.length?`<div class="lead-banner" style="margin-bottom:10px"><div><b>☎ ${due.length} lead${due.length>1?'s':''} to chase</b><div class="muted" style="font-size:12.5px;margin-top:2px">${due.slice(0,3).map(j=>esc(leadName(j))).join(', ')}${due.length>3?' +'+(due.length-3)+' more':''}</div></div><button class="btn sm" onclick="go('leads')">Open leads</button></div>`:'';
+  if(!jobs.length){ el.innerHTML=chaseHtml+emptyState('▤','No jobs scheduled','Tap “Schedule job” to add one.'); return; }
   const upcoming=jobs.filter(j=>(j.date||'')>=today);
   const past=jobs.filter(j=>(j.date||'')<today).reverse();
-  let html=upcoming.length?groupAgenda(upcoming,today):`<div class="hint" style="margin:6px 0 2px">No upcoming jobs — see earlier ones below.</div>`;
+  let html=chaseHtml+(upcoming.length?groupAgenda(upcoming,today):`<div class="hint" style="margin:6px 0 2px">No upcoming jobs — see earlier ones below.</div>`);
   if(past.length) html+=`<div class="ag-pasthd">Earlier jobs</div>`+groupAgenda(past,today);
   el.innerHTML=html;
 }
@@ -795,7 +1039,7 @@ function renderCalCells(){
   const start=new Date(calYear,calMonth,1).getDay();
   const daysIn=new Date(calYear,calMonth+1,0).getDate();
   const prevDays=new Date(calYear,calMonth,0).getDate();
-  const today=todayISO(); const jobs=mineOnly(DB.jobs); const cells=[];
+  const today=todayISO(); const jobs=mineOnly(DB.jobs.filter(j=>j.date)); const chases=openLeads().filter(j=>j.followupDate&&!j.followupDone); const cells=[];
   for(let i=0;i<42;i++){
     let dayNum,mo,yr,other=false;
     if(i<start){ dayNum=prevDays-start+1+i; mo=calMonth-1; yr=calYear; other=true; }
@@ -804,8 +1048,10 @@ function renderCalCells(){
     let m=mo,y=yr; if(m<0){m=11;y--;} if(m>11){m=0;y++;}
     const iso=`${y}-${String(m+1).padStart(2,'0')}-${String(dayNum).padStart(2,'0')}`;
     const evs=jobs.filter(j=>j.date===iso);
+    const chs=chases.filter(j=>j.followupDate===iso||(iso===today&&j.followupDate<today));
     cells.push(`<div class="cal-cell ${other?'other':''} ${iso===today?'today':''}" onclick="openJob(null,'${iso}')">
       <div class="dnum">${dayNum}</div>
+      ${chs.slice(0,2).map(j=>`<div class="cal-ev chase" onclick="event.stopPropagation();go('leads')" title="Chase ${esc(leadName(j))}">☎ ${esc(leadName(j))}</div>`).join('')}
       ${evs.slice(0,3).map(j=>`<div class="cal-ev ${j.status==='done'?'done':''}" style="background:${esc(ownerColor(j.ownerId))}" onclick="event.stopPropagation();openJob('${j.id}')" title="${esc(j.title)} — ${esc(j.ownerName||'')}">${j.status==='done'?'✓ ':''}${esc(j.time?j.time+' ':'')}${esc(j.title)}</div>`).join('')}
       ${evs.length>3?`<div class="muted" style="font-size:10px;margin-top:2px">+${evs.length-3} more</div>`:''}
     </div>`);
@@ -813,7 +1059,7 @@ function renderCalCells(){
   document.getElementById('calCells').innerHTML=cells.join('');
 }
 function renderJobList(){
-  const el=document.getElementById('jobList'); const jobs=mineOnly([...DB.jobs]).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const el=document.getElementById('jobList'); const jobs=mineOnly(DB.jobs.filter(j=>j.date)).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
   if(!jobs.length){ el.innerHTML=emptyState('▤','No jobs scheduled','Click a day or “Schedule job”.'); return; }
   el.innerHTML=`<table><tbody>${jobs.map(j=>`
     <tr style="cursor:pointer" onclick="openJob('${j.id}')">
@@ -826,10 +1072,12 @@ function renderJobList(){
 }
 function jobBadge(s){ return {scheduled:'<span class="badge purple">Scheduled</span>',quote:'<span class="badge amber">Quote</span>',done:'<span class="badge green">Done</span>'}[s]||'<span class="badge gray">—</span>'; }
 function openJob(id,presetDate){
-  const j=id?DB.jobs.find(x=>x.id===id):{date:presetDate||todayISO(),status:'scheduled',duration:2};
+  const j0=id?DB.jobs.find(x=>x.id===id):null;
+  const isLead=!!(j0&&!j0.date);                       // booking a lead: give it a date, default status scheduled
+  const j=j0?(isLead?Object.assign({},j0,{date:presetDate||todayISO(),status:'scheduled'}):j0):{date:presetDate||todayISO(),status:'scheduled',duration:2};
   const selCust=j.customerId?custById(j.customerId):null;
   const selName=selCust?esc(selCust.name):'';
-  modal(`${id?'Edit':'Schedule'} job`,`
+  modal(`${id&&!isLead?'Edit':(isLead?'Book':'Schedule')} job`,`
     <div class="frow">
       <div class="field full"><label>Job title *</label><input id="j_title" value="${esc(j.title)}" placeholder="e.g. TV Installations & Electrical Works"></div>
       <div class="field full"><label>Customer</label>
@@ -869,7 +1117,8 @@ function openJob(id,presetDate){
       </div>
       <div class="frow" style="margin:10px 0 0"><div class="field"><label>Amount charged ($) — required to mark Done</label><input type="number" inputmode="decimal" step="0.01" id="j_value" value="${esc(j.value!=null?j.value:'')}" placeholder="0.00" oninput="updJobProfit('${id||''}')"></div></div>
       <div id="jobProfit" style="margin-top:8px"></div>
-    </div>`,
+    </div>
+    ${id?jobDocsHtml(j0):''}`,
     [ id?{label:'Delete',cls:'danger',act:async()=>{ if(confirm('Delete this job?')){ const dj=DB.jobs.find(x=>x.id===id); await delRow('jobs',id); DB.jobs=DB.jobs.filter(x=>x.id!==id); closeModal(); render(); if(dj) deleteGoogleEvent(dj); }}}:null,
       {label:'Save job',cls:'btn',act:async()=>{
         const title=val('j_title').trim(); if(!title){ toast('Title required'); return; }
@@ -890,6 +1139,9 @@ function openJob(id,presetDate){
         }
         const obj={id:id||uid(),title,customerId,date:val('j_date'),time:val('j_time'),duration:parseFloat(val('j_dur'))||2,status:val('j_status'),notes:val('j_notes'),
           value:(val('j_value')!==''?parseFloat(val('j_value')):null),
+          stage:val('j_status')==='done'?'done':(val('j_status')==='quote'?'quoted':'booked'),
+          suburb:ex?ex.suburb:'',service:ex?ex.service:'',leadSource:ex?ex.leadSource:'',leadEmailId:ex?ex.leadEmailId:'',
+          followupDate:ex?ex.followupDate:null,followupDone:ex?(ex.followupDone||isLead):true,
           source:ex?ex.source:'local',googleEventId:ex?ex.googleEventId:null,calendarId:ex?ex.calendarId:null,
           ownerId:ex?ex.ownerId:me.id, ownerName:ex?ex.ownerName:me.name};
         let stored=ex?ex:obj;
@@ -920,7 +1172,7 @@ function custSearch(q){
   const cur=hid.value?custById(hid.value):null;
   if(!(cur && cur.name===inp.value)){ hid.value=''; const ca=document.getElementById('custActions'); if(ca) ca.innerHTML=''; }
   const term=(q||'').trim().toLowerCase();
-  let list=DB.customers.slice();
+  let list=DB.customers.filter(c=>term||!c.archived);
   if(term) list=list.filter(c=>[c.name,c.phone,c.email,c.address].some(f=>(f||'').toLowerCase().includes(term)));
   list=list.sort((a,b)=>a.name.localeCompare(b.name)).slice(0,8);
   let html=list.map(c=>`<div class="sr-item" onclick="chooseCust('${c.id}')"><div class="t-name">${esc(c.name)}</div>${[c.phone,c.address].filter(Boolean).length?`<div class="muted" style="font-size:11px">${esc([c.phone,c.address].filter(Boolean).join(' · '))}</div>`:''}</div>`).join('');
@@ -1013,7 +1265,7 @@ function clearInvoiceDraft(){ invDraftActive=false; try{ localStorage.removeItem
 document.addEventListener('input',()=>{ if(invDraftActive){ clearTimeout(draftTimer); draftTimer=setTimeout(saveInvoiceDraft,600); } });
 function openInvoiceFromJob(job){
   if(!job) return;
-  openInvoice(null, job.customerId, {project:job.title, completed:job.date, lines:[{desc:job.title, qty:1, price:Number(job.value)||0}]});
+  openInvoice(null, job.customerId, {project:job.title, jobId:job.id, completed:job.date, lines:[{desc:job.title, qty:1, price:Number(job.value)||0}]});
 }
 function openInvoice(id,presetCust,prefill,forceType){
   const existing=id?DB.invoices.find(x=>x.id===id):null;
@@ -1032,12 +1284,14 @@ function openInvoice(id,presetCust,prefill,forceType){
   const inv=existing || (dr
     ? {number:dr.number,date:dr.date,customerId:dr.customerId,project:dr.project,commenced:dr.commenced,completed:dr.completed,status:dr.status,type,lines:dr.lines}
     : {number:(q?nextQuoteNumber():nextInvNumber()),date:todayISO(),customerId:presetCust||'',project:(prefill&&prefill.project)||'',commenced:'',completed:(prefill&&prefill.completed)||'',status:'draft',type,lines:(prefill&&prefill.lines&&prefill.lines.length)?prefill.lines:[{desc:'',qty:1,price:0}]});
-  invDraftActive = !id;   // auto-save drafts only when creating new
+  const linkJobId=existing?(existing.jobId||''):((prefill&&prefill.jobId)||'');
+  invDraftActive = !id && !linkJobId;   // auto-save drafts only when creating new (not job-linked)
   const selCust=inv.customerId?custById(inv.customerId):null;
   const selName=selCust?esc(selCust.name):(dr&&dr.custSearch?esc(dr.custSearch):'');
   editingLines=JSON.parse(JSON.stringify(inv.lines&&inv.lines.length?inv.lines:[{desc:'',qty:1,price:0}]));
   modal(`${id?'Edit':'New'} ${q?'quote':'invoice'}`,`
     <input type="hidden" id="i_type" value="${esc(type)}">
+    <input type="hidden" id="i_jobid" value="${esc(linkJobId)}">
     <div class="frow">
       <div class="field"><label>${q?'Quote':'Invoice'} number</label><input id="i_number" value="${esc(inv.number)}"></div>
       <div class="field"><label>Date</label><input type="date" id="i_date" value="${esc(inv.date)}"></div>
@@ -1150,7 +1404,11 @@ async function saveInvoice(id){
   const ex=id?DB.invoices.find(x=>x.id===id):null;
   const bank=bankList()[parseInt(val('i_bank'))||0]||null;
   const type=val('i_type')||'invoice';
-  const obj={id:id||uid(),number:val('i_number'),date:val('i_date'),customerId,project:val('i_project'),commenced:val('i_comm'),completed:val('i_comp'),status:val('i_status'),lines,bank,type,
+  const status=val('i_status');
+  // stamp the day it was paid, and clear it if the status moves back off "paid"
+  const paidAt = status==='paid' ? ((ex&&ex.paidAt) || val('i_comp') || todayISO()) : null;
+  const obj={id:id||uid(),number:val('i_number'),date:val('i_date'),customerId,project:val('i_project'),commenced:val('i_comm'),completed:val('i_comp'),status,lines,bank,type,paidAt,jobId:val('i_jobid')||(ex&&ex.jobId)||null,
+    sentAt:ex?ex.sentAt:null,
     ownerId:ex?ex.ownerId:me.id, ownerName:ex?ex.ownerName:me.name};
   try{ await upsertInv(obj); }catch(e){ return toast('Save failed: '+e.message); }
   if(id){ Object.assign(ex,obj); }
@@ -1159,6 +1417,14 @@ async function saveInvoice(id){
     else { const m=/MIH-(\d+)/.exec(obj.number); if(m) DB.counters.invoice=Math.max(DB.counters.invoice,+m[1]); }
   }
   clearInvoiceDraft();
+  // a quote on a lead moves it to "quoted" and sets a chase in 3 days
+  if(!id && type==='quote' && obj.jobId){
+    const lj=DB.jobs.find(x=>x.id===obj.jobId);
+    if(lj && !lj.date && lj.stage==='lead'){
+      const upd=Object.assign({},lj,{stage:'quoted',followupDate:addDaysISO(3),followupDone:false});
+      try{ await upsertJob(upd); Object.assign(lj,upd); }catch(e){ console.warn(e); }
+    }
+  }
   invMode=type; closeModal(); go('invoices'); previewInvoice(obj.id); toast((type==='quote'?'Quote':'Invoice')+' saved');
 }
 function docContact(i){
@@ -1169,6 +1435,8 @@ function invoiceDocHtml(id){
   const i=DB.invoices.find(x=>x.id===id); const c=custById(i.customerId)||{}; const s=DB.settings;
   const q=i.type==='quote'; const contact=docContact(i);
   const total=invTotal(i),gst=invGST(i);
+  const isPaid = !q && i.status==='paid';
+  const paidOn = i.paidAt || i.completed || i.date;
   const arr=bankList();
   const first=(i.ownerName||'').toLowerCase().split(' ')[0];
   const pay = (i.bank&&i.bank.account) ? i.bank
@@ -1199,14 +1467,17 @@ function invoiceDocHtml(id){
       <div class="inv-foot-cols">
         ${q
           ? `<div class="inv-panel"><div class="ph">How to proceed</div><div class="pb" style="font-size:12px;line-height:1.6">This quote is valid for 30 days. To go ahead, simply reply to accept and we’ll get you booked in. Prices include GST.</div></div>`
-          : `<div class="inv-panel"><div class="ph">Payment Details</div><div class="pb"><div class="inv-kv">
+          : `<div class="inv-panel" style="position:relative;overflow:visible"><div class="ph">Payment Details</div><div class="pb"><div class="inv-kv">
               <b>Account Name</b><span>${esc(pay.name)}</span><b>BSB</b><span>${esc(pay.bsb)}</span>
               <b>Account Number</b><span>${esc(pay.account)}</span><b>Reference</b><span>${esc(i.number)}</span>
-            </div></div></div>`}
+            </div></div>
+            ${isPaid?`<div class="paid-stamp"><div class="ps-t">PAID</div><div class="ps-d">${fmtDate(paidOn)}</div></div>`:''}
+          </div>`}
         <div>
           <div style="display:flex;justify-content:space-between;font-size:12px;color:#555;padding:2px 4px"><span>Subtotal (GST Inc)</span><span>${money(total)}</span></div>
-          <div style="display:flex;justify-content:space-between;font-size:12px;color:#555;padding:2px 4px 10px"><span>GST Included</span><span>${money(gst)}</span></div>
-          <div class="inv-total"><span class="l">${q?'QUOTE TOTAL':'TOTAL DUE'}</span><span class="v">${money(total)}</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;color:#555;padding:2px 4px${isPaid?'':' 10px'}"><span>GST Included</span><span>${money(gst)}</span></div>
+          ${isPaid?`<div style="display:flex;justify-content:space-between;font-size:12px;color:#0b8a43;font-weight:700;padding:2px 4px 10px"><span>Amount Paid</span><span>${money(total)}</span></div>`:''}
+          <div class="inv-total${isPaid?' paid':''}"><span class="l">${q?'QUOTE TOTAL':(isPaid?'BALANCE DUE':'TOTAL DUE')}</span><span class="v">${money(isPaid?0:total)}</span></div>
         </div>
       </div>
     </div>
@@ -1571,6 +1842,7 @@ function eventToJobFields(ev){
 }
 async function pushJobToGoogle(j){
   const calId=DB.settings.googleCalendarId; if(!GAuth.connected||!calId) return;
+  if(!j.date) return;                       // leads have no date — never push them to Google Calendar
   const ev=jobToEvent(j);
   if(j.googleEventId){
     try{ await gcal(calBase(calId)+'/events/'+encodeURIComponent(j.googleEventId),{method:'PATCH',body:JSON.stringify(ev)}); }
@@ -1593,7 +1865,7 @@ async function pullFromGoogle(calId){
     if(ev.status==='cancelled'){ if(linked){ await delRow('jobs',linked.id); DB.jobs=DB.jobs.filter(j=>j!==linked); } continue; }
     const f=eventToJobFields(ev);
     if(linked){ linked.googleEventId=ev.id; linked.calendarId=calId; if(linked.source==='google'){ Object.assign(linked,f); await upsertJob(linked); } }
-    else if(!mihId){ const nj=Object.assign({id:uid(),source:'google',googleEventId:ev.id,calendarId:calId,status:'scheduled',customerId:'',ownerId:me.id,ownerName:me.name},f); DB.jobs.push(nj); await upsertJob(nj); }
+    else if(!mihId){ const nj=Object.assign({id:uid(),source:'google',googleEventId:ev.id,calendarId:calId,status:'scheduled',stage:'booked',customerId:'',ownerId:me.id,ownerName:me.name},f); DB.jobs.push(nj); await upsertJob(nj); }
   }
 }
 let syncing=false;
@@ -1610,7 +1882,7 @@ async function syncNow(){
     toast('No writable Google calendar found — reconnect and tick the calendar permission'); go('settings'); return; }
   DB.settings.googleCalendarId=calId;
   try{
-    for(const j of DB.jobs.filter(j=>j.source!=='google'||j.googleEventId)){ await pushJobToGoogle(j); await upsertJob(j); }
+    for(const j of DB.jobs.filter(j=>j.date && (j.source!=='google'||j.googleEventId))){ await pushJobToGoogle(j); await upsertJob(j); }
     await pullFromGoogle(calId);
     DB.settings.lastSync=new Date().toISOString(); await saveSettingsRow();
     render(); toast('Calendar synced');
@@ -1790,7 +2062,7 @@ function addLineFromPart(id){
 async function completeInvoice(id){
   const i=DB.invoices.find(x=>x.id===id); if(!i) return;
   if(!confirm('Mark '+i.number+' as paid and record the costs for it?')) return;
-  if(i.status!=='paid'){ i.status='paid'; try{ await upsertInv(i); }catch(e){ console.warn(e); } }
+  if(i.status!=='paid'){ i.status='paid'; i.paidAt=i.paidAt||i.completed||todayISO(); try{ await upsertInv(i); }catch(e){ console.warn(e); } }
   render();
   openExpense(null,'', 'Costs for '+i.number+(i.project?' — '+i.project:''), id);
 }
