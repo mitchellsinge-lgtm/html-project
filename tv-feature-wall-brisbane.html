@@ -401,8 +401,8 @@ src="https://www.facebook.com/tr?id=27592303160400799&ev=PageView&noscript=1"
   /* Feature wall video */
   .fw-video { position: relative; border-radius: 16px; overflow: hidden; background: #0a0a14; aspect-ratio: 16/9; box-shadow: 0 10px 30px rgba(0,0,0,0.25); }
   .fw-video video { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .fw-sound { position: absolute; right: 10px; bottom: 10px; background: rgba(10,10,20,0.78); color: #fff; border: 1px solid rgba(255,255,255,0.35); border-radius: 999px; padding: 0.5rem 0.9rem; font: 600 0.85rem 'Inter', sans-serif; cursor: pointer; display: none; }
-  .fw-sound.ready { display: inline-flex; align-items: center; gap: 0.4rem; }
+  .fw-sound { position: absolute; right: 8px; top: 8px; width: 34px; height: 34px; padding: 0; background: rgba(10,10,20,0.35); color: #fff; border: 0; border-radius: 50%; font-size: 1rem; line-height: 1; cursor: pointer; display: none; backdrop-filter: blur(4px); opacity: 0.85; }
+  .fw-sound.ready { display: inline-flex; align-items: center; justify-content: center; }
   .fw-video-wrap { margin: 0 0 1.2rem; }
   .fw-video-wrap.tight { margin: 1.2rem 0 0; }
 </style>
@@ -464,7 +464,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <video id="fwVideo" autoplay muted loop playsinline preload="auto" poster="video/feature-wall-poster.jpg" aria-label="Time-lapse of a TV feature wall being built" width="640" height="360">
       <source src="video/feature-wall-muted.mp4" type="video/mp4">
     </video>
-    <button type="button" class="fw-sound" id="fwSound" aria-pressed="false">&#128266; Play sound</button>
+    <button type="button" class="fw-sound" id="fwSound" aria-pressed="false" aria-label="Play sound">&#128263;</button>
   </div>
 </div>
     <h1>TV Feature Walls Brisbane. <span>Built to impress.</span></h1>
@@ -756,13 +756,13 @@ document.addEventListener('click', function (e) {
     if(!a) loadAudio();
     if(a.paused){
       try{a.currentTime=v.currentTime;}catch(e){}
-      a.play(); b.innerHTML='&#128263; Mute'; b.setAttribute('aria-pressed','true');
+      a.play(); b.innerHTML='&#128266;'; b.setAttribute('aria-pressed','true');
       if(window.gtag&&!started){started=true;gtag('event','video_sound_on',{page:location.pathname});}
-    } else { a.pause(); b.innerHTML='&#128266; Play sound'; b.setAttribute('aria-pressed','false'); }
+    } else { a.pause(); b.innerHTML='&#128263;'; b.setAttribute('aria-pressed','false'); }
   });
   v.addEventListener('seeked',function(){ if(a&&!a.paused){try{a.currentTime=v.currentTime;}catch(e){}} });
   v.addEventListener('timeupdate',function(){ if(a&&!a.paused&&v.currentTime<0.3){try{a.currentTime=v.currentTime;}catch(e){}} });
-  document.addEventListener('visibilitychange',function(){ if(document.hidden&&a&&!a.paused){a.pause();b.innerHTML='&#128266; Play sound';} });
+  document.addEventListener('visibilitychange',function(){ if(document.hidden&&a&&!a.paused){a.pause();b.innerHTML='&#128263;';} });
 })();
 </script>
 </body>
