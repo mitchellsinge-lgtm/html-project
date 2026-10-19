@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TV Feature Walls Brisbane | Free Quote | Massive Integrated Homes</title>
 <meta name="description" content="TV feature walls in Brisbane: recessed power and HDMI, hidden cables and LED feature lighting, installed by licensed electricians. Get a free quote.">
-<meta name="robots" content="index, follow">
+<meta name="robots" content="noindex, follow">
 <link rel="canonical" href="https://massiveintegratedhomes.com.au/tv-feature-wall.html">
 <link rel="icon" type="image/png" href="milogo.png">
 <meta property="og:title" content="TV Feature Walls Brisbane | Massive Integrated Homes">
@@ -397,6 +397,14 @@ src="https://www.facebook.com/tr?id=27592303160400799&ev=PageView&noscript=1"
   }
   footer p { font-size: 0.85rem; margin: 0.3rem 0; }
   footer a { color: #c084fc; }
+
+  /* Feature wall video */
+  .fw-video { position: relative; border-radius: 16px; overflow: hidden; background: #0a0a14; aspect-ratio: 16/9; box-shadow: 0 10px 30px rgba(0,0,0,0.25); }
+  .fw-video video { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .fw-sound { position: absolute; right: 10px; bottom: 10px; background: rgba(10,10,20,0.78); color: #fff; border: 1px solid rgba(255,255,255,0.35); border-radius: 999px; padding: 0.5rem 0.9rem; font: 600 0.85rem 'Inter', sans-serif; cursor: pointer; display: none; }
+  .fw-sound.ready { display: inline-flex; align-items: center; gap: 0.4rem; }
+  .fw-video-wrap { margin: 0 0 1.2rem; }
+  .fw-video-wrap.tight { margin: 1.2rem 0 0; }
 </style>
 </head>
 <body>
@@ -479,7 +487,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <form class="quote-form enquiry-form" action="https://formspree.io/f/maqagaoz" method="POST">
         <div>
           <label for="qf-name">Your name</label>
-          <input id="qf-name" name="name" type="text" placeholder="First and last name" autocomplete="name" autofocus required>
+          <input id="qf-name" name="name" type="text" placeholder="First and last name" autocomplete="name" required>
         </div>
         <div class="row">
           <div>
@@ -493,7 +501,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         </div>
         <div>
           <label for="qf-suburb">Suburb</label>
-          <input id="qf-suburb" name="suburb" type="text" placeholder="e.g. Springfield Lakes" autocomplete="address-level2" required>
+          <input id="qf-suburb" name="suburb" type="text" placeholder="e.g. Salisbury" autocomplete="address-level2" required>
         </div>
         <div>
           <label for="qf-service">What do you need?</label>
@@ -525,6 +533,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       </form>
     </div>
 
+<div class="fw-video-wrap tight">
+  <div class="fw-video">
+    <video id="fwVideo" autoplay muted loop playsinline preload="auto" poster="video/feature-wall-poster.jpg" aria-label="Time-lapse of a TV feature wall being built" width="640" height="360">
+      <source src="video/feature-wall-muted.mp4" type="video/mp4">
+    </video>
+    <button type="button" class="fw-sound" id="fwSound" aria-pressed="false">&#128266; Play sound</button>
+  </div>
+</div>
 
     <p class="call-alt">Prefer to talk? <a href="tel:+61480568180">Call 0480 568 180</a></p>
   </div>
@@ -570,7 +586,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <footer>
   <div class="container">
     <p><strong>Massive Integrated Homes</strong></p>
-    <p>Servicing all of Brisbane, Ipswich, Logan &amp; the Gold Coast</p>
+    <p>Servicing central &amp; south Brisbane, Logan &amp; the Gold Coast</p>
     <p>QBCC Licensed &middot; Fully Insured &middot; Electrical Contractor Licence No. 1508151 &middot; &copy; 2026</p>
     <p><a href="index.html">See our full website &rarr;</a></p>
   </div>
@@ -723,5 +739,31 @@ document.addEventListener('click', function (e) {
 })();
 </script>
 <script src="crm-lead.js" defer></script>
+<script>
+/* Muted video plays first. Audio file is only fetched after the video has loaded. */
+(function(){
+  var v=document.getElementById('fwVideo'), b=document.getElementById('fwSound');
+  if(!v||!b) return;
+  var a=null, started=false;
+  function loadAudio(){
+    if(a) return;
+    a=new Audio(); a.preload='auto'; a.loop=true; a.src='video/feature-wall-audio.m4a';
+    a.addEventListener('canplaythrough',function(){ b.classList.add('ready'); },{once:true});
+  }
+  function whenLoaded(){ setTimeout(loadAudio,1500); }
+  if(v.readyState>=3) whenLoaded(); else v.addEventListener('canplaythrough',whenLoaded,{once:true});
+  b.addEventListener('click',function(){
+    if(!a) loadAudio();
+    if(a.paused){
+      try{a.currentTime=v.currentTime;}catch(e){}
+      a.play(); b.innerHTML='&#128263; Mute'; b.setAttribute('aria-pressed','true');
+      if(window.gtag&&!started){started=true;gtag('event','video_sound_on',{page:location.pathname});}
+    } else { a.pause(); b.innerHTML='&#128266; Play sound'; b.setAttribute('aria-pressed','false'); }
+  });
+  v.addEventListener('seeked',function(){ if(a&&!a.paused){try{a.currentTime=v.currentTime;}catch(e){}} });
+  v.addEventListener('timeupdate',function(){ if(a&&!a.paused&&v.currentTime<0.3){try{a.currentTime=v.currentTime;}catch(e){}} });
+  document.addEventListener('visibilitychange',function(){ if(document.hidden&&a&&!a.paused){a.pause();b.innerHTML='&#128266; Play sound';} });
+})();
+</script>
 </body>
 </html>
