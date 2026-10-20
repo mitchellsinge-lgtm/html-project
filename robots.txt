@@ -32,4 +32,4 @@ Allow: /
 User-agent: Bytespider
 Allow: /
 
-Sitemap: https://massiveintegratedhomes.com.au/sitemap.xml
+Sitemap: https://www.massiveintegratedhomes.com.au/sitemap.xml
