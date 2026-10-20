@@ -352,7 +352,7 @@ table.inv-items td{padding:9px 12px;border-bottom:1px solid #eee;font-size:12px}
    MIH CRM — CLOUD (Supabase, shared workspace, Google sign-in)
    ===================================================================== */
 const CFG_KEY='mih_sb_cfg';
-const APP_VERSION='2026.10.16-35';   /* bump this when deploying; phones auto-refresh to match */
+const APP_VERSION='2026.10.20-36';   /* bump this when deploying; phones auto-refresh to match */
 const GST_DIVISOR=11;
 const CAL_SCOPE='https://www.googleapis.com/auth/calendar';
 const OAUTH_SCOPES='https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/spreadsheets';
@@ -796,6 +796,22 @@ function dueLeads(){ return openLeads().filter(leadDue).sort((a,b)=>a.followupDa
 function addDaysISO(n){ const d=new Date(); d.setDate(d.getDate()+n); return isoLocal(d); }
 function daysBetween(a,b){ return Math.round((new Date(b+'T00:00:00')-new Date(a+'T00:00:00'))/864e5); }
 function leadName(j){ const c=custById(j.customerId); return c?c.name:(j.title||'Lead'); }
+/* chase-date picker: 1/2/3 days, 1 week…, or an exact date. p = element id prefix */
+function chasePickerHtml(p,defDays,cur){
+  const opts=[['1','Tomorrow (1 day)'],['2','In 2 days'],['3','In 3 days'],['7','In 1 week'],['14','In 2 weeks'],['30','In 1 month']];
+  const useDate=!!cur && !opts.some(o=>addDaysISO(+o[0])===cur);
+  const sel=useDate?'date':String(defDays);
+  return `<select id="${p}_sel" onchange="document.getElementById('${p}_date').classList.toggle('hidden',this.value!=='date')">
+      ${opts.map(o=>`<option value="${o[0]}" ${sel===o[0]?'selected':''}>${o[1]}</option>`).join('')}
+      <option value="date" ${sel==='date'?'selected':''}>Pick a date…</option>
+      <option value="0">Don’t chase again</option></select>
+    <input type="date" id="${p}_date" class="${useDate?'':'hidden'}" style="margin-top:8px" value="${esc(cur||addDaysISO(defDays))}">`;
+}
+function chasePickerValue(p){
+  const s=val(p+'_sel'); if(s==='0') return null;
+  if(s==='date') return val(p+'_date')||null;
+  return addDaysISO(parseInt(s)||7);
+}
 function followupLabel(j){
   if(!j.followupDate||j.followupDone) return '<span class="badge gray">No follow-up set</span>';
   const n=daysBetween(todayISO(),j.followupDate);
@@ -844,7 +860,7 @@ function leadCard(j){
     `<button class="btn ghost sm" onclick="quoteLead('${j.id}')">＄ Quote</button>`,
     `<button class="btn line sm" onclick="openLead('${j.id}')">Edit</button>`,
     `<button class="btn line sm" onclick="loseLead('${j.id}')">Lost</button>`);
-  else acts.push(`<button class="btn ghost sm" onclick="reopenLead('${j.id}')">↺ Reopen</button>`);
+  else acts.push(`<button class="btn ghost sm" onclick="reopenLead('${j.id}')">↺ Reopen</button>`,`<button class="btn line sm" onclick="openLead('${j.id}')">Edit</button>`);
   const docHtml=docs.length?`<div class="lc-docs">${docs.map(d=>`<a href="#" onclick="previewInvoice('${d.id}');return false">${esc(d.number)} · ${d.type==='quote'?'quote':'invoice'} ${money(invTotal(d))}</a> ${invBadge(d.status)}`).join(' &nbsp; ')}</div>`:'';
   return `<div class="${cls}">
     <div class="lc-top"><div><div class="lc-name">${esc(c.name||j.title)}</div><div class="lc-meta">${meta}</div></div>
@@ -883,7 +899,7 @@ function openLead(id){
       <div class="field"><label>Suburb</label><input id="l_suburb" value="${esc(j&&j.suburb)}"></div>
       <div class="field"><label>Service</label><input id="l_service" list="l_services" value="${esc(j&&j.service)}" placeholder="e.g. EV charger"><datalist id="l_services">${SERVICES.map(s=>`<option value="${esc(s)}">`).join('')}</datalist></div>
       <div class="field"><label>Came from</label><select id="l_source">${srcs.map(s=>`<option ${cur===s?'selected':''}>${esc(s)}</option>`).join('')}</select></div>
-      <div class="field"><label>Chase up on</label><input type="date" id="l_follow" value="${esc((j&&j.followupDate)||addDaysISO(7))}"></div>
+      <div class="field"><label>Chase up</label>${chasePickerHtml('l_f',7,j&&!j.followupDone?j.followupDate:null)}</div>
       <div class="field full"><label>What they want / notes</label><textarea id="l_notes" rows="4">${esc(j&&j.notes)}</textarea></div>
     </div>
     <div id="leadMatch"></div>
@@ -907,7 +923,7 @@ async function saveLead(id){
       await upsertCust(cust); DB.customers.push(cust);
     }
   }catch(e){ return toast('Could not save contact: '+e.message); }
-  const follow=val('l_follow');
+  const follow=chasePickerValue('l_f');
   const obj={id:id||uid(),title:(service||'Enquiry')+(suburb?' — '+suburb:''),customerId:cust.id,date:null,time:'',duration:2,status:'quote',notes:val('l_notes'),
     value:ex?ex.value:null,stage:ex?ex.stage:'lead',suburb,service,leadSource:val('l_source'),leadEmailId:ex?ex.leadEmailId:'',
     followupDate:follow||null,followupDone:!follow,
@@ -920,17 +936,16 @@ function chaseLead(id){
   const j=DB.jobs.find(x=>x.id===id); if(!j) return;
   modal('Chased '+leadName(j),`
     <div class="field full"><label>What happened? <span class="hint">(optional — added to the notes)</span></label><textarea id="ch_note" rows="3" placeholder="e.g. Left voicemail / Wants a quote after payday"></textarea></div>
-    <div class="field full" style="margin-top:12px"><label>Chase again</label>
-      <select id="ch_next"><option value="3">in 3 days</option><option value="7" selected>in 1 week</option><option value="14">in 2 weeks</option><option value="30">in 1 month</option><option value="0">Don’t chase again</option></select></div>`,
+    <div class="field full" style="margin-top:12px"><label>Chase again</label>${chasePickerHtml('ch',3,null)}</div>`,
     [{label:'Save',cls:'btn',act:()=>saveChase(id)}]);
 }
 function stampNote(j,text){ const s=new Date().toLocaleDateString('en-AU',{day:'2-digit',month:'2-digit'}); return (j.notes?j.notes+'\n':'')+'['+s+'] '+text; }
 async function saveChase(id){
   const j=DB.jobs.find(x=>x.id===id); if(!j) return;
-  const n=parseInt(val('ch_next'))||0, note=val('ch_note').trim();
-  const upd=Object.assign({},j,{notes:stampNote(j,note||'Chased'),followupDate:n?addDaysISO(n):null,followupDone:!n});
+  const fu=chasePickerValue('ch'), note=val('ch_note').trim();
+  const upd=Object.assign({},j,{notes:stampNote(j,note||'Chased'),followupDate:fu,followupDone:!fu});
   try{ await upsertJob(upd); }catch(e){ return toast('Save failed: '+e.message); }
-  Object.assign(j,upd); closeModal(); render(); toast(n?'Chase again in '+n+' days':'Follow-up cleared');
+  Object.assign(j,upd); closeModal(); render(); toast(fu?'Chase again '+fmtDate(fu):'Follow-up cleared');
 }
 function bookLead(id){ openJob(id); }
 function quoteLead(id){
@@ -1103,10 +1118,12 @@ function openJob(id,presetDate){
       <div class="field"><label>Date *</label><input type="date" id="j_date" value="${esc(j.date)}"></div>
       <div class="field"><label>Start time</label><input type="time" id="j_time" value="${esc(j.time)}"></div>
       <div class="field"><label>Duration (hours)</label><input type="number" step="0.5" min="0.5" id="j_dur" value="${esc(j.duration||2)}"></div>
-      <div class="field"><label>Status</label><select id="j_status">
+      <div class="field"><label>Status</label><select id="j_status" onchange="document.getElementById('jobFollow').classList.toggle('hidden',this.value!=='lead')">
         <option value="scheduled" ${j.status==='scheduled'?'selected':''}>Scheduled</option>
+        <option value="lead">☎ Lead — no date yet, chase later</option>
         <option value="quote" ${j.status==='quote'?'selected':''}>Quote / pending</option>
         <option value="done" ${j.status==='done'?'selected':''}>Done</option></select></div>
+      <div class="field full hidden" id="jobFollow"><label>Chase up</label>${chasePickerHtml('jf',7,null)}<div class="hint">Moves this back to your Leads list and removes it from the calendar until booked.</div></div>
       <div class="field full"><label>Notes</label><textarea id="j_notes">${esc(j.notes)}</textarea></div>
     </div>
     ${id&&j.ownerName?`<div class="hint">Owner: ${esc(j.ownerName)}${GAuth.connected?' · changes sync to Google on save':''}</div>`:''}
@@ -1122,7 +1139,9 @@ function openJob(id,presetDate){
     [ id?{label:'Delete',cls:'danger',act:async()=>{ if(confirm('Delete this job?')){ const dj=DB.jobs.find(x=>x.id===id); await delRow('jobs',id); DB.jobs=DB.jobs.filter(x=>x.id!==id); closeModal(); render(); if(dj) deleteGoogleEvent(dj); }}}:null,
       {label:'Save job',cls:'btn',act:async()=>{
         const title=val('j_title').trim(); if(!title){ toast('Title required'); return; }
-        if(!val('j_date')){ toast('Date required'); return; }
+        const asLead=val('j_status')==='lead';
+        if(!asLead && !val('j_date')){ toast('Date required'); return; }
+        if(asLead && !val('j_custId') && !val('j_custsearch').trim() && !(document.getElementById('newCustPanel')&&!document.getElementById('newCustPanel').classList.contains('hidden'))){ toast('Pick a customer for this lead'); return; }
         if(val('j_status')==='done' && !(parseFloat(val('j_value'))>0)){ toast('Enter the amount charged to mark this job Done'); return; }
         const ex=id?DB.jobs.find(x=>x.id===id):null;
         // resolve customer: existing selection, inline-new, or exact-name fallback
@@ -1137,15 +1156,20 @@ function openJob(id,presetDate){
           const typed=val('j_custsearch').trim().toLowerCase();
           const m=typed?DB.customers.find(c=>(c.name||'').toLowerCase()===typed):null; if(m) customerId=m.id;
         }
-        const obj={id:id||uid(),title,customerId,date:val('j_date'),time:val('j_time'),duration:parseFloat(val('j_dur'))||2,status:val('j_status'),notes:val('j_notes'),
+        const fu=asLead?chasePickerValue('jf'):null;
+        const hasQuote=!!(id&&DB.invoices.some(i=>i.jobId===id&&i.type==='quote'));
+        let notes=val('j_notes'); if(asLead&&ex&&(ex.date||ex.stage==='lost')) notes=stampNote({notes},'Back to lead');
+        const dropGoogle=asLead&&ex&&ex.googleEventId;     // a lead has no date, so it leaves Google Calendar
+        const obj={id:id||uid(),title,customerId,date:asLead?null:val('j_date'),time:asLead?'':val('j_time'),duration:parseFloat(val('j_dur'))||2,status:asLead?'quote':val('j_status'),notes,
           value:(val('j_value')!==''?parseFloat(val('j_value')):null),
-          stage:val('j_status')==='done'?'done':(val('j_status')==='quote'?'quoted':'booked'),
+          stage:asLead?(hasQuote?'quoted':'lead'):(val('j_status')==='done'?'done':(val('j_status')==='quote'?'quoted':'booked')),
           suburb:ex?ex.suburb:'',service:ex?ex.service:'',leadSource:ex?ex.leadSource:'',leadEmailId:ex?ex.leadEmailId:'',
-          followupDate:ex?ex.followupDate:null,followupDone:ex?(ex.followupDone||isLead):true,
-          source:ex?ex.source:'local',googleEventId:ex?ex.googleEventId:null,calendarId:ex?ex.calendarId:null,
+          followupDate:asLead?fu:(ex?ex.followupDate:null),followupDone:asLead?!fu:(ex?(ex.followupDone||isLead):true),
+          source:dropGoogle?'local':(ex?ex.source:'local'),googleEventId:dropGoogle?null:(ex?ex.googleEventId:null),calendarId:dropGoogle?null:(ex?ex.calendarId:null),
           ownerId:ex?ex.ownerId:me.id, ownerName:ex?ex.ownerName:me.name};
         let stored=ex?ex:obj;
-        if(GAuth.connected&&DB.settings.googleCalendarId){ try{ await pushJobToGoogle(obj); }catch(e){ console.warn(e); } }
+        if(dropGoogle){ try{ deleteGoogleEvent(ex); }catch(e){ console.warn(e); } }
+        else if(!asLead && GAuth.connected&&DB.settings.googleCalendarId){ try{ await pushJobToGoogle(obj); }catch(e){ console.warn(e); } }
         try{ await upsertJob(obj); }catch(e){ return toast('Save failed: '+e.message); }
         if(id) Object.assign(stored,obj); else DB.jobs.push(obj);
         const justCompleted = obj.status==='done' && (!ex || ex.status!=='done');
