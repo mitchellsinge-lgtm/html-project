@@ -352,7 +352,7 @@ table.inv-items td{padding:9px 12px;border-bottom:1px solid #eee;font-size:12px}
    MIH CRM — CLOUD (Supabase, shared workspace, Google sign-in)
    ===================================================================== */
 const CFG_KEY='mih_sb_cfg';
-const APP_VERSION='2026.10.20-36';   /* bump this when deploying; phones auto-refresh to match */
+const APP_VERSION='2026.10.22-37';   /* bump this when deploying; phones auto-refresh to match */
 const GST_DIVISOR=11;
 const CAL_SCOPE='https://www.googleapis.com/auth/calendar';
 const OAUTH_SCOPES='https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/spreadsheets';
@@ -377,7 +377,7 @@ const GAuth={token:null,connected:false,calendars:[],needReconnect:false};
 
 /* ---------- helpers ---------- */
 const uid=()=> (crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2));
-const money=n=>'$'+(Number(n)||0).toLocaleString('en-AU',{minimumFractionDigits:2,maximumFractionDigits:2});
+const money=n=>{ n=Number(n)||0; return (n<0?'-':'')+'$'+Math.abs(n).toLocaleString('en-AU',{minimumFractionDigits:2,maximumFractionDigits:2}); };
 const esc=s=>(s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function fmtDate(d){ if(!d) return ''; const x=new Date(d+'T00:00:00'); return x.toLocaleDateString('en-AU',{day:'2-digit',month:'2-digit',year:'numeric'}); }
 function todayISO(){ return new Date().toISOString().slice(0,10); }
@@ -1354,6 +1354,7 @@ function openInvoice(id,presetCust,prefill,forceType){
     </div>
     <div id="liRows"></div>
     <button class="btn ghost sm" onclick="addLine()" style="margin-top:4px">+ Add line</button>
+    ${q?'':`<button class="btn ghost sm" onclick="addRefundLine()" style="margin-top:4px;margin-left:6px;color:#b42318">− Add refund</button>`}
     <div class="totbox" id="liTot"></div>
     <div class="field full" style="margin-top:18px"><label>Pay to (bank account on invoice)</label>
       <select id="i_bank">${bankOptions(inv.bank, inv.ownerName||me.name)}</select></div>`,
@@ -1363,12 +1364,12 @@ function openInvoice(id,presetCust,prefill,forceType){
   if(dr && dr.bankIndex!=null){ const bs=document.getElementById('i_bank'); if(bs) bs.value=dr.bankIndex; }
 }
 function lineRowHtml(l,idx){
-  return `<div class="li-item">
+  return `<div class="li-item"${l.refund?' style="border-color:#f3b7b0;background:#fff5f4"':''}>
     <input class="li-desc" type="text" value="${esc(l.desc)}" placeholder="Description (e.g. Stairwell TV install & mount)" oninput="updLine(${idx},'desc',this.value)">
     <div class="li-sub">
       <input class="li-qty" type="number" inputmode="decimal" min="0" step="1" value="${esc(l.qty)}" placeholder="Qty" oninput="updLine(${idx},'qty',this.value)" aria-label="Quantity">
       <span class="li-x">×</span>
-      <input class="li-each" type="number" inputmode="decimal" min="0" step="0.01" value="${esc(l.price)}" placeholder="Each $" oninput="updLine(${idx},'price',this.value)" aria-label="Price each">
+      <input class="li-each" type="number" inputmode="decimal" ${l.refund?'':'min="0" '}step="0.01" value="${esc(l.price)}" placeholder="Each $" oninput="updLine(${idx},'price',this.value)" aria-label="Price each">
       <span class="li-eq">=</span>
       <span class="li-line" id="litot_${idx}">${money((Number(l.qty)||0)*(Number(l.price)||0))}</span>
       <button type="button" class="li-del" onclick="delLine(${idx})" aria-label="Remove line">×</button>
@@ -1388,6 +1389,13 @@ function updTotals(){
     <div class="r tot"><span>TOTAL DUE</span><span>${money(total)}</span></div>`;
 }
 function addLine(){ editingLines.push({desc:'',qty:1,price:0}); renderLines(); }
+/* a refund is a negative line flagged refund:true — every total (invoice, GST, revenue, profit) then nets it automatically */
+function addRefundLine(){
+  const a=parseFloat(prompt('Refund amount ($, GST inclusive):')); if(!(a>0)) return;
+  const why=(prompt('Reason (shown on the invoice), e.g. faulty equipment:')||'').trim();
+  editingLines=editingLines.filter(l=>l.desc.trim()||Number(l.price));
+  editingLines.push({desc:'Refund'+(why?' — '+why:''),qty:1,price:-a,refund:true}); renderLines();
+}
 function delLine(i){ editingLines.splice(i,1); if(!editingLines.length) editingLines.push({desc:'',qty:1,price:0}); renderLines(); }
 /* update only the affected line total + grand total — never rebuild inputs (keeps focus) */
 function updLine(i,k,v){
@@ -1423,7 +1431,7 @@ async function saveInvoice(id){
     const m=typed?DB.customers.find(c=>(c.name||'').toLowerCase()===typed):null; if(m) customerId=m.id;
   }
   if(!customerId){ toast('Search and pick a customer, or add a new one'); return; }
-  const lines=editingLines.filter(l=>l.desc.trim()||Number(l.price)).map(l=>({desc:l.desc,qty:Number(l.qty)||0,price:Number(l.price)||0}));
+  const lines=editingLines.filter(l=>l.desc.trim()||Number(l.price)).map(l=>{ const o={desc:l.desc,qty:Number(l.qty)||0,price:Number(l.price)||0}; if(l.refund){ o.refund=true; if(o.price>0) o.price=-o.price; } return o; });
   if(!lines.length){ toast('Add at least one line item'); return; }
   const ex=id?DB.invoices.find(x=>x.id===id):null;
   const bank=bankList()[parseInt(val('i_bank'))||0]||null;
@@ -1487,7 +1495,7 @@ function invoiceDocHtml(id){
       </div>
       <div class="inv-sec-title">${q?'Quoted Works and Materials':'Itemised Works and Materials'}</div>
       <table class="inv-items"><thead><tr><th style="width:50px">QTY</th><th>Description</th><th class="r" style="width:110px">Each</th><th class="r" style="width:110px">Price</th></tr></thead>
-      <tbody>${i.lines.map(l=>`<tr><td>${esc(l.qty)}</td><td>${esc(l.desc)}</td><td class="r">${money(l.price)}</td><td class="r">${money((Number(l.qty)||0)*(Number(l.price)||0))}</td></tr>`).join('')}</tbody></table>
+      <tbody>${i.lines.map(l=>`<tr${l.refund?' style="color:#b42318;background:#fff5f4"':''}><td>${esc(l.qty)}</td><td>${esc(l.desc)}</td><td class="r">${money(l.price)}</td><td class="r">${money((Number(l.qty)||0)*(Number(l.price)||0))}</td></tr>`).join('')}</tbody></table>
       <div class="inv-foot-cols">
         ${q
           ? `<div class="inv-panel"><div class="ph">How to proceed</div><div class="pb" style="font-size:12px;line-height:1.6">This quote is valid for 30 days. To go ahead, simply reply to accept and we’ll get you booked in. Prices include GST.</div></div>`
@@ -1498,6 +1506,7 @@ function invoiceDocHtml(id){
             ${isPaid?`<div class="paid-stamp"><div class="ps-t">PAID</div><div class="ps-d">${fmtDate(paidOn)}</div></div>`:''}
           </div>`}
         <div>
+          ${(()=>{ const rf=(i.lines||[]).filter(l=>l.refund).reduce((s,l)=>s+(Number(l.qty)||0)*(Number(l.price)||0),0); return rf?`<div style="display:flex;justify-content:space-between;font-size:12px;color:#555;padding:2px 4px"><span>Works &amp; materials</span><span>${money(total-rf)}</span></div><div style="display:flex;justify-content:space-between;font-size:12px;color:#b42318;font-weight:700;padding:2px 4px"><span>Less refund</span><span>${money(rf)}</span></div>`:''; })()}
           <div style="display:flex;justify-content:space-between;font-size:12px;color:#555;padding:2px 4px"><span>Subtotal (GST Inc)</span><span>${money(total)}</span></div>
           <div style="display:flex;justify-content:space-between;font-size:12px;color:#555;padding:2px 4px${isPaid?'':' 10px'}"><span>GST Included</span><span>${money(gst)}</span></div>
           ${isPaid?`<div style="display:flex;justify-content:space-between;font-size:12px;color:#0b8a43;font-weight:700;padding:2px 4px 10px"><span>Amount Paid</span><span>${money(total)}</span></div>`:''}
