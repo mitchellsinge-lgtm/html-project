@@ -352,7 +352,7 @@ table.inv-items td{padding:9px 12px;border-bottom:1px solid #eee;font-size:12px}
    MIH CRM — CLOUD (Supabase, shared workspace, Google sign-in)
    ===================================================================== */
 const CFG_KEY='mih_sb_cfg';
-const APP_VERSION='2026.10.22-37';   /* bump this when deploying; phones auto-refresh to match */
+const APP_VERSION='2026.10.25-38';   /* bump this when deploying; phones auto-refresh to match */
 const GST_DIVISOR=11;
 const CAL_SCOPE='https://www.googleapis.com/auth/calendar';
 const OAUTH_SCOPES='https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/spreadsheets';
@@ -367,7 +367,8 @@ const DEFAULT_SETTINGS={
   ],
   services:'TV Wall Mounting | Home Automation | Smart Home Integration | Security & CCTV\nWiFi & Networking | Multi-Room Audio | Home Theatre | Commercial AV',
   calendarEmbed:'', googleCalendarId:'', lastSync:'', reviewUrl:'https://g.page/r/CbVjKnqoixi-EAE/review',
-  googleSheetId:'https://docs.google.com/spreadsheets/d/1ZHmpAxzOo2GPfGIzrReMztPKNP3MBYi23neekylLZjc/edit', lastSheetSync:''
+  googleSheetId:'https://docs.google.com/spreadsheets/d/1ZHmpAxzOo2GPfGIzrReMztPKNP3MBYi23neekylLZjc/edit', lastSheetSync:'',
+  weeklySalesTarget:15000, weeklyProfitTarget:4870   // from MIH_Business_Expenses_and_Targets_Oct-2026.xlsx (Targets sheet)
 };
 const DEFAULT_SHEET='1ZHmpAxzOo2GPfGIzrReMztPKNP3MBYi23neekylLZjc';
 let sb=null, me=null;
@@ -524,8 +525,8 @@ const jobToRow=j=>({id:j.id,title:j.title,customer_id:j.customerId||null,date:j.
   stage:j.stage||'booked',suburb:j.suburb||null,service:j.service||null,lead_source:j.leadSource||null,
   followup_date:j.followupDate||null,followup_done:!!j.followupDone,lead_email_id:j.leadEmailId||null,
   google_event_id:j.googleEventId||null,calendar_id:j.calendarId||null,source:j.source||'local',owner_id:j.ownerId,owner_name:j.ownerName,updated_at:new Date().toISOString()});
-const rowToExp=r=>({id:r.id,jobId:r.job_id,invoiceId:r.invoice_id||'',date:r.date,category:r.category,description:r.description,amount:Number(r.amount)||0,gstInc:r.gst_inc!==false,recurring:r.recurring||'',receiptPath:r.receipt_path||'',shared:r.shared===true,paidBy:r.paid_by||'',ownerId:r.owner_id,ownerName:r.owner_name});
-const expToRow=e=>({id:e.id,job_id:e.jobId||null,invoice_id:e.invoiceId||null,date:e.date||null,category:e.category,description:e.description,amount:e.amount||0,gst_inc:e.gstInc!==false,recurring:e.recurring||null,receipt_path:e.receiptPath||null,shared:!!e.shared,paid_by:e.paidBy||null,owner_id:e.ownerId,owner_name:e.ownerName,updated_at:new Date().toISOString()});
+const rowToExp=r=>({id:r.id,jobId:r.job_id,invoiceId:r.invoice_id||'',date:r.date,category:r.category,description:r.description,amount:Number(r.amount)||0,gstInc:r.gst_inc!==false,recurring:r.recurring||'',receiptPath:r.receipt_path||'',shared:r.shared===true,paidBy:r.paid_by||'',payStatus:r.pay_status||(r.shared===true?'owed':'paid'),reimbursedAt:r.reimbursed_at||null,paidFrom:r.paid_from||'',importRef:r.import_ref||'',ownerId:r.owner_id,ownerName:r.owner_name});
+const expToRow=e=>({id:e.id,job_id:e.jobId||null,invoice_id:e.invoiceId||null,date:e.date||null,category:e.category,description:e.description,amount:e.amount||0,gst_inc:e.gstInc!==false,recurring:e.recurring||null,receipt_path:e.receiptPath||null,shared:!!e.shared,paid_by:e.paidBy||null,pay_status:e.payStatus||'paid',reimbursed_at:e.reimbursedAt||null,paid_from:e.paidFrom||null,import_ref:e.importRef||null,owner_id:e.ownerId,owner_name:e.ownerName,updated_at:new Date().toISOString()});
 const rowToLoan=r=>({id:r.id,name:r.name,type:r.type||'business',openingBalance:Number(r.opening_balance)||0,notes:r.notes||'',plan:r.plan||null,ownerId:r.owner_id,ownerName:r.owner_name});
 const loanToRow=l=>({id:l.id,name:l.name,type:l.type||'business',opening_balance:l.openingBalance||0,notes:l.notes||'',plan:l.plan||null,owner_id:l.ownerId,owner_name:l.ownerName,updated_at:new Date().toISOString()});
 const rowToLE=r=>({id:r.id,loanId:r.loan_id,date:r.date,kind:r.kind||'repayment',amount:Number(r.amount)||0,note:r.note||'',ownerId:r.owner_id,ownerName:r.owner_name});
@@ -594,8 +595,8 @@ async function upsertJob(j){
   throw new Error('Job save failed (schema)');
 }
 async function upsertExp(e){
-  const row=expToRow(e); const optional=['shared','paid_by','invoice_id'];
-  for(let n=0;n<3;n++){ const {error}=await sb.from('expenses').upsert(row); if(!error) return;
+  const row=expToRow(e); const optional=['shared','paid_by','invoice_id','pay_status','reimbursed_at','paid_from','import_ref'];
+  for(let n=0;n<8;n++){ const {error}=await sb.from('expenses').upsert(row); if(!error) return;
     const miss=optional.find(c=>(c in row)&&(error.message||'').includes(c)); if(miss){ delete row[miss]; continue; } throw error; }
   throw new Error('Expense save failed (schema)');
 }
@@ -1970,20 +1971,25 @@ function openExpense(id,presetJobId,presetDesc,presetInvoiceId){
       </div>
     </div>
     <div class="li-item" style="margin-top:6px;background:var(--primary-soft);border-color:var(--line-strong)">
-      <label style="display:flex;align-items:center;gap:9px;cursor:pointer;font-size:13.5px"><input type="checkbox" id="e_shared" style="width:auto" ${e.shared?'checked':''} onchange="document.getElementById('paidByRow').style.display=this.checked?'':'none'"> This is a <b>shared business expense</b> (e.g. Google Ads, IG reels) — track who fronted it</label>
-      <div id="paidByRow" class="frow" style="margin:8px 0 0;display:${e.shared?'':'none'}">
-        <div class="field"><label>Paid by (whose money)</label><select id="e_paidby">${DB.members.map(m=>`<option ${((e.paidBy||me.name)===m.name)?'selected':''}>${esc(m.name)}</option>`).join('')}</select></div>
+      <div class="frow" style="margin:0">
+        <div class="field"><label>Paid? / whose money</label><select id="e_status" onchange="document.getElementById('paidByRow').style.display=(this.value==='owed'||this.value==='reimbursed')?'':'none'">
+          ${PAY_STATUS.map(s=>`<option value="${s.v}" ${expStatus(e)===s.v?'selected':''}>${s.label}</option>`).join('')}</select></div>
+        <div class="field" id="paidByRow" style="display:${['owed','reimbursed'].includes(expStatus(e))?'':'none'}"><label>Paid by (whose money)</label><select id="e_paidby">${DB.members.map(m=>`<option ${((e.paidBy||me.name)===m.name)?'selected':''}>${esc(m.name)}</option>`).join('')}</select></div>
       </div>
+      <div class="hint" style="margin-top:6px">Use “Paid personally — owed back” when Mitch or Nate paid from their own account (e.g. the van finance). Switch it to “repaid” once the business pays them back.</div>
     </div>
     <label style="display:flex;align-items:center;gap:9px;cursor:pointer;font-size:13px;margin-top:8px"><input type="checkbox" id="e_savepart" style="width:auto"> 💾 Save this to my parts / price list for reuse</label>`,
     [ id?{label:'Delete',cls:'danger',act:async()=>{ if(confirm('Delete expense?')){ await delRow('expenses',id); DB.expenses=DB.expenses.filter(x=>x.id!==id); closeModal(); rerenderFin(); }}}:null,
       {label:'Save expense',cls:'btn',act:async()=>{
         const amt=parseFloat(val('e_amt')); if(!(amt>0)){ toast('Enter an amount'); return; }
         const ex=id?DB.expenses.find(x=>x.id===id):null;
-        const shared=document.getElementById('e_shared').checked;
+        const payStatus=val('e_status')||'paid';
+        const shared=(payStatus==='owed'||payStatus==='reimbursed');
         const obj={id:id||uid(),date:val('e_date'),amount:amt,category:val('e_cat'),gstInc:val('e_gst')==='1',description:val('e_desc'),jobId:val('e_job'),recurring:val('e_rec'),receiptPath:receiptTmp?receiptTmp.path:'',
           invoiceId: ex?(ex.invoiceId||''):(e.invoiceId||''),
           shared, paidBy: shared?(val('e_paidby')||me.name):'',
+          payStatus, reimbursedAt: payStatus==='reimbursed'?((ex&&ex.reimbursedAt)||todayISO()):null,
+          paidFrom: ex?(ex.paidFrom||''):'', importRef: ex?(ex.importRef||''):'',
           ownerId:ex?ex.ownerId:me.id, ownerName:ex?ex.ownerName:me.name};
         try{ await upsertExp(obj); }catch(err){ return toast('Save failed: '+err.message); }
         if(ex) Object.assign(ex,obj); else DB.expenses.push(obj);
@@ -2220,21 +2226,54 @@ function recurringHtml(){
   return `<div class="hint" style="margin-bottom:8px">≈ <b>${money(monthly)}</b> per month in recurring costs.</div>
     <table><tbody>${r.map(e=>`<tr style="cursor:pointer" onclick="openExpense('${e.id}')"><td><div class="t-name">${esc(e.description||e.category)}</div><div class="muted" style="font-size:11px">${esc(e.category)} · ${esc(e.recurring)}</div></td><td style="text-align:right" class="t-name">${money(e.amount)}</td></tr>`).join('')}</tbody></table>`;
 }
+/* ---- paid / owed / repaid / due ---- */
+const PAY_STATUS=[
+  {v:'paid',label:'Paid by the business',short:'Paid',cls:'green'},
+  {v:'owed',label:'Paid personally — owed back',short:'Owed',cls:'amber'},
+  {v:'reimbursed',label:'Paid personally — repaid',short:'Repaid',cls:'gray'},
+  {v:'due',label:'Not paid yet (bill due)',short:'Due',cls:'red'}];
+function expStatus(e){ return (e&&e.payStatus)||(e&&e.shared?'owed':'paid'); }
+function payBadge(e){ const s=PAY_STATUS.find(x=>x.v===expStatus(e))||PAY_STATUS[0];
+  const who=(s.v==='owed'||s.v==='reimbursed')&&e.paidBy?' · '+esc(e.paidBy):'';
+  return `<span class="badge ${s.cls}">${s.short}${who}</span>`; }
+async function setExpStatus(id,status){
+  const e=DB.expenses.find(x=>x.id===id); if(!e) return;
+  const upd=Object.assign({},e,{payStatus:status,reimbursedAt:status==='reimbursed'?todayISO():null});
+  if(status==='owed'||status==='reimbursed'){ upd.shared=true; upd.paidBy=upd.paidBy||me.name; }
+  try{ await upsertExp(upd); }catch(err){ return toast('Save failed: '+err.message); }
+  Object.assign(e,upd); rerenderFin(); toast(status==='reimbursed'?'Marked repaid':status==='paid'?'Marked paid':'Updated');
+}
+function payTotals(){
+  const t={owed:0,due:0,owedBy:{}};
+  DB.expenses.forEach(e=>{ const s=expStatus(e);
+    if(s==='owed'){ t.owed+=e.amount; const w=e.paidBy||e.ownerName||'—'; t.owedBy[w]=(t.owedBy[w]||0)+e.amount; }
+    if(s==='due') t.due+=e.amount; });
+  return t;
+}
+let expFilter='all';
 function expensesTableHtml(){
-  const list=[...DB.expenses].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).slice(0,150);
-  if(!list.length) return `<div class="hint">No expenses recorded yet.</div>`;
-  return `<table><thead><tr><th>Date</th><th>Description</th><th>Job</th><th>By</th><th style="text-align:right">Amount</th><th></th></tr></thead><tbody>${list.map(e=>`<tr>
+  const counts={all:DB.expenses.length}; PAY_STATUS.forEach(s=>counts[s.v]=DB.expenses.filter(e=>expStatus(e)===s.v).length);
+  const seg=`<div class="seg" style="margin-bottom:10px">${[['all','All'],['owed','Owed back'],['due','Bills due'],['paid','Paid'],['reimbursed','Repaid']].map(([k,l])=>`<button class="${expFilter===k?'on':''}" onclick="expFilter='${k}';rerenderFin()">${l} (${counts[k]||0})</button>`).join('')}</div>`;
+  const all=[...DB.expenses].filter(e=>expFilter==='all'||expStatus(e)===expFilter).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const list=all.slice(0,200);
+  if(!DB.expenses.length) return `<div class="hint">No expenses recorded yet.</div>`;
+  const sum=all.reduce((s,e)=>s+e.amount,0);
+  return seg+`<div class="hint" style="margin-bottom:6px">${all.length} item${all.length===1?'':'s'} · ${money(sum)}${all.length>200?' · showing latest 200':''}</div>
+  <table><thead><tr><th>Date</th><th>Description</th><th>Status</th><th>Job</th><th style="text-align:right">Amount</th><th></th></tr></thead><tbody>${list.map(e=>{ const s=expStatus(e);
+    const quick= s==='owed'?`<button class="btn ghost sm" onclick="setExpStatus('${e.id}','reimbursed')">✓ Repaid</button> `
+               : s==='due'?`<button class="btn ghost sm" onclick="setExpStatus('${e.id}','paid')">✓ Paid</button> `:'';
+    return `<tr>
     <td>${fmtDate(e.date)}</td>
-    <td><div class="t-name">${esc(e.description||e.category)}</div><div class="muted" style="font-size:11px">${esc(e.category)}${e.recurring?' · '+esc(e.recurring):''}</div></td>
+    <td><div class="t-name">${esc(e.description||e.category)}</div><div class="muted" style="font-size:11px">${esc(e.category)}${e.recurring?' · '+esc(e.recurring):''}${e.paidFrom?' · '+esc(e.paidFrom):''}</div></td>
+    <td>${payBadge(e)}</td>
     <td>${e.jobId?esc((DB.jobs.find(j=>j.id===e.jobId)||{}).title||'—'):'<span class="muted">—</span>'}</td>
-    <td>${ownerTag(e)}</td>
     <td style="text-align:right" class="t-name">${money(e.amount)}</td>
-    <td style="text-align:right;white-space:nowrap">${e.receiptPath?`<button class="btn line sm" title="View receipt" onclick="viewReceipt('${esc(e.receiptPath)}')">🧾</button> `:''}<button class="btn line sm" onclick="openExpense('${e.id}')">Edit</button></td>
-  </tr>`).join('')}</tbody></table>`;
+    <td style="text-align:right;white-space:nowrap">${quick}${e.receiptPath?`<button class="btn line sm" title="View receipt" onclick="viewReceipt('${esc(e.receiptPath)}')">🧾</button> `:''}<button class="btn line sm" onclick="openExpense('${e.id}')">Edit</button></td>
+  </tr>`; }).join('')}</tbody></table>`;
 }
 function exportExpenses(){
-  const rows=[['Date','Category','Description','Job','Amount','GST included','Recurring','Receipt','Recorded by']];
-  [...DB.expenses].sort((a,b)=>(a.date||'').localeCompare(b.date||'')).forEach(e=>rows.push([e.date||'',e.category||'',e.description||'',(e.jobId?(DB.jobs.find(j=>j.id===e.jobId)||{}).title||'':''),e.amount,e.gstInc?'Yes':'No',e.recurring||'',e.receiptPath?'Yes':'',e.ownerName||'']));
+  const rows=[['Date','Category','Description','Job','Amount','GST included','Recurring','Pay status','Paid by','Paid from','Receipt','Recorded by']];
+  [...DB.expenses].sort((a,b)=>(a.date||'').localeCompare(b.date||'')).forEach(e=>rows.push([e.date||'',e.category||'',e.description||'',(e.jobId?(DB.jobs.find(j=>j.id===e.jobId)||{}).title||'':''),e.amount,e.gstInc?'Yes':'No',e.recurring||'',expStatus(e),e.paidBy||'',e.paidFrom||'',e.receiptPath?'Yes':'',e.ownerName||'']));
   const csv=rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\r\n');
   const b=new Blob([csv],{type:'text/csv'}); const u=URL.createObjectURL(b); const a=document.createElement('a'); a.href=u; a.download='MIH-expenses-'+todayISO()+'.csv'; a.click(); URL.revokeObjectURL(u);
   toast('Expenses exported (CSV)');
@@ -2274,8 +2313,8 @@ function sumSheetRows(){
     ['Outstanding (unpaid invoices)',r2(outstanding)],['Business loans owing',r2(bizDebt)],['Partner loan — Nate owes Mitch',r2(partnerBal)]];
 }
 function expSheetRows(){
-  const rows=[['Date','Category','Description','Job','Amount','GST inc','Recurring','Shared','Paid by','Receipt','Recorded by']];
-  [...DB.expenses].sort((a,b)=>(a.date||'').localeCompare(b.date||'')).forEach(e=>rows.push([e.date||'',e.category||'',e.description||'',(e.jobId?(DB.jobs.find(j=>j.id===e.jobId)||{}).title||'':''),r2(e.amount),e.gstInc?'Yes':'No',e.recurring||'',e.shared?'Yes':'',e.paidBy||'',e.receiptPath?'Yes':'',e.ownerName||'']));
+  const rows=[['Date','Category','Description','Job','Amount','GST inc','Recurring','Pay status','Paid by','Paid from','Receipt','Recorded by']];
+  [...DB.expenses].sort((a,b)=>(a.date||'').localeCompare(b.date||'')).forEach(e=>rows.push([e.date||'',e.category||'',e.description||'',(e.jobId?(DB.jobs.find(j=>j.id===e.jobId)||{}).title||'':''),r2(e.amount),e.gstInc?'Yes':'No',e.recurring||'',expStatus(e),e.paidBy||'',e.paidFrom||'',e.receiptPath?'Yes':'',e.ownerName||'']));
   return rows;
 }
 function sharedSheetRows(){
@@ -2321,7 +2360,7 @@ async function sheetsSync(){
 function updateSheetStatus(msg){ const el=document.getElementById('sheetStatus'); if(el) el.textContent=msg||(DB.settings.lastSheetSync?'Last synced '+new Date(DB.settings.lastSheetSync).toLocaleString('en-AU'):'Not synced yet'); }
 /* ---- shared partner-expense ledger ---- */
 function sharedLedger(){
-  const shared=DB.expenses.filter(e=>e.shared);
+  const shared=DB.expenses.filter(e=>e.shared && expStatus(e)!=='reimbursed');   // only what is still owed back
   const totals={}; DB.members.forEach(m=>totals[m.name]=0);
   shared.forEach(e=>{ const who=e.paidBy||e.ownerName||'—'; totals[who]=(totals[who]||0)+e.amount; });
   return {shared, totals, total:shared.reduce((s,e)=>s+e.amount,0)};
@@ -2334,12 +2373,129 @@ function sharedLedgerHtml(){
   if(DB.members.length===2){ const a=DB.members[0], b=DB.members[1]; const diff=(totals[a.name]||0)-(totals[b.name]||0);
     balance=Math.abs(diff)<0.005 ? 'You’re square — both fronted the same.' : `To even it up now, <b>${esc(diff>0?b.name:a.name)}</b> owes <b>${esc(diff>0?a.name:b.name)}</b> ${money(Math.abs(diff)/2)}. (Or the business repays each of you what you’ve fronted.)`;
   }
-  const list=[...shared].sort((x,y)=>(y.date||'').localeCompare(x.date||'')).slice(0,60).map(e=>`<tr><td>${fmtDate(e.date)}</td><td><div class="t-name">${esc(e.description||e.category)}</div><div class="muted" style="font-size:11px">${esc(e.category)}</div></td><td>${esc(e.paidBy||e.ownerName||'—')}</td><td style="text-align:right;white-space:nowrap">${e.receiptPath?`<button class="btn line sm" onclick="viewReceipt('${esc(e.receiptPath)}')">🧾</button> `:''}<span class="t-name">${money(e.amount)}</span></td><td style="text-align:right"><button class="btn line sm" onclick="openExpense('${e.id}')">Edit</button></td></tr>`).join('');
+  const list=[...shared].sort((x,y)=>(y.date||'').localeCompare(x.date||'')).slice(0,60).map(e=>`<tr><td>${fmtDate(e.date)}</td><td><div class="t-name">${esc(e.description||e.category)}</div><div class="muted" style="font-size:11px">${esc(e.category)}</div></td><td>${esc(e.paidBy||e.ownerName||'—')}</td><td style="text-align:right;white-space:nowrap">${e.receiptPath?`<button class="btn line sm" onclick="viewReceipt('${esc(e.receiptPath)}')">🧾</button> `:''}<span class="t-name">${money(e.amount)}</span></td><td style="text-align:right;white-space:nowrap"><button class="btn ghost sm" onclick="setExpStatus('${e.id}','reimbursed')">✓ Repaid</button> <button class="btn line sm" onclick="openExpense('${e.id}')">Edit</button></td></tr>`).join('');
   return `${rows}
-    <div style="display:flex;justify-content:space-between;font-weight:800;border-top:2px solid var(--ink);margin-top:6px;padding-top:8px"><span>Total fronted (business owes partners)</span><span>${money(total)}</span></div>
+    <div style="display:flex;justify-content:space-between;font-weight:800;border-top:2px solid var(--ink);margin-top:6px;padding-top:8px"><span>Still owed back (not yet repaid)</span><span>${money(total)}</span></div>
     <div class="hint" style="margin-top:8px">${balance}</div>
     <table style="margin-top:12px"><thead><tr><th>Date</th><th>Expense</th><th>Paid by</th><th style="text-align:right">Amount</th><th></th></tr></thead><tbody>${list}</tbody></table>`;
 }
+/* ---- weekly sales & profit targets (top of Financials) ---- */
+function weekStartISO(offset){ const d=new Date(); const day=(d.getDay()+6)%7; d.setDate(d.getDate()-day+7*(offset||0)); return isoLocal(d); }
+function addDaysTo(iso,n){ const d=new Date(iso+'T00:00:00'); d.setDate(d.getDate()+n); return isoLocal(d); }
+function weekFigures(offset){
+  const from=weekStartISO(offset), to=addDaysTo(from,6);
+  const inWk=d=>d&&d>=from&&d<=to;
+  const sales=DB.invoices.filter(i=>i.type!=='quote'&&i.status==='paid'&&inWk(i.paidAt||i.completed||i.date)).reduce((s,i)=>s+invTotal(i),0);
+  const costs=DB.expenses.filter(e=>inWk(e.date)).reduce((s,e)=>s+e.amount,0);
+  return {from,to,sales,costs,profit:sales-costs};
+}
+function targetRow(label,actual,target,sub){
+  const pct=target>0?Math.max(0,Math.min(1,actual/target)):0, hit=actual>=target&&target>0;
+  const col=hit?'var(--ok)':(pct>=0.6?'var(--warn)':'var(--danger)');
+  return `<div style="margin:6px 0 14px">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap">
+      <div><span class="t-name" style="font-size:15px">${label}</span> <span class="muted" style="font-size:12.5px">target ${money(target)}/wk</span></div>
+      <div style="font-family:'Space Grotesk';font-weight:800;font-size:22px;color:${col}">${money(actual)}</div>
+    </div>
+    <div style="height:10px;background:#eceaf3;border-radius:6px;overflow:hidden;margin-top:6px"><div style="height:100%;width:${(pct*100).toFixed(1)}%;background:${col}"></div></div>
+    <div class="muted" style="font-size:12px;margin-top:4px">${hit?'✓ Target hit — ':''}${Math.round(pct*100)}% of target${target>actual?' · '+money(target-actual)+' to go':''}${sub?' · '+sub:''}</div>
+  </div>`;
+}
+function weeklyTargetsHtml(){
+  const s=DB.settings, w=weekFigures(0), l=weekFigures(-1);
+  const st=Number(s.weeklySalesTarget)||0, pt=Number(s.weeklyProfitTarget)||0;
+  return `<div class="card pad" style="margin-bottom:18px">
+    <div class="section-head"><h2>This week · ${fmtDate(w.from)} – ${fmtDate(w.to)}</h2><button class="btn line sm" onclick="editTargets()">Edit targets</button></div>
+    ${targetRow('Weekly sales',w.sales,st,'last week '+money(l.sales))}
+    ${targetRow('Weekly profit',w.profit,pt,'last week '+money(l.profit))}
+    <div class="hint">Sales = invoices marked paid this week. Profit = those sales less every expense dated this week. The profit target pays both directors (${money(1758)} each), sets aside GST and the loan reserve, and leaves a buffer.</div>
+  </div>`;
+}
+function editTargets(){
+  const s=DB.settings;
+  modal('Weekly targets',`
+    <div class="frow">
+      <div class="field"><label>Weekly sales target ($)</label><input type="number" step="50" id="t_sales" value="${esc(s.weeklySalesTarget||'')}"></div>
+      <div class="field"><label>Weekly profit target ($)</label><input type="number" step="10" id="t_profit" value="${esc(s.weeklyProfitTarget||'')}"></div>
+    </div>
+    <div class="hint">Worked out in the Targets sheet of MIH_Business_Expenses_and_Targets_Oct-2026.xlsx: $15,000 sales at today's ~39% margin covers job costs, running costs (incl. the van), both wages, GST, the loan reserve and a $500 buffer.</div>`,
+    [{label:'Save',cls:'btn',act:async()=>{
+      s.weeklySalesTarget=parseFloat(val('t_sales'))||0; s.weeklyProfitTarget=parseFloat(val('t_profit'))||0;
+      try{ await saveSettingsRow(); }catch(e){ return toast('Save failed: '+e.message); }
+      closeModal(); rerenderFin(); toast('Targets saved'); }}]);
+}
+
+/* ---- import expenses from a CSV (with duplicate check) ---- */
+function parseCSV(text){
+  const rows=[]; let row=[], cell='', q=false;
+  for(let i=0;i<text.length;i++){ const ch=text[i];
+    if(q){ if(ch==='"'){ if(text[i+1]==='"'){ cell+='"'; i++; } else q=false; } else cell+=ch; }
+    else if(ch==='"') q=true;
+    else if(ch===','){ row.push(cell); cell=''; }
+    else if(ch==='\n'||ch==='\r'){ if(ch==='\r'&&text[i+1]==='\n') i++; row.push(cell); rows.push(row); row=[]; cell=''; }
+    else cell+=ch; }
+  if(cell!==''||row.length){ row.push(cell); rows.push(row); }
+  return rows.filter(r=>r.some(c=>c.trim()!==''));
+}
+function pickExpenseImport(){
+  if(!DB.financialsReady) return toast('Run financials-schema.sql in Supabase first');
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='.csv,text/csv';
+  inp.onchange=()=>{ const f=inp.files&&inp.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>previewExpenseImport(String(r.result||'')); r.readAsText(f); };
+  inp.click();
+}
+let importRows=[];
+function previewExpenseImport(text){
+  const rows=parseCSV(text.replace(/^﻿/,'')); if(rows.length<2) return toast('That file has no rows');
+  const H=rows[0].map(h=>h.trim().toLowerCase()); const col=n=>H.indexOf(n);
+  const need=['date','description','amount']; if(need.some(n=>col(n)<0)) return toast('CSV needs Date, Description and Amount columns');
+  const get=(r,n)=>{ const i=col(n); return i<0?'':(r[i]||'').trim(); };
+  importRows=rows.slice(1).map((r,idx)=>{
+    const st=(get(r,'pay status')||'paid').toLowerCase();
+    const o={idx,date:get(r,'date'),category:get(r,'category')||'Other',description:get(r,'description'),amount:parseFloat(get(r,'amount').replace(/[$,]/g,''))||0,   // negative = refund
+      gstInc:!/^n/i.test(get(r,'gst included')||'yes'),recurring:(get(r,'recurring')||'').toLowerCase(),
+      payStatus:['paid','owed','reimbursed','due'].includes(st)?st:'paid',paidBy:get(r,'paid by'),paidFrom:get(r,'paid from'),
+      importRef:get(r,'import ref'),note:get(r,'note'),tick:!/^n/i.test(get(r,'tick')||'yes')};
+    // duplicate check: same import ref, or same amount within 3 days
+    const dupe=DB.expenses.find(e=>(o.importRef&&e.importRef===o.importRef)||(Math.abs(e.amount-o.amount)<0.01&&e.date&&o.date&&Math.abs((new Date(e.date)-new Date(o.date))/864e5)<=3));
+    o.dupe=dupe?(dupe.importRef&&dupe.importRef===o.importRef?'Already imported':'Possible duplicate: '+(dupe.description||dupe.category)+' '+fmtDate(dupe.date)):'';
+    if(o.dupe) o.tick=false;
+    if(!o.amount||!o.date) o.tick=false;
+    return o; });
+  renderImportPreview();
+}
+function renderImportPreview(){
+  const sel=importRows.filter(r=>r.tick), d=importRows.filter(r=>r.dupe).length, rev=importRows.filter(r=>!r.tick&&!r.dupe).length;
+  const sum=sel.reduce((s,r)=>s+r.amount,0);
+  modal('Import expenses',`
+    <div class="hint" style="margin-bottom:8px"><b>${importRows.length}</b> rows · <b>${sel.length}</b> ticked (${money(sum)}) · <b>${d}</b> look like duplicates · <b>${rev}</b> left unticked to check. Untick anything you don't want, then Import.</div>
+    <div style="display:flex;gap:8px;margin-bottom:8px"><button class="btn line sm" onclick="importRows.forEach(r=>{if(!r.dupe)r.tick=true});renderImportPreview()">Tick all (not duplicates)</button><button class="btn line sm" onclick="importRows.forEach(r=>r.tick=false);renderImportPreview()">Untick all</button></div>
+    <div style="max-height:52vh;overflow:auto;border:1px solid var(--line);border-radius:10px">
+    <table><thead><tr><th></th><th>Date</th><th>Description</th><th>Status</th><th style="text-align:right">Amount</th></tr></thead><tbody>
+    ${importRows.map(r=>`<tr style="${r.dupe?'background:#fff7ed':''}">
+      <td><input type="checkbox" style="width:auto" ${r.tick?'checked':''} onchange="importRows[${r.idx}].tick=this.checked;document.getElementById('impCount').textContent=importRows.filter(x=>x.tick).length"></td>
+      <td style="white-space:nowrap">${fmtDate(r.date)}</td>
+      <td><div class="t-name">${esc(r.description)}</div><div class="muted" style="font-size:11px">${esc(r.category)}${r.paidFrom?' · '+esc(r.paidFrom):''}${r.recurring?' · '+esc(r.recurring):''}${r.note?' · '+esc(r.note):''}</div>${r.dupe?`<div style="font-size:11px;color:var(--warn);font-weight:600">${esc(r.dupe)}</div>`:''}</td>
+      <td>${payBadge(r)}</td>
+      <td style="text-align:right" class="t-name">${money(r.amount)}</td></tr>`).join('')}
+    </tbody></table></div>`,
+    [{label:'Cancel',cls:'line',act:()=>closeModal()},
+     {label:'Import ticked',cls:'btn',act:()=>doExpenseImport()}],'wide');
+  const foot=document.querySelector('.modal-foot'); if(foot) foot.insertAdjacentHTML('afterbegin',`<span class="hint" style="margin-right:auto"><b id="impCount">${sel.length}</b> to import</span>`);
+}
+async function doExpenseImport(){
+  const sel=importRows.filter(r=>r.tick); if(!sel.length) return toast('Nothing ticked');
+  if(!confirm('Import '+sel.length+' expenses?')) return;
+  closeModal(); let ok=0, fail=0;
+  for(const r of sel){
+    const shared=(r.payStatus==='owed'||r.payStatus==='reimbursed');
+    const obj={id:uid(),date:r.date,amount:r2(r.amount),category:r.category,gstInc:r.gstInc,description:r.description,jobId:'',recurring:['weekly','monthly','yearly'].includes(r.recurring)?r.recurring:'',receiptPath:'',invoiceId:'',
+      shared,paidBy:shared?(r.paidBy||me.name):'',payStatus:r.payStatus,reimbursedAt:r.payStatus==='reimbursed'?todayISO():null,paidFrom:r.paidFrom,importRef:r.importRef,
+      ownerId:me.id,ownerName:me.name};
+    try{ await upsertExp(obj); DB.expenses.push(obj); ok++; if(ok%10===0) toast('Imported '+ok+' of '+sel.length+'…'); }catch(e){ console.warn(e); fail++; }
+  }
+  rerenderFin(); toast('Imported '+ok+(fail?' · '+fail+' failed (run migration-expense-status.sql?)':''));
+}
+
 function viewFinancials(){
   document.getElementById('topAction').innerHTML='';
   const c=document.getElementById('content');
@@ -2351,12 +2507,15 @@ function viewFinancials(){
   const partnerBal=partnerLoans.reduce((s,l)=>s+loanBalance(l.id),0);
   const bizLoans=DB.loans.filter(l=>l.type!=='partner');
   const bizDebt=bizLoans.reduce((s,l)=>s+loanBalance(l.id),0);
+  const pt=payTotals();
+  const owedTxt=Object.entries(pt.owedBy).map(([w,v])=>esc(w)+' '+money(v)).join(' · ')||'nothing owed back';
   c.innerHTML=`
+   ${weeklyTargetsHtml()}
    <div class="grid stat-grid" style="margin-bottom:22px">
      ${stat('Revenue (paid)',money(paidRev),'invoices marked paid','＄')}
      ${stat('Expenses',money(totalExp),DB.expenses.length+' recorded','▣')}
      ${stat('Net profit',money(net),'revenue − expenses','✓')}
-     ${stat('Owed to Mitch',money(partnerBal),'Nate ↔ Mitch balance','◍')}
+     ${stat('Owed back to partners',money(pt.owed),owedTxt+(pt.due?' · bills due '+money(pt.due):''),'◍')}
    </div>
    <div class="card pad" style="margin-bottom:18px">
      <div class="section-head"><h2>Google Sheet</h2><a href="https://docs.google.com/spreadsheets/d/${esc(sheetId())}" target="_blank" class="btn line sm">Open sheet ↗</a></div>
@@ -2384,7 +2543,7 @@ function viewFinancials(){
      ${partsCardHtml()}
    </div>
    <div class="card pad">
-     <div class="section-head"><h2>All expenses</h2><div style="display:flex;gap:8px"><button class="btn line sm" onclick="exportExpenses()">⇩ Export CSV</button><button class="btn ghost sm" onclick="openExpense()">+ Add expense</button></div></div>
+     <div class="section-head"><h2>All expenses</h2><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn line sm" onclick="pickExpenseImport()">⇪ Import CSV</button><button class="btn line sm" onclick="exportExpenses()">⇩ Export CSV</button><button class="btn ghost sm" onclick="openExpense()">+ Add expense</button></div></div>
      ${expensesTableHtml()}
    </div>`;
 }
