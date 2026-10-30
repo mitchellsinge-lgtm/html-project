@@ -406,6 +406,13 @@ src="https://www.facebook.com/tr?id=27592303160400799&ev=PageView&noscript=1"
   .fw-faq-item summary { cursor: pointer; font-weight: 600; }
   .fw-faq-item p { margin-top: 0.6rem; color: var(--muted); line-height: 1.55; }
 
+
+  .fw-video { position: relative; border-radius: 16px; overflow: hidden; background: #0a0a14; aspect-ratio: 16/9; max-width: 640px; margin: 0 auto; box-shadow: 0 10px 30px rgba(0,0,0,0.25); }
+  .fw-video video { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .fw-sound { position: absolute; right: 8px; top: 8px; width: 34px; height: 34px; padding: 0; background: rgba(10,10,20,0.35); color: #fff; border: 0; border-radius: 50%; font-size: 1rem; line-height: 1; cursor: pointer; display: none; backdrop-filter: blur(4px); opacity: 0.85; }
+  .fw-sound.ready { display: inline-flex; align-items: center; justify-content: center; }
+  .fw-video-wrap { margin: 0 0 1.2rem; }
+
   .cc-hero { background: #1a0f3a !important; }
   .cc-hero::before { display: none; }
   .cc-bg { position: absolute; inset: 0; z-index: 0; overflow: hidden; }
@@ -560,6 +567,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <img src="photos/cctv/cctv-3.jpg" alt="" width="1050" height="1400" loading="lazy">
 </div>
     <div class="container hero-inner">
+<div class="fw-video-wrap">
+  <div class="fw-video">
+    <video id="fwVideo" autoplay muted loop playsinline preload="auto" poster="video/cctv1-poster.jpg" aria-label="CCTV and alarm system installed by a licensed electrician in Brisbane" width="640" height="360">
+      <source src="video/cctv1-muted.mp4" type="video/mp4">
+    </video>
+    <button type="button" class="fw-sound" id="fwSound" aria-pressed="false" aria-label="Play sound">&#128263;</button>
+  </div>
+</div>
 <h1>CCTV &amp; alarm installation Brisbane. <span>Installed properly.</span></h1>
     <p class="hero-lead">The Ajax Premium Security Bundle &mdash; alarm and 4 cameras with live viewing on your phone &mdash; supplied and installed from <strong>$6,999</strong> by a licensed electrician. No pushy sales, just a free quote.</p>
 
@@ -847,6 +862,32 @@ document.addEventListener('click', function (e) {
       },5500);
     }, n*1800);
   });
+})();
+</script>
+<script>
+/* Muted video plays first. Audio file is only fetched after the video has loaded. */
+(function(){
+  var v=document.getElementById('fwVideo'), b=document.getElementById('fwSound');
+  if(!v||!b) return;
+  var a=null, started=false;
+  function loadAudio(){
+    if(a) return;
+    a=new Audio(); a.preload='auto'; a.loop=true; a.src='video/cctv1-audio.m4a';
+    a.addEventListener('canplaythrough',function(){ b.classList.add('ready'); },{once:true});
+  }
+  function whenLoaded(){ setTimeout(loadAudio,1500); }
+  if(v.readyState>=3) whenLoaded(); else v.addEventListener('canplaythrough',whenLoaded,{once:true});
+  b.addEventListener('click',function(){
+    if(!a) loadAudio();
+    if(a.paused){
+      try{a.currentTime=v.currentTime;}catch(e){}
+      a.play(); b.innerHTML='&#128266;'; b.setAttribute('aria-pressed','true');
+      if(window.gtag&&!started){started=true;gtag('event','video_sound_on',{page:location.pathname});}
+    } else { a.pause(); b.innerHTML='&#128263;'; b.setAttribute('aria-pressed','false'); }
+  });
+  v.addEventListener('seeked',function(){ if(a&&!a.paused){try{a.currentTime=v.currentTime;}catch(e){}} });
+  v.addEventListener('timeupdate',function(){ if(a&&!a.paused&&v.currentTime<0.3){try{a.currentTime=v.currentTime;}catch(e){}} });
+  document.addEventListener('visibilitychange',function(){ if(document.hidden&&a&&!a.paused){a.pause();b.innerHTML='&#128263;';} });
 })();
 </script>
 </body>
