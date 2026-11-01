@@ -352,7 +352,7 @@ table.inv-items td{padding:9px 12px;border-bottom:1px solid #eee;font-size:12px}
    MIH CRM — CLOUD (Supabase, shared workspace, Google sign-in)
    ===================================================================== */
 const CFG_KEY='mih_sb_cfg';
-const APP_VERSION='2026.10.25-38';   /* bump this when deploying; phones auto-refresh to match */
+const APP_VERSION='2026.11.02-39';   /* bump this when deploying; phones auto-refresh to match */
 const GST_DIVISOR=11;
 const CAL_SCOPE='https://www.googleapis.com/auth/calendar';
 const OAUTH_SCOPES='https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/spreadsheets';
@@ -480,6 +480,8 @@ async function onSignedIn(session){
     renderUserChip();
     render();
     { const n=dueLeads().length; if(n) setTimeout(()=>toast('☎ '+n+' lead'+(n>1?'s':'')+' to chase today'),700); }
+    if(location.hash==='#leads') go('leads');
+    startLeadAlerts();
   }catch(e){ console.error(e); appReady=false; hide('loading'); showLogin('Could not load your workspace: '+(e.message||e)); }
 }
 function renderUserChip(){
@@ -519,11 +521,11 @@ const rowToCust=r=>({id:r.id,name:r.name,contact:r.contact,phone:r.phone,email:r
 const custToRow=c=>({id:c.id,name:c.name,contact:c.contact,phone:c.phone,email:c.email,abn:c.abn,address:c.address,notes:c.notes,archived:!!c.archived,owner_id:c.ownerId,owner_name:c.ownerName,updated_at:new Date().toISOString()});
 const rowToJob=r=>({id:r.id,title:r.title,customerId:r.customer_id,date:r.date,time:r.time,duration:Number(r.duration)||2,status:r.status,notes:r.notes,value:(r.value!=null?Number(r.value):null),
   stage:r.stage||(r.status==='done'?'done':'booked'),suburb:r.suburb||'',service:r.service||'',leadSource:r.lead_source||'',createdAt:r.created_at||null,
-  followupDate:r.followup_date||null,followupDone:r.followup_done===true,leadEmailId:r.lead_email_id||'',
+  followupDate:r.followup_date||null,followupDone:r.followup_done===true,leadEmailId:r.lead_email_id||'',chaseCount:Number(r.chase_count)||0,lastChasedAt:r.last_chased_at||null,
   googleEventId:r.google_event_id,calendarId:r.calendar_id,source:r.source,ownerId:r.owner_id,ownerName:r.owner_name});
 const jobToRow=j=>({id:j.id,title:j.title,customer_id:j.customerId||null,date:j.date||null,time:j.time||null,duration:j.duration||2,status:j.status,notes:j.notes,value:(j.value!=null&&j.value!==''?Number(j.value):null),
   stage:j.stage||'booked',suburb:j.suburb||null,service:j.service||null,lead_source:j.leadSource||null,
-  followup_date:j.followupDate||null,followup_done:!!j.followupDone,lead_email_id:j.leadEmailId||null,
+  followup_date:j.followupDate||null,followup_done:!!j.followupDone,lead_email_id:j.leadEmailId||null,chase_count:j.chaseCount||0,last_chased_at:j.lastChasedAt||null,
   google_event_id:j.googleEventId||null,calendar_id:j.calendarId||null,source:j.source||'local',owner_id:j.ownerId,owner_name:j.ownerName,updated_at:new Date().toISOString()});
 const rowToExp=r=>({id:r.id,jobId:r.job_id,invoiceId:r.invoice_id||'',date:r.date,category:r.category,description:r.description,amount:Number(r.amount)||0,gstInc:r.gst_inc!==false,recurring:r.recurring||'',receiptPath:r.receipt_path||'',shared:r.shared===true,paidBy:r.paid_by||'',payStatus:r.pay_status||(r.shared===true?'owed':'paid'),reimbursedAt:r.reimbursed_at||null,paidFrom:r.paid_from||'',importRef:r.import_ref||'',ownerId:r.owner_id,ownerName:r.owner_name});
 const expToRow=e=>({id:e.id,job_id:e.jobId||null,invoice_id:e.invoiceId||null,date:e.date||null,category:e.category,description:e.description,amount:e.amount||0,gst_inc:e.gstInc!==false,recurring:e.recurring||null,receipt_path:e.receiptPath||null,shared:!!e.shared,paid_by:e.paidBy||null,pay_status:e.payStatus||'paid',reimbursed_at:e.reimbursedAt||null,paid_from:e.paidFrom||null,import_ref:e.importRef||null,owner_id:e.ownerId,owner_name:e.ownerName,updated_at:new Date().toISOString()});
@@ -583,8 +585,8 @@ async function upsertCust(c){
 async function upsertJob(j){
   const row=jobToRow(j);
   // tolerate columns that may not be migrated yet
-  const optional=['value','stage','suburb','service','lead_source','followup_date','followup_done','lead_email_id'];
-  for(let n=0;n<8;n++){
+  const optional=['value','stage','suburb','service','lead_source','followup_date','followup_done','lead_email_id','chase_count','last_chased_at'];
+  for(let n=0;n<12;n++){
     const {error}=await sb.from('jobs').upsert(row);
     if(!error) return;
     const msg=error.message||'';
@@ -791,6 +793,10 @@ const SERVICES=['EV charger','Electrical work','TV mounting','Home theatre','CCT
 const LEAD_SOURCES=['Website','Google Ads','Facebook / Instagram','Referral','Phone call','Repeat customer','Other'];
 function leadScope(arr){ return ownerFilter==='mine'?arr.filter(x=>x.ownerId===me.id||!x.ownerId):arr; }   // unowned website leads are shared
 function openLeads(){ return leadScope(DB.jobs).filter(j=>!j.date&&(j.stage==='lead'||j.stage==='quoted')); }
+/* NEW = never chased (no chase recorded and no dated chase note), not yet quoted */
+function isNewLead(j){ return j.stage==='lead' && !(j.chaseCount>0) && !/\[\d{2}\/\d{2}\] /.test(j.notes||''); }
+function newLeads(){ return openLeads().filter(isNewLead); }
+function workingLeads(){ return openLeads().filter(j=>!isNewLead(j)); }
 function lostLeads(){ return leadScope(DB.jobs).filter(j=>!j.date&&j.stage==='lost'); }
 function leadDue(j){ return !!(j.followupDate&&!j.followupDone&&j.followupDate<=todayISO()); }
 function dueLeads(){ return openLeads().filter(leadDue).sort((a,b)=>a.followupDate.localeCompare(b.followupDate)); }
@@ -823,7 +829,7 @@ function followupLabel(j){
 }
 function leadAge(j){ if(!j.createdAt) return ''; const n=Math.floor((Date.now()-new Date(j.createdAt))/864e5); return n<=0?'today':(n===1?'yesterday':n+' days ago'); }
 function updateLeadBadge(){
-  const n=dueLeads().length;
+  const n=newLeads().length+dueLeads().filter(j=>!isNewLead(j)).length;
   document.querySelectorAll('[data-view="leads"]').forEach(b=>{
     let s=b.querySelector('.nbadge');
     if(n){ if(!s){ s=document.createElement('span'); s.className='nbadge'; b.appendChild(s); } s.textContent=n; }
@@ -835,16 +841,20 @@ function leadBannerHtml(){
   const names=d.slice(0,3).map(j=>esc(leadName(j))).join(', ')+(d.length>3?' +'+(d.length-3)+' more':'');
   return `<div class="lead-banner"><div><b>☎ ${d.length} lead${d.length>1?'s':''} to chase</b><div class="muted" style="font-size:12.5px;margin-top:2px">${names}</div></div><button class="btn sm" onclick="go('leads')">Open leads</button></div>`;
 }
-let leadTab='open';
+let leadTab=null;
 function viewLeads(){
   document.getElementById('topAction').innerHTML=filterSeg()+`<button class="btn" style="margin-left:12px" onclick="openLead()">+ New lead</button>`;
-  const open=openLeads(), lost=lostLeads();
-  const seg=`<div class="seg"><button class="${leadTab==='open'?'on':''}" onclick="leadTab='open';viewLeads()">Open (${open.length})</button><button class="${leadTab==='lost'?'on':''}" onclick="leadTab='lost';viewLeads()">Lost (${lost.length})</button></div>`;
-  const tools=`<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px">${seg}<button class="btn line sm" onclick="go('customers')">◍ Contacts</button></div>`;
+  const nw=newLeads(), open=workingLeads(), lost=lostLeads();
+  if(!leadTab) leadTab=nw.length?'new':'open';
+  const tab=(k,l,n)=>`<button class="${leadTab===k?'on':''}" onclick="leadTab='${k}';viewLeads()">${l} (${n})</button>`;
+  const seg=`<div class="seg">${tab('new','New',nw.length)}${tab('open','Open',open.length)}${tab('lost','Lost',lost.length)}</div>`;
+  const tools=`<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px">${seg}<button class="btn line sm" onclick="go('customers')">◍ Contacts</button>${alertsBtnHtml()}</div>`;
   let body='';
   if(leadTab==='lost') body=lost.length?lost.map(leadCard).join(''):emptyState('☎','No lost leads','Leads you mark lost are kept here.');
-  else if(!open.length) body=emptyState('☎','No open leads','Add one with “+ New lead”. Website enquiries will appear here too.');
-  else body=[...open].sort((a,b)=>{ const x=leadDue(a)?0:1, y=leadDue(b)?0:1; return x-y||(a.followupDate||'9999').localeCompare(b.followupDate||'9999'); }).map(leadCard).join('');
+  else if(leadTab==='new') body=nw.length?[...nw].sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||'')).map(leadCard).join('')
+      :emptyState('☎','No new leads','New enquiries land here until you chase them the first time.');
+  else body=open.length?[...open].sort((a,b)=>{ const x=leadDue(a)?0:1, y=leadDue(b)?0:1; return x-y||(a.followupDate||'9999').localeCompare(b.followupDate||'9999'); }).map(leadCard).join('')
+      :emptyState('☎','No open leads','Leads move here once you\'ve chased them, until they\'re booked or lost.');
   document.getElementById('content').innerHTML=tools+body;
 }
 function leadCard(j){
@@ -864,7 +874,7 @@ function leadCard(j){
   else acts.push(`<button class="btn ghost sm" onclick="reopenLead('${j.id}')">↺ Reopen</button>`,`<button class="btn line sm" onclick="openLead('${j.id}')">Edit</button>`);
   const docHtml=docs.length?`<div class="lc-docs">${docs.map(d=>`<a href="#" onclick="previewInvoice('${d.id}');return false">${esc(d.number)} · ${d.type==='quote'?'quote':'invoice'} ${money(invTotal(d))}</a> ${invBadge(d.status)}`).join(' &nbsp; ')}</div>`:'';
   return `<div class="${cls}">
-    <div class="lc-top"><div><div class="lc-name">${esc(c.name||j.title)}</div><div class="lc-meta">${meta}</div></div>
+    <div class="lc-top"><div><div class="lc-name">${isNewLead(j)?'<span class="badge purple" style="margin-right:6px">NEW</span>':''}${esc(c.name||j.title)}</div><div class="lc-meta">${meta}</div></div>
       <div style="text-align:right">${lost?'<span class="badge gray">Lost</span>':followupLabel(j)}${(j.stage==='quoted'&&!lost)?' <span class="badge purple">Quoted</span>':''}</div></div>
     ${j.notes?`<div class="lc-msg">${esc(j.notes)}</div>`:''}${docHtml}
     <div class="lc-actions">${acts.join('')}</div>
@@ -944,9 +954,9 @@ function stampNote(j,text){ const s=new Date().toLocaleDateString('en-AU',{day:'
 async function saveChase(id){
   const j=DB.jobs.find(x=>x.id===id); if(!j) return;
   const fu=chasePickerValue('ch'), note=val('ch_note').trim();
-  const upd=Object.assign({},j,{notes:stampNote(j,note||'Chased'),followupDate:fu,followupDone:!fu});
+  const upd=Object.assign({},j,{notes:stampNote(j,note||'Chased'),followupDate:fu,followupDone:!fu,chaseCount:(j.chaseCount||0)+1,lastChasedAt:new Date().toISOString()});
   try{ await upsertJob(upd); }catch(e){ return toast('Save failed: '+e.message); }
-  Object.assign(j,upd); closeModal(); render(); toast(fu?'Chase again '+fmtDate(fu):'Follow-up cleared');
+  Object.assign(j,upd); closeModal(); render(); toast((isNewLead(upd)?'':'Moved to Open · ')+(fu?'chase again '+fmtDate(fu):'follow-up cleared'));
 }
 function bookLead(id){ openJob(id); }
 function quoteLead(id){
@@ -979,6 +989,79 @@ function jobDocsHtml(j){
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><b>Quotes &amp; invoices for this job</b>
       <span style="display:flex;gap:6px"><button type="button" class="btn line sm" onclick="closeModal();openInvoice(null,'${j.customerId||''}',${pre},'quote')">+ Quote</button><button type="button" class="btn line sm" onclick="closeModal();openInvoice(null,'${j.customerId||''}',${pre},'invoice')">+ Invoice</button></span></div>
     ${rows}</div>`;
+}
+
+/* =====================================================================
+   LEAD ALERTS — phone/desktop notifications for new website leads
+   Push (works with the app closed) needs: sw.js on the site, the push_subscriptions
+   table, and the notify-lead Edge Function + database webhook in Supabase.
+   While the CRM is open it also checks for new leads every minute.
+   ===================================================================== */
+const VAPID_PUBLIC='BLG13X9oQMCRTZBRJRp8UUDC2R7627BAyGPTxh0TSTYSTzmlFIxI7X7XrR6dAdcrn7Ut1UcgukxU7CaSyiKUdBc';
+let swReg=null, leadSeenAt=null, leadPollTimer=null;
+function b64uToU8(s){ const p='='.repeat((4-s.length%4)%4); const b=atob((s+p).replace(/-/g,'+').replace(/_/g,'/')); return Uint8Array.from([...b].map(c=>c.charCodeAt(0))); }
+function alertsState(){ if(!('Notification' in window)) return 'unsupported'; return Notification.permission; }
+function alertsBtnHtml(){
+  const st=alertsState();
+  if(st==='granted') return `<span class="badge green" title="This device gets new-lead alerts">🔔 Alerts on</span>`;
+  if(st==='denied') return `<span class="badge gray" title="Allow notifications for this site in your browser settings">🔕 Alerts blocked</span>`;
+  if(st==='unsupported') return `<span class="badge gray" title="On iPhone, add the CRM to your Home Screen first">🔕 Alerts unavailable</span>`;
+  return `<button class="btn ghost sm" onclick="enableAlerts()">🔔 Turn on lead alerts</button>`;
+}
+async function registerSW(){
+  if(!('serviceWorker' in navigator)) return null;
+  try{ swReg=await navigator.serviceWorker.register('sw.js'); await navigator.serviceWorker.ready; return swReg; }catch(e){ console.warn('sw',e); return null; }
+}
+async function savePushSub(){
+  if(!swReg||!('PushManager' in window)) return false;
+  try{
+    let sub=await swReg.pushManager.getSubscription();
+    if(!sub) sub=await swReg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64uToU8(VAPID_PUBLIC)});
+    const j=sub.toJSON();
+    const {error}=await sb.from('push_subscriptions').upsert({endpoint:j.endpoint,p256dh:j.keys.p256dh,auth:j.keys.auth,member_name:me.name,user_agent:navigator.userAgent.slice(0,200)},{onConflict:'endpoint'});
+    if(error){ console.warn('push sub',error); return false; }
+    return true;
+  }catch(e){ console.warn('push subscribe',e); return false; }
+}
+async function enableAlerts(){
+  if(!('Notification' in window)) return toast('Notifications not supported here. On iPhone, add the CRM to your Home Screen and open it from there.');
+  const p=await Notification.requestPermission();
+  if(p!=='granted'){ render(); return toast('Alerts not allowed on this device'); }
+  if(!swReg) await registerSW();
+  const pushed=await savePushSub();
+  render();
+  notifyLocal('🔔 Lead alerts are on','You\'ll get a notification when a new enquiry comes in.','mih-test');
+  toast(pushed?'Alerts on — including when the app is closed':'Alerts on while the CRM is open (run the push setup for closed-app alerts)');
+}
+function notifyLocal(title,body,tag){
+  if(alertsState()!=='granted') return;
+  const opts={body,tag,icon:'milogo.png',badge:'milogo.png',data:{url:location.pathname+'#leads'}};
+  try{ if(swReg) swReg.showNotification(title,opts); else new Notification(title,opts); }catch(e){ console.warn(e); }
+}
+async function pollNewLeads(){
+  if(!sb||!me) return;
+  try{
+    const {data,error}=await sb.from('jobs').select('*').eq('stage','lead').gt('created_at',leadSeenAt).order('created_at');
+    if(error||!data||!data.length) return;
+    let fresh=0;
+    for(const r of data){
+      if(r.created_at>leadSeenAt) leadSeenAt=r.created_at;
+      if(DB.jobs.some(j=>j.id===r.id)) continue;
+      const j=rowToJob(r); DB.jobs.push(j); fresh++;
+      if(j.customerId&&!custById(j.customerId)){ const c=await sb.from('customers').select('*').eq('id',j.customerId).maybeSingle(); if(c.data) DB.customers.push(rowToCust(c.data)); }
+      const who=leadName(j);
+      notifyLocal('New lead: '+who,[j.service,j.suburb].filter(Boolean).join(' · ')||'Website enquiry','lead-'+j.id);
+      toast('☎ New lead: '+who);
+    }
+    if(fresh){ leadTab='new'; render(); }
+  }catch(e){ console.warn('poll',e); }
+}
+async function startLeadAlerts(){
+  leadSeenAt=DB.jobs.reduce((m,j)=>j.createdAt&&j.createdAt>m?j.createdAt:m,new Date(Date.now()-60000).toISOString());
+  await registerSW();
+  if(alertsState()==='granted') savePushSub();      // keep this device's push subscription fresh
+  clearInterval(leadPollTimer); leadPollTimer=setInterval(pollNewLeads,60000);
+  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') pollNewLeads(); });
 }
 
 /* =====================================================================
