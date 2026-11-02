@@ -352,7 +352,7 @@ table.inv-items td{padding:9px 12px;border-bottom:1px solid #eee;font-size:12px}
    MIH CRM — CLOUD (Supabase, shared workspace, Google sign-in)
    ===================================================================== */
 const CFG_KEY='mih_sb_cfg';
-const APP_VERSION='2026.11.02-39';   /* bump this when deploying; phones auto-refresh to match */
+const APP_VERSION='2026.11.02-40';   /* bump this when deploying; phones auto-refresh to match */
 const GST_DIVISOR=11;
 const CAL_SCOPE='https://www.googleapis.com/auth/calendar';
 const OAUTH_SCOPES='https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/spreadsheets';
@@ -521,11 +521,11 @@ const rowToCust=r=>({id:r.id,name:r.name,contact:r.contact,phone:r.phone,email:r
 const custToRow=c=>({id:c.id,name:c.name,contact:c.contact,phone:c.phone,email:c.email,abn:c.abn,address:c.address,notes:c.notes,archived:!!c.archived,owner_id:c.ownerId,owner_name:c.ownerName,updated_at:new Date().toISOString()});
 const rowToJob=r=>({id:r.id,title:r.title,customerId:r.customer_id,date:r.date,time:r.time,duration:Number(r.duration)||2,status:r.status,notes:r.notes,value:(r.value!=null?Number(r.value):null),
   stage:r.stage||(r.status==='done'?'done':'booked'),suburb:r.suburb||'',service:r.service||'',leadSource:r.lead_source||'',createdAt:r.created_at||null,
-  followupDate:r.followup_date||null,followupDone:r.followup_done===true,leadEmailId:r.lead_email_id||'',chaseCount:Number(r.chase_count)||0,lastChasedAt:r.last_chased_at||null,
+  followupDate:r.followup_date||null,followupDone:r.followup_done===true,leadEmailId:r.lead_email_id||'',chaseCount:Number(r.chase_count)||0,lastChasedAt:r.last_chased_at||null,remindAt:r.remind_at||null,remindSent:r.remind_sent===true,
   googleEventId:r.google_event_id,calendarId:r.calendar_id,source:r.source,ownerId:r.owner_id,ownerName:r.owner_name});
 const jobToRow=j=>({id:j.id,title:j.title,customer_id:j.customerId||null,date:j.date||null,time:j.time||null,duration:j.duration||2,status:j.status,notes:j.notes,value:(j.value!=null&&j.value!==''?Number(j.value):null),
   stage:j.stage||'booked',suburb:j.suburb||null,service:j.service||null,lead_source:j.leadSource||null,
-  followup_date:j.followupDate||null,followup_done:!!j.followupDone,lead_email_id:j.leadEmailId||null,chase_count:j.chaseCount||0,last_chased_at:j.lastChasedAt||null,
+  followup_date:j.followupDate||null,followup_done:!!j.followupDone,lead_email_id:j.leadEmailId||null,chase_count:j.chaseCount||0,last_chased_at:j.lastChasedAt||null,remind_at:j.remindAt||null,remind_sent:!!j.remindSent,
   google_event_id:j.googleEventId||null,calendar_id:j.calendarId||null,source:j.source||'local',owner_id:j.ownerId,owner_name:j.ownerName,updated_at:new Date().toISOString()});
 const rowToExp=r=>({id:r.id,jobId:r.job_id,invoiceId:r.invoice_id||'',date:r.date,category:r.category,description:r.description,amount:Number(r.amount)||0,gstInc:r.gst_inc!==false,recurring:r.recurring||'',receiptPath:r.receipt_path||'',shared:r.shared===true,paidBy:r.paid_by||'',payStatus:r.pay_status||(r.shared===true?'owed':'paid'),reimbursedAt:r.reimbursed_at||null,paidFrom:r.paid_from||'',importRef:r.import_ref||'',ownerId:r.owner_id,ownerName:r.owner_name});
 const expToRow=e=>({id:e.id,job_id:e.jobId||null,invoice_id:e.invoiceId||null,date:e.date||null,category:e.category,description:e.description,amount:e.amount||0,gst_inc:e.gstInc!==false,recurring:e.recurring||null,receipt_path:e.receiptPath||null,shared:!!e.shared,paid_by:e.paidBy||null,pay_status:e.payStatus||'paid',reimbursed_at:e.reimbursedAt||null,paid_from:e.paidFrom||null,import_ref:e.importRef||null,owner_id:e.ownerId,owner_name:e.ownerName,updated_at:new Date().toISOString()});
@@ -585,8 +585,8 @@ async function upsertCust(c){
 async function upsertJob(j){
   const row=jobToRow(j);
   // tolerate columns that may not be migrated yet
-  const optional=['value','stage','suburb','service','lead_source','followup_date','followup_done','lead_email_id','chase_count','last_chased_at'];
-  for(let n=0;n<12;n++){
+  const optional=['value','stage','suburb','service','lead_source','followup_date','followup_done','lead_email_id','chase_count','last_chased_at','remind_at','remind_sent'];
+  for(let n=0;n<14;n++){
     const {error}=await sb.from('jobs').upsert(row);
     if(!error) return;
     const msg=error.message||'';
@@ -798,16 +798,17 @@ function isNewLead(j){ return j.stage==='lead' && !(j.chaseCount>0) && !/\[\d{2}
 function newLeads(){ return openLeads().filter(isNewLead); }
 function workingLeads(){ return openLeads().filter(j=>!isNewLead(j)); }
 function lostLeads(){ return leadScope(DB.jobs).filter(j=>!j.date&&j.stage==='lost'); }
-function leadDue(j){ return !!(j.followupDate&&!j.followupDone&&j.followupDate<=todayISO()); }
+function remindPending(j){ return !!(j.remindAt&&!j.remindSent&&new Date(j.remindAt)>new Date()); }
+function leadDue(j){ return !!(j.followupDate&&!j.followupDone&&j.followupDate<=todayISO()&&!remindPending(j)); }
 function dueLeads(){ return openLeads().filter(leadDue).sort((a,b)=>a.followupDate.localeCompare(b.followupDate)); }
 function addDaysISO(n){ const d=new Date(); d.setDate(d.getDate()+n); return isoLocal(d); }
 function daysBetween(a,b){ return Math.round((new Date(b+'T00:00:00')-new Date(a+'T00:00:00'))/864e5); }
 function leadName(j){ const c=custById(j.customerId); return c?c.name:(j.title||'Lead'); }
 /* chase-date picker: 1/2/3 days, 1 week…, or an exact date. p = element id prefix */
-function chasePickerHtml(p,defDays,cur){
-  const opts=[['1','Tomorrow (1 day)'],['2','In 2 days'],['3','In 3 days'],['7','In 1 week'],['14','In 2 weeks'],['30','In 1 month']];
-  const useDate=!!cur && !opts.some(o=>addDaysISO(+o[0])===cur);
-  const sel=useDate?'date':String(defDays);
+function chasePickerHtml(p,defDays,cur,withToday){
+  const opts=(withToday?[['today6h','Texted — call back later today (reminder in 6 hrs)']]:[]).concat([['1','Tomorrow (1 day)'],['2','In 2 days'],['3','In 3 days'],['7','In 1 week'],['14','In 2 weeks'],['30','In 1 month']]);
+  const useDate=!!cur && !opts.some(o=>o[0]!=='today6h'&&addDaysISO(+o[0])===cur);
+  const sel=useDate?'date':(withToday?'today6h':String(defDays));
   return `<select id="${p}_sel" onchange="document.getElementById('${p}_date').classList.toggle('hidden',this.value!=='date')">
       ${opts.map(o=>`<option value="${o[0]}" ${sel===o[0]?'selected':''}>${o[1]}</option>`).join('')}
       <option value="date" ${sel==='date'?'selected':''}>Pick a date…</option>
@@ -817,9 +818,12 @@ function chasePickerHtml(p,defDays,cur){
 function chasePickerValue(p){
   const s=val(p+'_sel'); if(s==='0') return null;
   if(s==='date') return val(p+'_date')||null;
+  if(s==='today6h') return todayISO();
   return addDaysISO(parseInt(s)||7);
 }
 function followupLabel(j){
+  if(remindPending(j)) return `<span class="badge amber">☎ Call back ${new Date(j.remindAt).toLocaleTimeString('en-AU',{hour:'numeric',minute:'2-digit'})}</span>`;
+  if(!j.followupDone&&j.remindAt&&j.remindSent&&j.followupDate===todayISO()) return '<span class="badge red">☎ Call back now</span>';
   if(!j.followupDate||j.followupDone) return '<span class="badge gray">No follow-up set</span>';
   const n=daysBetween(todayISO(),j.followupDate);
   if(n<0) return `<span class="badge red">Chase overdue ${-n}d</span>`;
@@ -947,16 +951,19 @@ function chaseLead(id){
   const j=DB.jobs.find(x=>x.id===id); if(!j) return;
   modal('Chased '+leadName(j),`
     <div class="field full"><label>What happened? <span class="hint">(optional — added to the notes)</span></label><textarea id="ch_note" rows="3" placeholder="e.g. Left voicemail / Wants a quote after payday"></textarea></div>
-    <div class="field full" style="margin-top:12px"><label>Chase again</label>${chasePickerHtml('ch',3,null)}</div>`,
+    <div class="field full" style="margin-top:12px"><label>Chase again</label>${chasePickerHtml('ch',3,null,true)}</div>`,
     [{label:'Save',cls:'btn',act:()=>saveChase(id)}]);
 }
 function stampNote(j,text){ const s=new Date().toLocaleDateString('en-AU',{day:'2-digit',month:'2-digit'}); return (j.notes?j.notes+'\n':'')+'['+s+'] '+text; }
 async function saveChase(id){
   const j=DB.jobs.find(x=>x.id===id); if(!j) return;
-  const fu=chasePickerValue('ch'), note=val('ch_note').trim();
-  const upd=Object.assign({},j,{notes:stampNote(j,note||'Chased'),followupDate:fu,followupDone:!fu,chaseCount:(j.chaseCount||0)+1,lastChasedAt:new Date().toISOString()});
+  const fu=chasePickerValue('ch'), note=val('ch_note').trim(), later=val('ch_sel')==='today6h';
+  const remindAt=later?new Date(Date.now()+6*3600e3).toISOString():null;
+  const upd=Object.assign({},j,{notes:stampNote(j,note||(later?'Texted — call back later today':'Chased')),followupDate:fu,followupDone:!fu,
+    chaseCount:(j.chaseCount||0)+1,lastChasedAt:new Date().toISOString(),remindAt,remindSent:false});
   try{ await upsertJob(upd); }catch(e){ return toast('Save failed: '+e.message); }
-  Object.assign(j,upd); closeModal(); render(); toast((isNewLead(upd)?'':'Moved to Open · ')+(fu?'chase again '+fmtDate(fu):'follow-up cleared'));
+  Object.assign(j,upd); closeModal(); render();
+  toast(later?'Reminder set for '+new Date(remindAt).toLocaleTimeString('en-AU',{hour:'numeric',minute:'2-digit'})+' to call back':((isNewLead(upd)?'':'Moved to Open · ')+(fu?'chase again '+fmtDate(fu):'follow-up cleared')));
 }
 function bookLead(id){ openJob(id); }
 function quoteLead(id){
@@ -1040,6 +1047,7 @@ function notifyLocal(title,body,tag){
 }
 async function pollNewLeads(){
   if(!sb||!me) return;
+  checkReminders();
   try{
     const {data,error}=await sb.from('jobs').select('*').eq('stage','lead').gt('created_at',leadSeenAt).order('created_at');
     if(error||!data||!data.length) return;
@@ -1055,6 +1063,18 @@ async function pollNewLeads(){
     }
     if(fresh){ leadTab='new'; render(); }
   }catch(e){ console.warn('poll',e); }
+}
+async function checkReminders(){
+  const now=new Date(); let fired=0;
+  for(const j of DB.jobs.filter(x=>x.remindAt&&!x.remindSent&&new Date(x.remindAt)<=now&&!x.date&&(x.stage==='lead'||x.stage==='quoted'))){
+    const c=custById(j.customerId)||{};
+    notifyLocal('☎ Call back: '+leadName(j),'You texted earlier today'+(c.phone?' · '+c.phone:''),'remind-'+j.id);
+    toast('☎ Time to call back '+leadName(j));
+    const upd=Object.assign({},j,{remindSent:true});
+    try{ await upsertJob(upd); Object.assign(j,upd); }catch(e){ console.warn(e); }
+    fired++;
+  }
+  if(fired&&(currentView==='leads'||currentView==='dashboard')) render();
 }
 async function startLeadAlerts(){
   leadSeenAt=DB.jobs.reduce((m,j)=>j.createdAt&&j.createdAt>m?j.createdAt:m,new Date(Date.now()-60000).toISOString());
