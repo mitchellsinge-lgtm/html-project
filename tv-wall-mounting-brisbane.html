@@ -425,11 +425,12 @@ src="https://www.facebook.com/tr?id=27592303160400799&ev=PageView&noscript=1"
   .cc-lower { position: relative; overflow: hidden; padding: 2.5rem 0; }
   .cc-lower .cc-bg::after { background: rgba(10,10,20,0.22); }
   .cc-lower .fw-faq, .cc-lower .fw-review, .cc-lower .fw-gallery { position: relative; z-index: 1; background: transparent; }
-  .cc-lower .fw-gallery h2, .cc-lower .fw-faq h2 { color: #fff; text-shadow: 0 2px 14px rgba(0,0,0,0.55); }
+  .cc-lower .fw-faq h2 { color: #fff; text-shadow: 0 2px 14px rgba(0,0,0,0.55); }
   .cc-lower .fw-sub { color: #fff; text-shadow: 0 1px 10px rgba(0,0,0,0.55); }
   .cc-lower .fw-gallery { padding: 1.5rem 0; }
-  .cc-lower .fw-list { background: #fff; border-radius: 12px; padding: 1rem 1.1rem 1rem 1.1rem; box-shadow: 0 8px 26px rgba(0,0,0,0.25); }
-  .cc-lower .fw-list li { padding-left: 1.6rem; }
+  .cc-lower .gal-card { background: #fff; border-radius: 16px; padding: 1.3rem 1.1rem; box-shadow: 0 8px 26px rgba(0,0,0,0.25); }
+  .cc-lower .gal-card .fw-sub { color: var(--muted); text-shadow: none; }
+  .cc-lower .gal-card h2 { color: inherit; text-shadow: none; }
   .cc-lower .fw-faq-item, .cc-lower a.fw-review-card { background: #fff; box-shadow: 0 8px 26px rgba(0,0,0,0.25); }
   .cc-price { background: #fff; padding: 1.5rem 0 0.5rem; }
   .cc-price h2 { font-size: 1.5rem; margin-bottom: 0.4rem; }
@@ -680,7 +681,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
 <!-- Recent installs -->
 <section class="fw-gallery">
-  <div class="container">
+  <div class="container"><div class="gal-card">
     <h2>Recent TV installs</h2>
     <p class="fw-sub">Real jobs across Brisbane. Cabling hidden, finished clean.</p>
     <div class="fw-grid">
@@ -694,7 +695,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <li>Soundbar and devices connected and set up</li>
       <li>Done by licensed electricians</li>
     </ul>
-  </div>
+  </div>  </div>
 </section>
 
 <!-- Wall mount FAQ -->
