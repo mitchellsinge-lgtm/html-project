@@ -188,6 +188,10 @@ textarea{resize:vertical;min-height:64px}
 .lc-docs{margin-top:8px;font-size:12px;color:var(--muted)}
 .lead-banner{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:12px 14px;margin-bottom:18px}
 .cal-ev.chase{background:#d97706 !important}
+.cal-ev.rem{background:#bae6fd !important;color:#075985 !important}
+.cal-ev.rem.done{opacity:.5;text-decoration:line-through}
+.ag-card.rem{border-left:4px solid #38bdf8 !important;background:#f0f9ff}
+.rem-row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px}
 .ag-card:hover{border-color:var(--line-strong)}
 .ag-top{display:flex;align-items:center;gap:10px;margin-bottom:3px}
 .ag-time{font-weight:700;font-size:13px;color:var(--ink-soft)}
@@ -271,7 +275,13 @@ table.inv-items td{padding:9px 12px;border-bottom:1px solid #eee;font-size:12px}
   .userchip .nm,.userchip .em{display:none}
   .content{padding:18px 14px 96px}
   .card{overflow-x:auto}
-  .cal-grid{min-width:520px}
+  html,body{overflow-x:hidden}
+  .optmenu{position:fixed;left:12px;right:12px;top:auto;bottom:calc(84px + env(safe-area-inset-bottom));min-width:0;max-height:70vh;overflow-y:auto;z-index:950}
+  .cal-grid{min-width:0;gap:3px}
+  .cal-cell{min-height:62px;padding:4px 3px;border-radius:7px}
+  .cal-cell .dnum{font-size:11px}
+  .cal-ev{font-size:9px;padding:1px 3px;margin-top:2px;gap:2px}
+  .cal-dow{font-size:10px}
   .seg button{padding:6px 10px;font-size:12px}
   /* stack data tables into readable cards (no horizontal zoom) */
   #content table,#content thead,#content tbody,#content tr,#content td{display:block}
@@ -352,7 +362,7 @@ table.inv-items td{padding:9px 12px;border-bottom:1px solid #eee;font-size:12px}
    MIH CRM — CLOUD (Supabase, shared workspace, Google sign-in)
    ===================================================================== */
 const CFG_KEY='mih_sb_cfg';
-const APP_VERSION='2026.11.02-40';   /* bump this when deploying; phones auto-refresh to match */
+const APP_VERSION='2026.11.05-43';   /* bump this when deploying; phones auto-refresh to match */
 const GST_DIVISOR=11;
 const CAL_SCOPE='https://www.googleapis.com/auth/calendar';
 const OAUTH_SCOPES='https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/spreadsheets';
@@ -372,7 +382,7 @@ const DEFAULT_SETTINGS={
 };
 const DEFAULT_SHEET='1ZHmpAxzOo2GPfGIzrReMztPKNP3MBYi23neekylLZjc';
 let sb=null, me=null;
-let DB={customers:[],jobs:[],invoices:[],expenses:[],loans:[],loanEntries:[],parts:[],members:[],settings:{...DEFAULT_SETTINGS},counters:{invoice:2,quote:0},financialsReady:false};
+let DB={reminders:[],remindersReady:false,customers:[],jobs:[],invoices:[],expenses:[],loans:[],loanEntries:[],parts:[],members:[],settings:{...DEFAULT_SETTINGS},counters:{invoice:2,quote:0},financialsReady:false};
 const EXP_CATS=['Materials','Subcontractor','Fuel','Vehicle','Tools & Equipment','Subscriptions','Insurance','Phone & Internet','Marketing','Office','Bank/Fees','Other'];
 const GAuth={token:null,connected:false,calendars:[],needReconnect:false};
 
@@ -381,7 +391,7 @@ const uid=()=> (crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Ma
 const money=n=>{ n=Number(n)||0; return (n<0?'-':'')+'$'+Math.abs(n).toLocaleString('en-AU',{minimumFractionDigits:2,maximumFractionDigits:2}); };
 const esc=s=>(s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function fmtDate(d){ if(!d) return ''; const x=new Date(d+'T00:00:00'); return x.toLocaleDateString('en-AU',{day:'2-digit',month:'2-digit',year:'numeric'}); }
-function todayISO(){ return new Date().toISOString().slice(0,10); }
+function todayISO(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }   // local date, not UTC
 function toast(msg){ const t=document.createElement('div'); t.className='toast'; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),2400); }
 const val=id=>{ const e=document.getElementById(id); return e?e.value:''; };
 const custById=id=>DB.customers.find(c=>c.id===id);
@@ -557,6 +567,7 @@ async function loadAll(){
   DB.counters.invoice=DB.invoices.reduce((m,i)=>{const x=/MIH-(\d+)/.exec(i.number||'');return x?Math.max(m,+x[1]):m;},2);
   DB.counters.quote=DB.invoices.reduce((m,i)=>{const x=/QUO-(\d+)/.exec(i.number||'');return x?Math.max(m,+x[1]):m;},0);
   await loadFinancials();
+  try{ const rm=await sb.from('reminders').select('*'); if(!rm.error){ DB.reminders=(rm.data||[]).map(rowToRem); DB.remindersReady=true; } }catch(e){}
 }
 async function loadFinancials(){
   DB.expenses=[];DB.loans=[];DB.loanEntries=[];DB.parts=[];DB.financialsReady=false;
@@ -570,6 +581,9 @@ async function loadFinancials(){
   }catch(e){ DB.financialsReady=false; }
   try{ const pr=await sb.from('parts').select('*'); if(!pr.error) DB.parts=(pr.data||[]).map(rowToPart); }catch(e){}
 }
+const rowToRem=r=>({id:r.id,title:r.title||'',note:r.note||'',remindAt:r.remind_at,jobId:r.job_id||'',notify:r.notify!==false,done:r.done===true,sent:r.sent===true,ownerId:r.owner_id,ownerName:r.owner_name});
+const remToRow=x=>({id:x.id,title:x.title,note:x.note||null,remind_at:x.remindAt,job_id:x.jobId||null,notify:!!x.notify,done:!!x.done,sent:!!x.sent,owner_id:x.ownerId,owner_name:x.ownerName});
+async function upsertRem(x){ const {error}=await sb.from('reminders').upsert(remToRow(x)); if(error) throw error; }
 async function upsertPart(p){
   const row=partToRow(p);
   let {error}=await sb.from('parts').upsert(row);
@@ -874,6 +888,7 @@ function leadCard(j){
     `<button class="btn ghost sm" onclick="bookLead('${j.id}')">📅 Book</button>`,
     `<button class="btn ghost sm" onclick="quoteLead('${j.id}')">＄ Quote</button>`,
     `<button class="btn line sm" onclick="openLead('${j.id}')">Edit</button>`,
+    `<button class="btn line sm" onclick="openReminder(null,'${j.id}')">⏰ Reminder</button>`,
     `<button class="btn line sm" onclick="loseLead('${j.id}')">Lost</button>`);
   else acts.push(`<button class="btn ghost sm" onclick="reopenLead('${j.id}')">↺ Reopen</button>`,`<button class="btn line sm" onclick="openLead('${j.id}')">Edit</button>`);
   const docHtml=docs.length?`<div class="lc-docs">${docs.map(d=>`<a href="#" onclick="previewInvoice('${d.id}');return false">${esc(d.number)} · ${d.type==='quote'?'quote':'invoice'} ${money(invTotal(d))}</a> ${invBadge(d.status)}`).join(' &nbsp; ')}</div>`:'';
@@ -1074,14 +1089,86 @@ async function checkReminders(){
     try{ await upsertJob(upd); Object.assign(j,upd); }catch(e){ console.warn(e); }
     fired++;
   }
-  if(fired&&(currentView==='leads'||currentView==='dashboard')) render();
+  for(const x of DB.reminders.filter(r=>r.notify&&!r.sent&&!r.done&&new Date(r.remindAt)<=now)){
+    notifyLocal('⏰ '+x.title,x.note||'Reminder','rem-'+x.id); toast('⏰ '+x.title);
+    const u=Object.assign({},x,{sent:true}); try{ await upsertRem(u); Object.assign(x,u); }catch(e){ console.warn(e); }
+    fired++;
+  }
+  if(fired&&(currentView==='leads'||currentView==='dashboard'||currentView==='calendar')) render();
+}
+/* once a day on this device: one notification listing leads due for a chase */
+function chaseDigestLocal(){
+  const d=dueLeads(); if(!d.length||alertsState()!=='granted') return;
+  const k='mih_digest_'+todayISO(); try{ if(localStorage.getItem(k)) return; localStorage.setItem(k,'1'); }catch(e){}
+  notifyLocal('☎ '+d.length+' lead'+(d.length>1?'s':'')+' to chase today',d.slice(0,3).map(j=>leadName(j)).join(', ')+(d.length>3?' +'+(d.length-3)+' more':''),'chase-digest');
 }
 async function startLeadAlerts(){
   leadSeenAt=DB.jobs.reduce((m,j)=>j.createdAt&&j.createdAt>m?j.createdAt:m,new Date(Date.now()-60000).toISOString());
   await registerSW();
   if(alertsState()==='granted') savePushSub();      // keep this device's push subscription fresh
+  chaseDigestLocal();
   clearInterval(leadPollTimer); leadPollTimer=setInterval(pollNewLeads,60000);
   document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') pollNewLeads(); });
+}
+
+/* =====================================================================
+   REMINDERS — light-blue calendar items with a time, optional phone notification
+   e.g. "Order parts for Smith job" Tue 8:00 am. Can be linked to a lead or job.
+   ===================================================================== */
+function remDate(x){ return isoLocal(new Date(x.remindAt)); }
+function remTime(x){ const d=new Date(x.remindAt); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+function remTimeLabel(x){ return new Date(x.remindAt).toLocaleTimeString('en-AU',{hour:'numeric',minute:'2-digit'}); }
+function remScope(){ return mineOnly(DB.reminders); }
+function openReminder(id,presetJobId,presetDate){
+  if(!DB.remindersReady) return toast('Run migration-reminders.sql in Supabase first');
+  const x=id?DB.reminders.find(r=>r.id===id):{title:'',note:'',jobId:presetJobId||'',notify:true,
+      remindAt:new Date((presetDate||addDaysISO(1))+'T08:00:00').toISOString()};
+  const job=x.jobId?DB.jobs.find(j=>j.id===x.jobId):null;
+  modal(id?'Edit reminder':'New reminder',`
+    <div class="frow">
+      <div class="field full"><label>Remind me to *</label><input id="r_title" value="${esc(x.title)}" placeholder="e.g. Order parts for the Smith job"></div>
+      <div class="field"><label>Date</label><input type="date" id="r_date" value="${esc(remDate(x))}"></div>
+      <div class="field"><label>Time</label><input type="time" id="r_time" value="${esc(remTime(x))}"></div>
+      <div class="field full"><label>Notes</label><textarea id="r_note" rows="3">${esc(x.note)}</textarea></div>
+    </div>
+    ${job?`<div class="hint">Linked to: <b>${esc(job.title)}</b>${job.date?' ('+fmtDate(job.date)+')':' (lead)'}</div>`:''}
+    <label style="display:flex;align-items:center;gap:9px;cursor:pointer;font-size:13.5px;margin-top:10px"><input type="checkbox" id="r_notify" style="width:auto" ${x.notify?'checked':''}> 🔔 Send a phone notification at this time</label>`,
+    [ id?{label:'Delete',cls:'danger',act:async()=>{ if(!confirm('Delete this reminder?')) return; try{ await delRow('reminders',id); }catch(e){ return toast(e.message); } DB.reminders=DB.reminders.filter(r=>r.id!==id); closeModal(); render(); }}:null,
+      id&&!x.done?{label:'✓ Done',cls:'line',act:()=>setRemDone(id,true)}:null,
+      {label:'Save reminder',cls:'btn',act:async()=>{
+        const title=val('r_title').trim(); if(!title) return toast('What should we remind you about?');
+        const at=new Date(val('r_date')+'T'+(val('r_time')||'08:00')+':00');
+        if(isNaN(at)) return toast('Pick a date and time');
+        const ex=id?DB.reminders.find(r=>r.id===id):null;
+        const obj={id:id||uid(),title,note:val('r_note'),remindAt:at.toISOString(),jobId:x.jobId||'',notify:document.getElementById('r_notify').checked,
+          done:ex?ex.done:false,sent:(ex&&ex.remindAt===at.toISOString())?ex.sent:false,ownerId:ex?ex.ownerId:me.id,ownerName:ex?ex.ownerName:me.name};
+        try{ await upsertRem(obj); }catch(e){ return toast('Save failed: '+e.message); }
+        if(ex) Object.assign(ex,obj); else DB.reminders.push(obj);
+        closeModal(); render(); toast('Reminder set for '+fmtDate(remDate(obj))+' '+remTimeLabel(obj)); }} ]);
+}
+async function setRemDone(id,done){
+  const x=DB.reminders.find(r=>r.id===id); if(!x) return;
+  const u=Object.assign({},x,{done}); try{ await upsertRem(u); }catch(e){ return toast(e.message); }
+  Object.assign(x,u); closeModal(); render(); toast(done?'Reminder done':'Reminder reopened');
+}
+function remAgendaCard(x){
+  const job=x.jobId?DB.jobs.find(j=>j.id===x.jobId):null;
+  return `<div class="ag-card rem" onclick="openReminder('${x.id}')">
+    <div class="ag-top"><span class="ag-time">${esc(remTimeLabel(x))}</span><span class="badge" style="background:#e0f2fe;color:#075985">⏰ Reminder${x.notify?' · 🔔':''}</span></div>
+    <div class="ag-title">${esc(x.title)}</div>
+    ${job?`<div class="ag-cust">${esc(job.title)}</div>`:''}${x.note?`<div class="ag-cust">${esc(x.note)}</div>`:''}
+    <div class="ag-foot"><span class="owner-tag">${esc(x.ownerName||'')}</span><span onclick="event.stopPropagation()"><button class="btn ghost sm" onclick="setRemDone('${x.id}',true)">✓ Done</button></span></div>
+  </div>`;
+}
+function remindersForJobHtml(jobId){
+  if(!DB.remindersReady) return '';
+  const list=DB.reminders.filter(r=>r.jobId===jobId).sort((a,b)=>a.remindAt.localeCompare(b.remindAt));
+  return `<div class="li-item" style="margin-top:12px;background:#f0f9ff;border-color:#bae6fd">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b>⏰ Reminders</b>
+      <button type="button" class="btn line sm" onclick="closeModal();openReminder(null,'${jobId}')">+ Reminder</button></div>
+    ${list.length?list.map(x=>`<div class="rem-row" style="cursor:pointer;${x.done?'opacity:.5;text-decoration:line-through':''}" onclick="closeModal();openReminder('${x.id}')"><span>${esc(x.title)}</span><span class="muted">${fmtDate(remDate(x))} ${esc(remTimeLabel(x))}${x.notify?' 🔔':''}</span></div>`).join('')
+      :'<div class="hint" style="margin-top:6px">e.g. order parts, confirm with the customer, follow up a payment.</div>'}
+  </div>`;
 }
 
 /* =====================================================================
@@ -1092,7 +1179,7 @@ function viewCalendar(){
   const isMobile=window.matchMedia('(max-width:860px)').matches;
   if(calMode===null) calMode=isMobile?'agenda':'month';
   const now=new Date(); if(calYear==null){ calYear=now.getFullYear(); calMonth=now.getMonth(); }
-  document.getElementById('topAction').innerHTML=filterSeg()+`<button class="btn line" style="margin-left:12px" onclick="openLead()">+ New lead</button><button class="btn" style="margin-left:8px" onclick="openJob()">+ Schedule job</button>`;
+  document.getElementById('topAction').innerHTML=filterSeg()+`<button class="btn line" style="margin-left:12px" onclick="openLead()">+ New lead</button><button class="btn line" style="margin-left:8px" onclick="openReminder()">⏰ Reminder</button><button class="btn" style="margin-left:8px" onclick="openJob()">+ Schedule job</button>`;
   const gbtn=GAuth.connected?`<button class="btn ghost sm" onclick="syncNow()">⟳ Sync Google</button>`:`<button class="btn line sm" onclick="reconnectCal()">Connect Google</button>`;
   const toggle=`<div class="seg"><button class="${calMode==='agenda'?'on':''}" onclick="setCalMode('agenda')">List</button><button class="${calMode==='month'?'on':''}" onclick="setCalMode('month')">Month</button></div>`;
   if(calMode==='agenda'){
@@ -1123,8 +1210,11 @@ function renderAgenda(){
   const jobs=mineOnly(DB.jobs.filter(j=>j.date)).sort((a,b)=>(a.date||'').localeCompare(b.date||'')||(a.time||'').localeCompare(b.time||''));
   const due=dueLeads();
   const chaseHtml=due.length?`<div class="lead-banner" style="margin-bottom:10px"><div><b>☎ ${due.length} lead${due.length>1?'s':''} to chase</b><div class="muted" style="font-size:12.5px;margin-top:2px">${due.slice(0,3).map(j=>esc(leadName(j))).join(', ')}${due.length>3?' +'+(due.length-3)+' more':''}</div></div><button class="btn sm" onclick="go('leads')">Open leads</button></div>`:'';
-  if(!jobs.length){ el.innerHTML=chaseHtml+emptyState('▤','No jobs scheduled','Tap “Schedule job” to add one.'); return; }
-  const upcoming=jobs.filter(j=>(j.date||'')>=today);
+  const rems=remScope().filter(x=>!x.done).map(x=>({_rem:x,date:remDate(x),time:remTime(x)}));
+  const overdueRems=rems.filter(r=>r.date<today).map(r=>Object.assign({},r,{date:today}));   // overdue, not done → show under today
+  const items=jobs.concat(rems.filter(r=>r.date>=today),overdueRems).sort((a,b)=>(a.date||'').localeCompare(b.date||'')||(a.time||'').localeCompare(b.time||''));
+  if(!items.length){ el.innerHTML=chaseHtml+emptyState('▤','No jobs scheduled','Tap “Schedule job” to add one.'); return; }
+  const upcoming=items.filter(j=>(j.date||'')>=today);
   const past=jobs.filter(j=>(j.date||'')<today).reverse();
   let html=chaseHtml+(upcoming.length?groupAgenda(upcoming,today):`<div class="hint" style="margin:6px 0 2px">No upcoming jobs — see earlier ones below.</div>`);
   if(past.length) html+=`<div class="ag-pasthd">Earlier jobs</div>`+groupAgenda(past,today);
@@ -1132,13 +1222,13 @@ function renderAgenda(){
 }
 function groupAgenda(list,today){
   let html='',last=null;
-  for(const j of list){ if(j.date!==last){ last=j.date; html+=`<div class="ag-date">${agendaDateLabel(j.date,today)}</div>`; } html+=agendaCard(j); }
+  for(const j of list){ if(j.date!==last){ last=j.date; html+=`<div class="ag-date">${agendaDateLabel(j.date,today)}</div>`; } html+=j._rem?remAgendaCard(j._rem):agendaCard(j); }
   return html;
 }
 function agendaDateLabel(d,today){
   if(!d) return 'No date';
   const long=new Date(d+'T00:00:00').toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long'});
-  const tm=new Date(Date.now()+864e5).toISOString().slice(0,10);
+  const tm=isoLocal(new Date(Date.now()+864e5));
   if(d===today) return 'Today · '+long;
   if(d===tm) return 'Tomorrow · '+long;
   return long;
@@ -1168,8 +1258,10 @@ function renderCalCells(){
     const iso=`${y}-${String(m+1).padStart(2,'0')}-${String(dayNum).padStart(2,'0')}`;
     const evs=jobs.filter(j=>j.date===iso);
     const chs=chases.filter(j=>j.followupDate===iso||(iso===today&&j.followupDate<today));
+    const rms=remScope().filter(x=>remDate(x)===iso).sort((a,b)=>a.remindAt.localeCompare(b.remindAt));
     cells.push(`<div class="cal-cell ${other?'other':''} ${iso===today?'today':''}" onclick="openJob(null,'${iso}')">
       <div class="dnum">${dayNum}</div>
+      ${rms.slice(0,2).map(x=>`<div class="cal-ev rem ${x.done?'done':''}" onclick="event.stopPropagation();openReminder('${x.id}')" title="${esc(x.title)}">⏰ ${esc(remTime(x))} ${esc(x.title)}</div>`).join('')}
       ${chs.slice(0,2).map(j=>`<div class="cal-ev chase" onclick="event.stopPropagation();go('leads')" title="Chase ${esc(leadName(j))}">☎ ${esc(leadName(j))}</div>`).join('')}
       ${evs.slice(0,3).map(j=>`<div class="cal-ev ${j.status==='done'?'done':''}" style="background:${esc(ownerColor(j.ownerId))}" onclick="event.stopPropagation();openJob('${j.id}')" title="${esc(j.title)} — ${esc(j.ownerName||'')}">${j.status==='done'?'✓ ':''}${esc(j.time?j.time+' ':'')}${esc(j.title)}</div>`).join('')}
       ${evs.length>3?`<div class="muted" style="font-size:10px;margin-top:2px">+${evs.length-3} more</div>`:''}
@@ -1218,6 +1310,9 @@ function openJob(id,presetDate){
           <button type="button" class="btn line sm" style="margin-top:8px" onclick="cancelNewCust()">Cancel new customer</button>
         </div>
         <div id="custActions">${custActionsHtml(selCust)}</div>
+        <div id="siteAddrRow" style="margin-top:10px;display:${selCust?'':'none'}"><label>Site address</label>
+          <input id="j_addr" value="${esc((selCust&&selCust.address)||j.suburb||'')}" placeholder="Street address, suburb QLD postcode">
+          <div class="hint">Updating this saves it to the customer (used for Map and Google Calendar).</div></div>
       </div>
       <div class="field"><label>Date *</label><input type="date" id="j_date" value="${esc(j.date)}"></div>
       <div class="field"><label>Start time</label><input type="time" id="j_time" value="${esc(j.time)}"></div>
@@ -1239,7 +1334,7 @@ function openJob(id,presetDate){
       <div class="frow" style="margin:10px 0 0"><div class="field"><label>Amount charged ($) — required to mark Done</label><input type="number" inputmode="decimal" step="0.01" id="j_value" value="${esc(j.value!=null?j.value:'')}" placeholder="0.00" oninput="updJobProfit('${id||''}')"></div></div>
       <div id="jobProfit" style="margin-top:8px"></div>
     </div>
-    ${id?jobDocsHtml(j0):''}`,
+    ${id?jobDocsHtml(j0):''}${id?remindersForJobHtml(id):''}`,
     [ id?{label:'Delete',cls:'danger',act:async()=>{ if(confirm('Delete this job?')){ const dj=DB.jobs.find(x=>x.id===id); await delRow('jobs',id); DB.jobs=DB.jobs.filter(x=>x.id!==id); closeModal(); render(); if(dj) deleteGoogleEvent(dj); }}}:null,
       {label:'Save job',cls:'btn',act:async()=>{
         const title=val('j_title').trim(); if(!title){ toast('Title required'); return; }
@@ -1259,6 +1354,12 @@ function openJob(id,presetDate){
         } else if(!customerId){
           const typed=val('j_custsearch').trim().toLowerCase();
           const m=typed?DB.customers.find(c=>(c.name||'').toLowerCase()===typed):null; if(m) customerId=m.id;
+        }
+        // site address typed on the job → save it to the customer
+        const addrIn=document.getElementById('j_addr');
+        if(addrIn&&customerId&&!addingNew){
+          const cu=custById(customerId), na=addrIn.value.trim();
+          if(cu&&na&&na!==(cu.address||'')){ const u=Object.assign({},cu,{address:na}); try{ await upsertCust(u); Object.assign(cu,u); }catch(e){ return toast('Could not save address: '+e.message); } }
         }
         const fu=asLead?chasePickerValue('jf'):null;
         const hasQuote=!!(id&&DB.invoices.some(i=>i.jobId===id&&i.type==='quote'));
@@ -1316,6 +1417,8 @@ function chooseCust(cid){
   document.getElementById('custResults').classList.add('hidden');
   hideNewCust();
   const ca=document.getElementById('custActions'); if(ca) ca.innerHTML=custActionsHtml(c);
+  const ar=document.getElementById('siteAddrRow'), ai=document.getElementById('j_addr');
+  if(ar&&ai){ ar.style.display=''; ai.value=c.address||''; }
 }
 function chooseNewCust(){
   const typed=document.getElementById('j_custsearch').value.trim();
