@@ -362,7 +362,7 @@ table.inv-items td{padding:9px 12px;border-bottom:1px solid #eee;font-size:12px}
    MIH CRM — CLOUD (Supabase, shared workspace, Google sign-in)
    ===================================================================== */
 const CFG_KEY='mih_sb_cfg';
-const APP_VERSION='2026.11.05-43';   /* bump this when deploying; phones auto-refresh to match */
+const APP_VERSION='2026.11.06-44';   /* bump this when deploying; phones auto-refresh to match */
 const GST_DIVISOR=11;
 const CAL_SCOPE='https://www.googleapis.com/auth/calendar';
 const OAUTH_SCOPES='https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/spreadsheets';
@@ -545,8 +545,8 @@ const rowToLE=r=>({id:r.id,loanId:r.loan_id,date:r.date,kind:r.kind||'repayment'
 const rowToPart=r=>({id:r.id,name:r.name||'',price:Number(r.price)||0,unit:r.unit||'',category:r.category||'',notes:r.notes||'',ownerId:r.owner_id,ownerName:r.owner_name});
 const partToRow=p=>({id:p.id,name:p.name,price:p.price||0,unit:p.unit||'',category:p.category||'',notes:p.notes||'',owner_id:p.ownerId,owner_name:p.ownerName,updated_at:new Date().toISOString()});
 const leToRow=x=>({id:x.id,loan_id:x.loanId,date:x.date||null,kind:x.kind||'repayment',amount:x.amount||0,note:x.note||'',owner_id:x.ownerId,owner_name:x.ownerName});
-const rowToInv=r=>({id:r.id,number:r.number,date:r.date,customerId:r.customer_id,jobId:r.job_id||'',project:r.project,commenced:r.commenced,completed:r.completed,status:r.status,lines:r.lines||[],bank:r.bank||null,sentAt:r.sent_at||null,paidAt:r.paid_at||null,type:r.type||'invoice',ownerId:r.owner_id,ownerName:r.owner_name});
-const invToRow=i=>({id:i.id,number:i.number,date:i.date||null,customer_id:i.customerId||null,job_id:i.jobId||null,project:i.project,commenced:i.commenced||null,completed:i.completed||null,status:i.status,lines:i.lines,bank:i.bank||null,sent_at:i.sentAt||null,paid_at:i.paidAt||null,type:i.type||'invoice',owner_id:i.ownerId,owner_name:i.ownerName,updated_at:new Date().toISOString()});
+const rowToInv=r=>({id:r.id,number:r.number,date:r.date,customerId:r.customer_id,jobId:r.job_id||'',project:r.project,commenced:r.commenced,completed:r.completed,status:r.status,lines:r.lines||[],bank:r.bank||null,sentAt:r.sent_at||null,paidAt:r.paid_at||null,type:r.type||'invoice',terms:r.terms||'',ownerId:r.owner_id,ownerName:r.owner_name});
+const invToRow=i=>({id:i.id,number:i.number,date:i.date||null,customer_id:i.customerId||null,job_id:i.jobId||null,project:i.project,commenced:i.commenced||null,completed:i.completed||null,status:i.status,lines:i.lines,bank:i.bank||null,sent_at:i.sentAt||null,paid_at:i.paidAt||null,type:i.type||'invoice',terms:i.terms||null,owner_id:i.ownerId,owner_name:i.ownerName,updated_at:new Date().toISOString()});
 
 async function loadMembers(){
   const {data,error}=await sb.from('members').select('*');
@@ -633,8 +633,8 @@ async function receiptUrl(path){ if(!path) return ''; const {data,error}=await s
 async function upsertInv(i){
   const row=invToRow(i);
   // tolerate optional columns that may not be migrated yet (bank, sent_at, job_id)
-  const optional=['bank','sent_at','paid_at','job_id','type'];
-  for(let n=0;n<4;n++){
+  const optional=['bank','sent_at','paid_at','job_id','type','terms'];
+  for(let n=0;n<7;n++){
     const {error}=await sb.from('invoices').upsert(row);
     if(!error) return;
     const msg=error.message||'';
@@ -886,7 +886,7 @@ function leadCard(j){
   if(!lost) acts.push(
     `<button class="btn ghost sm" onclick="chaseLead('${j.id}')">✓ Chased</button>`,
     `<button class="btn ghost sm" onclick="bookLead('${j.id}')">📅 Book</button>`,
-    `<button class="btn ghost sm" onclick="quoteLead('${j.id}')">＄ Quote</button>`,
+    `<button class="btn ghost sm" onclick="quoteLeadTpl('${j.id}')">＄ Quote</button>`,
     `<button class="btn line sm" onclick="openLead('${j.id}')">Edit</button>`,
     `<button class="btn line sm" onclick="openReminder(null,'${j.id}')">⏰ Reminder</button>`,
     `<button class="btn line sm" onclick="loseLead('${j.id}')">Lost</button>`);
@@ -981,6 +981,12 @@ async function saveChase(id){
   toast(later?'Reminder set for '+new Date(remindAt).toLocaleTimeString('en-AU',{hour:'numeric',minute:'2-digit'})+' to call back':((isNewLead(upd)?'':'Moved to Open · ')+(fu?'chase again '+fmtDate(fu):'follow-up cleared')));
 }
 function bookLead(id){ openJob(id); }
+function quoteLeadTpl(id){
+  const j=DB.jobs.find(x=>x.id===id); if(!j) return;
+  modal('Quick quote — '+leadName(j),`<div class="hint" style="margin-bottom:10px">Pick a standard quote. You can still edit it before saving.</div>
+    ${QUOTE_TEMPLATES.map(t=>`<button class="btn line" style="display:block;width:100%;text-align:left;margin-bottom:8px" onclick="closeModal();openInvoice(null,'${j.customerId||''}',{jobId:'${j.id}',template:'${t.key}'},'quote')">${esc(t.name)}</button>`).join('')}
+    <button class="btn ghost" style="display:block;width:100%;text-align:left" onclick="closeModal();quoteLead('${j.id}')">Blank quote…</button>`,[]);
+}
 function quoteLead(id){
   const j=DB.jobs.find(x=>x.id===id); if(!j) return;
   if(!j.customerId){ toast('Add a contact first'); return openLead(id); }
@@ -1498,6 +1504,49 @@ function openInvoiceFromJob(job){
   if(!job) return;
   openInvoice(null, job.customerId, {project:job.title, jobId:job.id, completed:job.date, lines:[{desc:job.title, qty:1, price:Number(job.value)||0}]});
 }
+/* =====================================================================
+   QUOTE TEMPLATES — EV charger deals (prices match our ads, GST inclusive)
+   ===================================================================== */
+const EV_BASE_TERMS=[
+ 'Standard installation only. Price is based on the charger being mounted on a suitable wall within 10 metres of the main switchboard (measured along the cable route). Longer cable runs are charged per metre and confirmed before work starts.',
+ 'No switchboard upgrades or alterations are included. The existing switchboard must have space and capacity for a new dedicated circuit. Switchboard upgrades, main switch or consumer mains upgrades, and any rectification of existing faults are quoted separately if required.',
+ 'Cable is run on the surface or through accessible roof/underfloor space. Concealed runs through finished walls or ceilings, trenching, underground cabling, posts or pedestals, and core drilling through brick or concrete are not included.',
+ 'Maximum demand is checked on site. If the existing supply cannot support the charger at full current, the charger will be set to a lower current, or load management (CT module) can be added at extra cost.',
+ 'Mounting on a solid wall (brick, block, or plasterboard with suitable framing) with clear access to the switchboard, install location and roof/underfloor space where needed.',
+ 'Energex is notified of the EV charger installation by MIH. Any requirement from Energex or your retailer (for example a smart meter or network device) is arranged through them; their timing and any retailer charges are outside our control and not included.',
+ 'If asbestos is suspected (for example in older switchboard panels), work on that item stops until it is safely managed. Asbestos testing and removal are not included.',
+ 'If existing wiring or equipment is found to be unsafe or non-compliant, it must be rectified before the charger can be connected. This will be quoted separately and nothing will proceed without your approval.',
+ 'Patching, painting and making good of finishes are not included.',
+ 'App features (scheduling, solar charging, Wi-Fi) depend on the charger model and your vehicle. We set up what the charger supports during commissioning; solar-surplus charging may need an additional CT module.',
+ '12-month MIH warranty on workmanship. This quote is valid for 30 days. Payment is due on completion. Prices include GST.'];
+const EV_INSTALL_ONLY='The charger is supplied by you and must be an Australian-compliant (RCM-approved) unit with its installation manual. The charger itself, its warranty and any faults in the unit are the responsibility of the manufacturer or seller.';
+const EV_THREE_PHASE='A three-phase installation requires an existing three-phase supply at the switchboard. Upgrading from single phase to three phase (Energex service work) is not included.';
+const EV_SUPPLY='The supplied charger is covered by the manufacturer\'s warranty; MIH will assist with any warranty claim.';
+const QUOTE_TEMPLATES=[
+ {key:'ev1i',name:'EV — single-phase install only ($930)',project:'Single-phase EV charger installation',
+  lines:[{desc:'Single-phase EV charger installation (charger supplied by customer): dedicated circuit with RCBO protection, up to 10 m from the switchboard, mounting, connection, testing, commissioning and Certificate of Compliance',qty:1,price:930}],
+  terms:[EV_INSTALL_ONLY].concat(EV_BASE_TERMS)},
+ {key:'ev3i',name:'EV — three-phase install only ($1,100)',project:'Three-phase EV charger installation',
+  lines:[{desc:'Three-phase EV charger installation (charger supplied by customer): dedicated three-phase circuit with RCBO protection, up to 10 m from the switchboard, mounting, connection, testing, commissioning and Certificate of Compliance',qty:1,price:1100}],
+  terms:[EV_INSTALL_ONLY,EV_THREE_PHASE].concat(EV_BASE_TERMS)},
+ {key:'ev1s',name:'EV — single-phase supply & install ($1,299)',project:'Single-phase EV charger — supplied and installed',
+  lines:[{desc:'SEVR Series 7 EV charger — 7 kW single-phase, 32 A, Type 2 connector',qty:1,price:380},
+         {desc:'Installation: dedicated circuit with RCBO protection, up to 10 m from the switchboard, mounting, connection, testing, commissioning and Certificate of Compliance',qty:1,price:919}],
+  terms:[EV_SUPPLY].concat(EV_BASE_TERMS)},
+ {key:'ev3s',name:'EV — three-phase supply & install ($1,799)',project:'Three-phase EV charger — supplied and installed',
+  lines:[{desc:'SEVR Series 22 EV charger — 22 kW three-phase, 32 A, Type 2 connector',qty:1,price:520},
+         {desc:'Installation: dedicated three-phase circuit with RCBO protection, up to 10 m from the switchboard, mounting, connection, testing, commissioning and Certificate of Compliance',qty:1,price:1279}],
+  terms:[EV_SUPPLY,EV_THREE_PHASE].concat(EV_BASE_TERMS)}];
+function applyQuoteTemplate(key){
+  const t=QUOTE_TEMPLATES.find(x=>x.key===key); if(!t) return;
+  const has=editingLines.some(l=>(l.desc||'').trim()||Number(l.price));
+  if(has&&!confirm('Replace the current lines with “'+t.name+'”?')){ const sel=document.getElementById('i_tpl'); if(sel) sel.value=''; return; }
+  editingLines=JSON.parse(JSON.stringify(t.lines)); renderLines();
+  const pj=document.getElementById('i_project'); if(pj) pj.value=t.project;
+  const tm=document.getElementById('i_terms'); if(tm) tm.value=t.terms.join('\n');
+  const dt=document.getElementById('i_termsBox'); if(dt) dt.open=true;
+  toast('Template applied — check the details, then save');
+}
 function openInvoice(id,presetCust,prefill,forceType){
   const existing=id?DB.invoices.find(x=>x.id===id):null;
   // offer to restore an unsaved draft when starting a NEW invoice/quote of the same kind
@@ -1554,6 +1603,8 @@ function openInvoice(id,presetCust,prefill,forceType){
         ${q?`<option value="accepted" ${inv.status==='accepted'?'selected':''}>Accepted</option><option value="declined" ${inv.status==='declined'?'selected':''}>Declined</option>`:`<option value="paid" ${inv.status==='paid'?'selected':''}>Paid</option>`}
       </select></div>
     </div>
+    <div class="field full" style="margin-bottom:12px"><label>⚡ Start from a template</label>
+      <select id="i_tpl" onchange="applyQuoteTemplate(this.value)"><option value="">— choose a standard quote —</option>${QUOTE_TEMPLATES.map(t=>`<option value="${t.key}">${esc(t.name)}</option>`).join('')}</select></div>
     <label style="margin-bottom:8px;display:block">Itemised works &amp; materials</label>
     <div class="cust-pick" style="margin-bottom:10px">
       <input id="i_partsearch" autocomplete="off" placeholder="🔍 Add a saved part as a line (type 2+ letters)…" oninput="invPartSearch(this.value)">
@@ -1563,12 +1614,15 @@ function openInvoice(id,presetCust,prefill,forceType){
     <button class="btn ghost sm" onclick="addLine()" style="margin-top:4px">+ Add line</button>
     ${q?'':`<button class="btn ghost sm" onclick="addRefundLine()" style="margin-top:4px;margin-left:6px;color:#b42318">− Add refund</button>`}
     <div class="totbox" id="liTot"></div>
+    <details id="i_termsBox" style="margin-top:16px" ${inv.terms?'open':''}><summary style="cursor:pointer;font-weight:600;font-size:13.5px">Terms &amp; fine print <span class="hint">(printed on the document — one point per line)</span></summary>
+      <textarea id="i_terms" rows="8" style="margin-top:8px;font-size:12.5px">${esc(inv.terms||'')}</textarea></details>
     <div class="field full" style="margin-top:18px"><label>Pay to (bank account on invoice)</label>
       <select id="i_bank">${bankOptions(inv.bank, inv.ownerName||me.name)}</select></div>`,
     [ id?{label:'Delete',cls:'danger',act:async()=>{ if(confirm('Delete this '+(q?'quote':'invoice')+'?')){ await delRow('invoices',id); DB.invoices=DB.invoices.filter(x=>x.id!==id); closeModal(); render(); }}}:null,
       {label:'Save & preview',cls:'btn',act:()=>saveInvoice(id)} ],'wide');
   renderLines();
   if(dr && dr.bankIndex!=null){ const bs=document.getElementById('i_bank'); if(bs) bs.value=dr.bankIndex; }
+  if(!id&&prefill&&prefill.template){ const sel=document.getElementById('i_tpl'); if(sel) sel.value=prefill.template; editingLines=[{desc:'',qty:1,price:0}]; applyQuoteTemplate(prefill.template); }
 }
 function lineRowHtml(l,idx){
   return `<div class="li-item"${l.refund?' style="border-color:#f3b7b0;background:#fff5f4"':''}>
@@ -1646,7 +1700,7 @@ async function saveInvoice(id){
   const status=val('i_status');
   // stamp the day it was paid, and clear it if the status moves back off "paid"
   const paidAt = status==='paid' ? ((ex&&ex.paidAt) || val('i_comp') || todayISO()) : null;
-  const obj={id:id||uid(),number:val('i_number'),date:val('i_date'),customerId,project:val('i_project'),commenced:val('i_comm'),completed:val('i_comp'),status,lines,bank,type,paidAt,jobId:val('i_jobid')||(ex&&ex.jobId)||null,
+  const obj={id:id||uid(),number:val('i_number'),date:val('i_date'),customerId,project:val('i_project'),commenced:val('i_comm'),completed:val('i_comp'),status,lines,bank,type,paidAt,terms:(document.getElementById('i_terms')?val('i_terms').trim():((ex&&ex.terms)||'')),jobId:val('i_jobid')||(ex&&ex.jobId)||null,
     sentAt:ex?ex.sentAt:null,
     ownerId:ex?ex.ownerId:me.id, ownerName:ex?ex.ownerName:me.name};
   try{ await upsertInv(obj); }catch(e){ return toast('Save failed: '+e.message); }
@@ -1721,6 +1775,8 @@ function invoiceDocHtml(id){
         </div>
       </div>
     </div>
+    ${i.terms?`<div style="padding:0 34px 18px"><div style="font-size:9.5px;font-weight:700;letter-spacing:.6px;color:#555;text-transform:uppercase;margin-bottom:4px">Terms &amp; conditions</div>
+      <ol style="margin:0;padding-left:16px;font-size:8.6px;line-height:1.45;color:#555">${i.terms.split(/\n+/).map(t=>t.trim()).filter(Boolean).map(t=>`<li style="margin-bottom:2px">${esc(t)}</li>`).join('')}</ol></div>`:''}
     <div class="inv-services"><div class="acc"></div><div class="sv"><div class="sh">OUR SERVICES</div><div class="sl">${esc(s.services).replace(/\n/g,'<br>')}</div></div></div>
     <div class="inv-thanks">Thank you for choosing ${esc(s.businessName)}</div>
   </div>`;
