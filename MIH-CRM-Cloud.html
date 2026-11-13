@@ -362,7 +362,7 @@ table.inv-items td{padding:9px 12px;border-bottom:1px solid #eee;font-size:12px}
    MIH CRM — CLOUD (Supabase, shared workspace, Google sign-in)
    ===================================================================== */
 const CFG_KEY='mih_sb_cfg';
-const APP_VERSION='2026.11.13-47';   /* bump this when deploying; phones auto-refresh to match */
+const APP_VERSION='2026.11.13-49';   /* bump this when deploying; phones auto-refresh to match */
 const GST_DIVISOR=11;
 const CAL_SCOPE='https://www.googleapis.com/auth/calendar';
 const OAUTH_SCOPES='https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/spreadsheets';
@@ -1826,8 +1826,8 @@ async function invoicePdf(id,opts){
   try{
     const node=wrap.querySelector('.inv-doc');
     // compact = small file for text messages (~150–300 KB); normal = sharper for email/print
-    const canvas=await html2canvas(node,{scale:opts.compact?1.2:2,backgroundColor:'#ffffff',useCORS:true,logging:false});
-    const quality=opts.compact?0.62:0.9;
+    const canvas=await html2canvas(node,{scale:opts.compact?1:2,backgroundColor:'#ffffff',useCORS:true,logging:false});
+    const quality=opts.compact?0.5:0.9;
     const pdf=new window.jspdf.jsPDF({unit:'pt',format:'a4',compress:true});
     const pw=pdf.internal.pageSize.getWidth(), phPage=pdf.internal.pageSize.getHeight();
     // split long documents (e.g. quotes with fine print) across pages instead of cutting them off
@@ -1843,23 +1843,32 @@ async function invoicePdf(id,opts){
     return { b64, blob:pdf.output('blob') };
   } finally { document.body.removeChild(wrap); }
 }
-/* send a small PDF by text: opens the phone's share sheet (pick Messages); falls back to download + SMS */
+/* Text a PDF: uploads a small copy, then opens Messages with the customer's number and a
+   download link already filled in (a text link can't carry an attachment AND a number). */
+async function smsPdfLink(blob,path,c,msg,name){
+  const tel=telLink(c&&c.phone);
+  const file=new File([blob],name,{type:'application/pdf'});
+  const shareFile=async()=>{ try{ if(navigator.canShare&&navigator.canShare({files:[file]})){ await navigator.share({files:[file],title:name,text:msg}); return true; } }catch(e){ if(e&&e.name==='AbortError') return true; } return false; };
+  if(!tel){ toast('No mobile saved for this customer — pick who to send it to'); if(await shareFile()) return; }
+  let url='';
+  try{
+    const up=await sb.storage.from('receipts').upload(path,blob,{upsert:true,contentType:'application/pdf'}); if(up.error) throw up.error;
+    const sg=await sb.storage.from('receipts').createSignedUrl(path,60*60*24*365); if(sg.error||!sg.data) throw (sg.error||new Error('no link'));
+    url=sg.data.signedUrl;
+  }catch(e){ console.warn('pdf link failed',e); }
+  if(tel&&url){ location.href='sms:'+tel+'?&body='+encodeURIComponent(msg+'\n\n'+url); return; }
+  if(await shareFile()) return;
+  const u=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=u; a.download=name; a.click(); URL.revokeObjectURL(u);
+  if(tel) setTimeout(()=>{ location.href='sms:'+tel+'?&body='+encodeURIComponent(msg); },600);
+  toast('Downloaded — attach it to the text');
+}
 async function textInvoice(id){
   const i=DB.invoices.find(x=>x.id===id); if(!i) return;
   const c=custById(i.customerId)||{}; const q=i.type==='quote';
-  toast('Making a small PDF for text…');
+  toast('Preparing text…');
   let pdf; try{ pdf=await invoicePdf(id,{compact:true}); }catch(e){ return toast('PDF failed: '+(e.message||'')); }
-  const name=(q?'Quote-':'Invoice-')+i.number+'.pdf';
   const msg=`Hi ${(c.name||'').split(' ')[0]||'there'}, here's your ${q?'quote':'invoice'} ${i.number} from Massive Integrated Homes — ${money(invTotal(i))} inc GST. Any questions, just reply or call ${docContact(i).phone}. Thanks!`;
-  const file=new File([pdf.blob],name,{type:'application/pdf'});
-  const kb=Math.round(pdf.blob.size/1024);
-  try{
-    if(navigator.canShare&&navigator.canShare({files:[file]})){ await navigator.share({files:[file],title:name,text:msg}); toast('Shared ('+kb+' KB)'); return; }
-  }catch(e){ if(e&&e.name==='AbortError') return; console.warn(e); }
-  const u=URL.createObjectURL(pdf.blob); const a=document.createElement('a'); a.href=u; a.download=name; a.click(); URL.revokeObjectURL(u);
-  const tel=telLink(c.phone);
-  if(tel) setTimeout(()=>{ location.href='sms:'+tel+'?&body='+encodeURIComponent(msg); },600);
-  toast('Downloaded '+kb+' KB — attach it to the text');
+  await smsPdfLink(pdf.blob,'share/'+(q?'quote-':'invoice-')+id+'.pdf',c,msg,(q?'Quote-':'Invoice-')+i.number+'.pdf');
 }
 /* =====================================================================
    EV CHARGER CERTIFICATE OF TESTING & COMPLIANCE — made from an invoice
@@ -1960,24 +1969,50 @@ function previewCoc(id){
   modal('Certificate '+i.coc.number,cocDocHtml(id),
     [ {label:'Edit',cls:'line',act:()=>{ closeModal(); openEvCoc(id); }},
       {label:'📄 Save PDF',cls:'line',act:()=>cocSend(id,false)},
-      {label:'💬 Text / share',cls:'line',act:()=>cocSend(id,true)},
+      {label:'💬 Text',cls:'line',act:()=>cocSend(id,true)},
+      {label:'📧 Email',cls:'line',act:()=>cocEmail(id)},
       {label:'🖨 Print',cls:'btn',act:()=>printInvoice()} ],'wide');
 }
-async function cocSend(id,share){
+function cocMsg(c){ return `Hi ${((c&&c.name)||'').split(' ')[0]||'there'}, here's the Certificate of Testing and Compliance for your EV charger installation. Please keep it with your property records. Thanks — Mitch, Massive Integrated Homes`; }
+async function cocSend(id,text){
   const i=DB.invoices.find(x=>x.id===id); if(!i||!i.coc) return; const c=custById(i.customerId)||{};
-  toast('Generating certificate…');
-  let pdf; try{ pdf=await invoicePdf(id,{html:cocDocHtml(id),compact:share}); }catch(e){ return toast('PDF failed: '+(e.message||'')); }
+  toast(text?'Preparing text…':'Generating certificate…');
+  let pdf; try{ pdf=await invoicePdf(id,{html:cocDocHtml(id),compact:text}); }catch(e){ return toast('PDF failed: '+(e.message||'')); }
   const name='COC-'+i.coc.number+'.pdf';
-  const msg=`Hi ${(c.name||'').split(' ')[0]||'there'}, here's the Certificate of Testing and Compliance for your EV charger installation. Please keep it with your property records. Thanks — Mitch, Massive Integrated Homes`;
-  if(share){
-    const file=new File([pdf.blob],name,{type:'application/pdf'});
-    try{ if(navigator.canShare&&navigator.canShare({files:[file]})){ await navigator.share({files:[file],title:name,text:msg}); return; } }
-    catch(e){ if(e&&e.name==='AbortError') return; console.warn(e); }
-  }
+  if(text) return smsPdfLink(pdf.blob,'share/coc-'+id+'.pdf',c,cocMsg(c),name);
   const u=URL.createObjectURL(pdf.blob); const a=document.createElement('a'); a.href=u; a.download=name; a.click(); URL.revokeObjectURL(u);
-  const tel=telLink(c.phone);
-  if(share&&tel) setTimeout(()=>{ location.href='sms:'+tel+'?&body='+encodeURIComponent(msg); },600);
   toast('Certificate downloaded');
+}
+function cocEmail(id){
+  const i=DB.invoices.find(x=>x.id===id); if(!i||!i.coc) return; const c=custById(i.customerId); if(!c) return toast('No customer on this invoice');
+  modal('Email certificate '+i.coc.number,`
+    <div class="field full"><label>Send to — ${esc(c.name)}'s email</label>
+      <input id="ce_to" type="email" inputmode="email" value="${esc(c.email||'')}" placeholder="customer@email.com"></div>
+    <div class="hint" style="margin-top:8px">${c.email?'Saved on '+esc(c.name)+'’s profile — please check it’s correct.':'⚠ No email saved for '+esc(c.name)+' yet — add one above.'} Any change is saved to their profile.</div>
+    <div class="hint" style="margin-top:12px">Sending from <b>${esc(me.email)}</b> with the certificate attached as a PDF.</div>`,
+    [ {label:'Cancel',cls:'line',act:()=>{ closeModal(); previewCoc(id); }},
+      {label:'📧 Send certificate',cls:'btn',act:async()=>{
+        const to=(val('ce_to')||'').replace(/\s/g,'').trim();
+        if(!/^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$/.test(to)) return toast('Enter a valid email address');
+        if(to!==(c.email||'')){ c.email=to; try{ await upsertCust(c); }catch(e){ console.warn(e); } }
+        if(!GAuth.token) return toast('Connect Google first (Settings) to send email');
+        toast('Sending…');
+        let pdf; try{ pdf=await invoicePdf(id,{html:cocDocHtml(id)}); }catch(e){ return toast('PDF failed: '+(e.message||'')); }
+        const k=i.coc, s_=DB.settings;
+        const html=`<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;color:#15152a">
+          <div style="background:#0c0b14;color:#fff;padding:22px 24px;border-radius:10px 10px 0 0"><div style="font-size:20px;font-weight:700">${esc(s_.businessName)}</div><div style="color:#a855f7;font-size:11px;font-weight:700;letter-spacing:1px;margin-top:3px">${esc(s_.tagline)}</div></div>
+          <div style="height:4px;background:#7c3aed"></div>
+          <div style="padding:24px;border:1px solid #eee;border-top:0;border-radius:0 0 10px 10px;font-size:14px;line-height:1.6">
+            <p style="margin:0 0 12px">Hi ${esc((c.name||'there').split(' ')[0])},</p>
+            <p style="margin:0 0 12px">Thanks for choosing ${esc(s_.businessName)} for your EV charger installation. Your Certificate of Testing and Compliance (<b>${esc(k.number)}</b>) is attached.</p>
+            <p style="margin:0 0 12px">It confirms the installation at ${esc(k.address)} was tested on completion and complies with the Queensland electrical safety requirements. Please keep it with your property records — it may be needed for insurance or if you sell.</p>
+            <p style="margin:0 0 12px">Any questions, just reply to this email or call 0490 792 415.</p>
+            <p style="margin:0">Kind regards,<br>Mitchell Singe<br>${esc(s_.businessName)} · Electrical Contractor Licence 1508151</p>
+          </div></div>`;
+        try{ await gmailSend(to,'Certificate of Testing and Compliance '+k.number+' — '+s_.businessName,html,'',pdf.b64,'COC-'+k.number+'.pdf'); }
+        catch(e){ return toast('Email failed: '+(e.message||'').slice(0,120)); }
+        closeModal(); toast('Certificate emailed to '+to); }} ]);
+  setTimeout(()=>{ const el=document.getElementById('ce_to'); if(el&&!el.value) el.focus(); },50);
 }
 async function storeInvoicePdf(id, blob){
   try{ await sb.storage.from('receipts').upload('invoices/'+id+'.pdf', blob, {upsert:true, contentType:'application/pdf'}); return true; }
