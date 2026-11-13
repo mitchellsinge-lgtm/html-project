@@ -362,7 +362,7 @@ table.inv-items td{padding:9px 12px;border-bottom:1px solid #eee;font-size:12px}
    MIH CRM — CLOUD (Supabase, shared workspace, Google sign-in)
    ===================================================================== */
 const CFG_KEY='mih_sb_cfg';
-const APP_VERSION='2026.11.06-44';   /* bump this when deploying; phones auto-refresh to match */
+const APP_VERSION='2026.11.13-47';   /* bump this when deploying; phones auto-refresh to match */
 const GST_DIVISOR=11;
 const CAL_SCOPE='https://www.googleapis.com/auth/calendar';
 const OAUTH_SCOPES='https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/spreadsheets';
@@ -545,8 +545,8 @@ const rowToLE=r=>({id:r.id,loanId:r.loan_id,date:r.date,kind:r.kind||'repayment'
 const rowToPart=r=>({id:r.id,name:r.name||'',price:Number(r.price)||0,unit:r.unit||'',category:r.category||'',notes:r.notes||'',ownerId:r.owner_id,ownerName:r.owner_name});
 const partToRow=p=>({id:p.id,name:p.name,price:p.price||0,unit:p.unit||'',category:p.category||'',notes:p.notes||'',owner_id:p.ownerId,owner_name:p.ownerName,updated_at:new Date().toISOString()});
 const leToRow=x=>({id:x.id,loan_id:x.loanId,date:x.date||null,kind:x.kind||'repayment',amount:x.amount||0,note:x.note||'',owner_id:x.ownerId,owner_name:x.ownerName});
-const rowToInv=r=>({id:r.id,number:r.number,date:r.date,customerId:r.customer_id,jobId:r.job_id||'',project:r.project,commenced:r.commenced,completed:r.completed,status:r.status,lines:r.lines||[],bank:r.bank||null,sentAt:r.sent_at||null,paidAt:r.paid_at||null,type:r.type||'invoice',terms:r.terms||'',ownerId:r.owner_id,ownerName:r.owner_name});
-const invToRow=i=>({id:i.id,number:i.number,date:i.date||null,customer_id:i.customerId||null,job_id:i.jobId||null,project:i.project,commenced:i.commenced||null,completed:i.completed||null,status:i.status,lines:i.lines,bank:i.bank||null,sent_at:i.sentAt||null,paid_at:i.paidAt||null,type:i.type||'invoice',terms:i.terms||null,owner_id:i.ownerId,owner_name:i.ownerName,updated_at:new Date().toISOString()});
+const rowToInv=r=>({id:r.id,number:r.number,date:r.date,customerId:r.customer_id,jobId:r.job_id||'',project:r.project,commenced:r.commenced,completed:r.completed,status:r.status,lines:r.lines||[],bank:r.bank||null,sentAt:r.sent_at||null,paidAt:r.paid_at||null,type:r.type||'invoice',terms:r.terms||'',coc:r.coc||null,ownerId:r.owner_id,ownerName:r.owner_name});
+const invToRow=i=>({id:i.id,number:i.number,date:i.date||null,customer_id:i.customerId||null,job_id:i.jobId||null,project:i.project,commenced:i.commenced||null,completed:i.completed||null,status:i.status,lines:i.lines,bank:i.bank||null,sent_at:i.sentAt||null,paid_at:i.paidAt||null,type:i.type||'invoice',terms:i.terms||null,coc:i.coc||null,owner_id:i.ownerId,owner_name:i.ownerName,updated_at:new Date().toISOString()});
 
 async function loadMembers(){
   const {data,error}=await sb.from('members').select('*');
@@ -633,8 +633,8 @@ async function receiptUrl(path){ if(!path) return ''; const {data,error}=await s
 async function upsertInv(i){
   const row=invToRow(i);
   // tolerate optional columns that may not be migrated yet (bank, sent_at, job_id)
-  const optional=['bank','sent_at','paid_at','job_id','type','terms'];
-  for(let n=0;n<7;n++){
+  const optional=['bank','sent_at','paid_at','job_id','type','terms','coc'];
+  for(let n=0;n<8;n++){
     const {error}=await sb.from('invoices').upsert(row);
     if(!error) return;
     const msg=error.message||'';
@@ -1517,11 +1517,11 @@ const EV_BASE_TERMS=[
  'If asbestos is suspected (for example in older switchboard panels), work on that item stops until it is safely managed. Asbestos testing and removal are not included.',
  'If existing wiring or equipment is found to be unsafe or non-compliant, it must be rectified before the charger can be connected. This will be quoted separately and nothing will proceed without your approval.',
  'Patching, painting and making good of finishes are not included.',
- 'App features (scheduling, solar charging, Wi-Fi) depend on the charger model and your vehicle. We set up what the charger supports during commissioning; solar-surplus charging may need an additional CT module.',
+ 'For customer-supplied chargers, app features (scheduling, solar charging, Wi-Fi) depend on the charger model and your vehicle; we set up what the charger supports during commissioning. Charging times can often also be scheduled from the vehicle itself.',
  '12-month MIH warranty on workmanship. This quote is valid for 30 days. Payment is due on completion. Prices include GST.'];
 const EV_INSTALL_ONLY='The charger is supplied by you and must be an Australian-compliant (RCM-approved) unit with its installation manual. The charger itself, its warranty and any faults in the unit are the responsibility of the manufacturer or seller.';
 const EV_THREE_PHASE='A three-phase installation requires an existing three-phase supply at the switchboard. Upgrading from single phase to three phase (Energex service work) is not included.';
-const EV_SUPPLY='The supplied charger is covered by the manufacturer\'s warranty; MIH will assist with any warranty claim.';
+const EV_SUPPLY='The supplied SEVR charger comes with a 3-year manufacturer\'s warranty; MIH will assist with any warranty claim. It is a standard charger: it does not include app control, scheduled charging or solar-surplus charging.';
 const QUOTE_TEMPLATES=[
  {key:'ev1i',name:'EV — single-phase install only ($930)',project:'Single-phase EV charger installation',
   lines:[{desc:'Single-phase EV charger installation (charger supplied by customer): dedicated circuit with RCBO protection, up to 10 m from the switchboard, mounting, connection, testing, commissioning and Certificate of Compliance',qty:1,price:930}],
@@ -1811,26 +1811,173 @@ function previewInvoice(id){
     [ {label:'Edit',cls:'line',act:()=>{ closeModal(); openInvoice(id); }},
       {label:q?'➜ Convert to invoice':'➜ Convert to quote',cls:'line',act:()=>convertDoc(id)},
       {label:'📄 Save PDF',cls:'line',act:()=>saveInvoicePdf(id)},
+      {label:'💬 Text '+(q?'quote':'invoice'),cls:'line',act:()=>textInvoice(id)},
+      q?null:{label:(i.coc?'⚡ View EV COC':'⚡ EV COC'),cls:'line',act:()=>{ closeModal(); if(i.coc) previewCoc(id); else openEvCoc(id); }},
       {label:(q?'📧 Email quote':'📧 Email to customer'),cls:'line',act:()=>emailInvoice(id)},
       {label:'🖨 Print',cls:'btn',act:()=>printInvoice()} ].filter(Boolean),'wide');
 }
-async function invoicePdf(id){
+async function invoicePdf(id,opts){
+  opts=opts||{};
   if(!window.html2canvas || !window.jspdf) throw new Error('PDF library not loaded');
   const wrap=document.createElement('div');
   wrap.style.cssText='position:fixed;left:-99999px;top:0;width:780px;background:#fff';
-  wrap.innerHTML=invoiceDocHtml(id);
+  wrap.innerHTML=opts.html||invoiceDocHtml(id);
   document.body.appendChild(wrap);
   try{
     const node=wrap.querySelector('.inv-doc');
-    const canvas=await html2canvas(node,{scale:2,backgroundColor:'#ffffff',useCORS:true,logging:false});
-    const img=canvas.toDataURL('image/jpeg',0.92);
-    const pdf=new window.jspdf.jsPDF({unit:'pt',format:'a4'});
-    const pw=pdf.internal.pageSize.getWidth();
-    const ph=canvas.height*(pw/canvas.width);
-    pdf.addImage(img,'JPEG',0,0,pw,Math.min(ph,pdf.internal.pageSize.getHeight()));
+    // compact = small file for text messages (~150–300 KB); normal = sharper for email/print
+    const canvas=await html2canvas(node,{scale:opts.compact?1.2:2,backgroundColor:'#ffffff',useCORS:true,logging:false});
+    const quality=opts.compact?0.62:0.9;
+    const pdf=new window.jspdf.jsPDF({unit:'pt',format:'a4',compress:true});
+    const pw=pdf.internal.pageSize.getWidth(), phPage=pdf.internal.pageSize.getHeight();
+    // split long documents (e.g. quotes with fine print) across pages instead of cutting them off
+    const sliceH=Math.floor(canvas.width*(phPage/pw));
+    for(let y=0,page=0;y<canvas.height;y+=sliceH,page++){
+      const h=Math.min(sliceH,canvas.height-y);
+      const c=document.createElement('canvas'); c.width=canvas.width; c.height=h;
+      const cx=c.getContext('2d'); cx.fillStyle='#ffffff'; cx.fillRect(0,0,c.width,h); cx.drawImage(canvas,0,y,canvas.width,h,0,0,canvas.width,h);
+      if(page>0) pdf.addPage();
+      pdf.addImage(c.toDataURL('image/jpeg',quality),'JPEG',0,0,pw,h*(pw/canvas.width),undefined,'FAST');
+    }
     const b64=pdf.output('datauristring').split(',')[1].replace(/(.{76})/g,'$1\r\n');
     return { b64, blob:pdf.output('blob') };
   } finally { document.body.removeChild(wrap); }
+}
+/* send a small PDF by text: opens the phone's share sheet (pick Messages); falls back to download + SMS */
+async function textInvoice(id){
+  const i=DB.invoices.find(x=>x.id===id); if(!i) return;
+  const c=custById(i.customerId)||{}; const q=i.type==='quote';
+  toast('Making a small PDF for text…');
+  let pdf; try{ pdf=await invoicePdf(id,{compact:true}); }catch(e){ return toast('PDF failed: '+(e.message||'')); }
+  const name=(q?'Quote-':'Invoice-')+i.number+'.pdf';
+  const msg=`Hi ${(c.name||'').split(' ')[0]||'there'}, here's your ${q?'quote':'invoice'} ${i.number} from Massive Integrated Homes — ${money(invTotal(i))} inc GST. Any questions, just reply or call ${docContact(i).phone}. Thanks!`;
+  const file=new File([pdf.blob],name,{type:'application/pdf'});
+  const kb=Math.round(pdf.blob.size/1024);
+  try{
+    if(navigator.canShare&&navigator.canShare({files:[file]})){ await navigator.share({files:[file],title:name,text:msg}); toast('Shared ('+kb+' KB)'); return; }
+  }catch(e){ if(e&&e.name==='AbortError') return; console.warn(e); }
+  const u=URL.createObjectURL(pdf.blob); const a=document.createElement('a'); a.href=u; a.download=name; a.click(); URL.revokeObjectURL(u);
+  const tel=telLink(c.phone);
+  if(tel) setTimeout(()=>{ location.href='sms:'+tel+'?&body='+encodeURIComponent(msg); },600);
+  toast('Downloaded '+kb+' KB — attach it to the text');
+}
+/* =====================================================================
+   EV CHARGER CERTIFICATE OF TESTING & COMPLIANCE — made from an invoice
+   ===================================================================== */
+const COC_TESTS=[['Visual inspection','','Correct and secure installation',''],['Earth continuity','earth','≤ 1 Ω',' Ω'],['Insulation resistance','ins','≥ 1 MΩ at 500 V d.c.',' MΩ'],
+  ['Polarity','','Correct',''],['Correct circuit connection','','Correct',''],['RCD trip time','rcd','≤ 300 ms',' ms']];
+function nextCocNumber(){ return 'MIH-COC-'+((Number(DB.settings.cocCounter)||1073)+1); }
+function openEvCoc(id){
+  const i=DB.invoices.find(x=>x.id===id); if(!i) return;
+  const c=custById(i.customerId)||{}; const k=i.coc||{};
+  const txt=(i.lines||[]).map(l=>l.desc).join(' ')+' '+(i.project||'');
+  const three=k.phase?k.phase==='three':/three|3[ -]?phase|22 ?kW/i.test(txt);
+  const sevr=/SEVR Series (7|22)/i.exec(txt);
+  const d={number:k.number||nextCocNumber(),date:k.date||i.completed||i.paidAt||i.date||todayISO(),address:k.address||c.address||'',
+    charger:k.charger||(sevr?('SEVR Series '+sevr[1]+(sevr[1]==='22'?' — 22 kW three-phase, 32 A':' — 7 kW single-phase, 32 A')):''),
+    cable:k.cable||(three?'6 mm² 4C+E':'6 mm² TPS'),len:k.len||'',prot:k.prot||(three?'32 A 3-pole RCBO':'32 A RCBO'),
+    earth:k.earth||'',ins:k.ins||'',rcd:k.rcd||'',notes:k.notes||''};
+  modal('EV charger COC — '+i.number,`
+    <div class="frow">
+      <div class="field"><label>Certificate number</label><input id="c_num" value="${esc(d.number)}"></div>
+      <div class="field"><label>Date of work</label><input type="date" id="c_date" value="${esc(d.date)}"></div>
+      <div class="field full"><label>Site address *</label><input id="c_addr" value="${esc(d.address)}" placeholder="Street address, suburb QLD postcode"></div>
+      <div class="field full"><label>Charger (make / model) *</label><input id="c_charger" value="${esc(d.charger)}" placeholder="e.g. Tesla Wall Connector Gen 3 — 7 kW single-phase"></div>
+      <div class="field"><label>Supply</label><select id="c_phase"><option value="single" ${three?'':'selected'}>Single phase</option><option value="three" ${three?'selected':''}>Three phase</option></select></div>
+      <div class="field"><label>Circuit protection</label><input id="c_prot" value="${esc(d.prot)}"></div>
+      <div class="field"><label>Cable</label><input id="c_cable" value="${esc(d.cable)}"></div>
+      <div class="field"><label>Cable run (m)</label><input type="number" inputmode="decimal" id="c_len" value="${esc(d.len)}" placeholder="e.g. 8"></div>
+    </div>
+    <div class="li-item" style="margin-top:6px;background:var(--primary-soft);border-color:var(--line-strong)">
+      <label style="display:flex;align-items:center;gap:9px;cursor:pointer;font-size:14px;font-weight:600"><input type="checkbox" id="c_pass" style="width:auto" ${i.coc?'checked':''}> ✓ All tests passed</label>
+      <div class="hint" style="margin:4px 0 8px">Visual, earth continuity, insulation resistance, polarity, correct connection and RCD. Readings are optional — leave blank to show PASS only.</div>
+      <div class="frow" style="margin:0">
+        <div class="field"><label>Earth continuity (Ω)</label><input type="number" inputmode="decimal" step="0.01" id="c_earth" value="${esc(d.earth)}"></div>
+        <div class="field"><label>Insulation (MΩ)</label><input type="number" inputmode="decimal" id="c_ins" value="${esc(d.ins)}"></div>
+        <div class="field"><label>RCD trip time (ms)</label><input type="number" inputmode="decimal" id="c_rcd" value="${esc(d.rcd)}"></div>
+      </div>
+    </div>
+    <div class="field full" style="margin-top:10px"><label>Extra notes <span class="hint">(optional, printed on the certificate)</span></label><input id="c_notes" value="${esc(d.notes)}"></div>`,
+    [ i.coc?{label:'Remove COC',cls:'danger',act:async()=>{ if(!confirm('Remove this certificate from the invoice?')) return; const u=Object.assign({},i,{coc:null}); try{ await upsertInv(u); }catch(e){ return toast(e.message); } i.coc=null; closeModal(); toast('COC removed'); }}:null,
+      {label:'Create certificate',cls:'btn',act:async()=>{
+        if(!document.getElementById('c_pass').checked) return toast('Tick “All tests passed” to issue a certificate');
+        if(!val('c_addr').trim()) return toast('Site address is required');
+        if(!val('c_charger').trim()) return toast('Enter the charger make / model');
+        const coc={number:val('c_num').trim()||nextCocNumber(),date:val('c_date')||todayISO(),issued:todayISO(),address:val('c_addr').trim(),charger:val('c_charger').trim(),phase:val('c_phase'),
+          prot:val('c_prot').trim(),cable:val('c_cable').trim(),len:val('c_len'),earth:val('c_earth'),ins:val('c_ins'),rcd:val('c_rcd'),notes:val('c_notes').trim(),pass:true};
+        const u=Object.assign({},i,{coc});
+        try{ await upsertInv(u); }catch(e){ return toast('Save failed: '+e.message+' (run migration-invoice-coc.sql?)'); }
+        i.coc=coc;
+        const m=/(\d+)\s*$/.exec(coc.number); if(m&&+m[1]>(Number(DB.settings.cocCounter)||1073)){ DB.settings.cocCounter=+m[1]; try{ await saveSettingsRow(); }catch(e){} }
+        closeModal(); previewCoc(id); toast('Certificate '+coc.number+' created'); }} ]);
+}
+function cocDocHtml(id){
+  const i=DB.invoices.find(x=>x.id===id); const k=i.coc; const c=custById(i.customerId)||{}; const s=DB.settings;
+  const three=k.phase==='three';
+  const kv=(a,b)=>b?`<b>${a}</b><span>${esc(b)}</span>`:'';
+  const tests=COC_TESTS.map(t=>{ const r=t[1]&&k[t[1]]!==''&&k[t[1]]!=null?esc(k[t[1]])+t[3]:'—';
+    return `<tr><td>${t[0]}</td><td class="r">${r}</td><td class="r">${t[2]}</td><td class="r" style="font-weight:700;color:#0b8a43">PASS</td></tr>`; }).join('');
+  return `
+  <div class="inv-doc" id="invDoc">
+    <div class="inv-head">
+      <div class="lhs"><img src="milogo.png" onerror="this.style.display='none'">
+        <div><div class="co">${esc(s.businessName)}</div><div class="tag">${esc(s.tagline)}</div>
+          <div class="ci">ABN ${esc(s.abn||'62 834 287 138')}<br>Electrical Contractor Licence 1508151<br>Mobile: 0490 792 415<br>Email: mitchell@massiveintegratedhomes.com.au</div></div></div>
+      <div class="inv-stamp"><div class="t" style="font-size:11px;letter-spacing:1.5px">CERTIFICATE</div><div class="n">${esc(k.number)}</div><div class="d">${fmtDate(k.issued||k.date)}</div></div>
+    </div>
+    <div class="inv-accent"></div>
+    <div class="inv-body">
+      <div style="font-size:17px;font-weight:800;margin-bottom:2px">Certificate of Testing and Compliance</div>
+      <div style="font-size:11.5px;color:#666;margin-bottom:14px">EV charger installation — Queensland <i>Electrical Safety Act 2002</i> and <i>Electrical Safety Regulation 2013</i></div>
+      <div class="inv-cols">
+        <div class="inv-panel"><div class="ph">Issued To</div><div class="pb"><div class="big">${esc(c.name||'—')}</div>${esc(k.address).replace(/, /g,'<br>')}</div></div>
+        <div class="inv-panel"><div class="ph">Work Details</div><div class="pb"><div class="inv-kv">
+          ${kv('Date of work:',fmtDate(k.date))}${kv('Invoice:',i.number)}${kv('Supply:',three?'Three phase, 400 V':'Single phase, 230 V')}
+        </div></div></div>
+      </div>
+      <div style="font-size:12px;line-height:1.6;margin:4px 0 14px">Massive Integrated Homes certifies that the electrical work described below was carried out at the above address by a licensed electrical contractor, was tested on completion, and complies with the <i>Electrical Safety Act 2002</i>, the <i>Electrical Safety Regulation 2013</i> and AS/NZS 3000 (Wiring Rules).</div>
+      <div class="inv-sec-title">Installation</div>
+      <table class="inv-items"><thead><tr><th style="width:170px">Item</th><th>Detail</th></tr></thead><tbody>
+        <tr><td>EV charger</td><td>${esc(k.charger)}</td></tr>
+        <tr><td>Circuit</td><td>New dedicated ${three?'three-phase':'single-phase'} circuit from the switchboard${k.cable?' — '+esc(k.cable):''}${k.len?', approx. '+esc(k.len)+' m':''}</td></tr>
+        ${k.prot?`<tr><td>Protection</td><td>${esc(k.prot)}</td></tr>`:''}
+        ${k.notes?`<tr><td>Notes</td><td>${esc(k.notes)}</td></tr>`:''}
+      </tbody></table>
+      <div class="inv-sec-title" style="margin-top:16px">Test Results</div>
+      <table class="inv-items"><thead><tr><th>Test</th><th class="r" style="width:110px">Result</th><th class="r" style="width:190px">Requirement</th><th class="r" style="width:80px">Outcome</th></tr></thead><tbody>${tests}</tbody></table>
+      <div class="inv-foot-cols" style="margin-top:16px">
+        <div class="inv-panel"><div class="ph">For Your Records</div><div class="pb" style="font-size:11.5px;line-height:1.6">Keep this certificate with your property records. Test the safety switch (RCBO) with its test button every few months. Any changes to the charger or circuit must be done by a licensed electrical contractor.</div></div>
+        <div class="inv-panel"><div class="ph">Certified By</div><div class="pb"><div class="inv-kv">
+          <b>Name</b><span>Mitchell Singe</span><b>Licence No.</b><span>1508151</span><b>Date issued</b><span>${fmtDate(k.issued||k.date)}</span>
+          <b>Signature</b><span style="font-style:italic;font-weight:700;font-size:16px;color:#1e1b4b">Mitchell Singe</span></div></div></div>
+      </div>
+    </div>
+    <div class="inv-thanks">Thank you for choosing ${esc(s.businessName)}</div>
+  </div>`;
+}
+function previewCoc(id){
+  const i=DB.invoices.find(x=>x.id===id); if(!i||!i.coc) return;
+  modal('Certificate '+i.coc.number,cocDocHtml(id),
+    [ {label:'Edit',cls:'line',act:()=>{ closeModal(); openEvCoc(id); }},
+      {label:'📄 Save PDF',cls:'line',act:()=>cocSend(id,false)},
+      {label:'💬 Text / share',cls:'line',act:()=>cocSend(id,true)},
+      {label:'🖨 Print',cls:'btn',act:()=>printInvoice()} ],'wide');
+}
+async function cocSend(id,share){
+  const i=DB.invoices.find(x=>x.id===id); if(!i||!i.coc) return; const c=custById(i.customerId)||{};
+  toast('Generating certificate…');
+  let pdf; try{ pdf=await invoicePdf(id,{html:cocDocHtml(id),compact:share}); }catch(e){ return toast('PDF failed: '+(e.message||'')); }
+  const name='COC-'+i.coc.number+'.pdf';
+  const msg=`Hi ${(c.name||'').split(' ')[0]||'there'}, here's the Certificate of Testing and Compliance for your EV charger installation. Please keep it with your property records. Thanks — Mitch, Massive Integrated Homes`;
+  if(share){
+    const file=new File([pdf.blob],name,{type:'application/pdf'});
+    try{ if(navigator.canShare&&navigator.canShare({files:[file]})){ await navigator.share({files:[file],title:name,text:msg}); return; } }
+    catch(e){ if(e&&e.name==='AbortError') return; console.warn(e); }
+  }
+  const u=URL.createObjectURL(pdf.blob); const a=document.createElement('a'); a.href=u; a.download=name; a.click(); URL.revokeObjectURL(u);
+  const tel=telLink(c.phone);
+  if(share&&tel) setTimeout(()=>{ location.href='sms:'+tel+'?&body='+encodeURIComponent(msg); },600);
+  toast('Certificate downloaded');
 }
 async function storeInvoicePdf(id, blob){
   try{ await sb.storage.from('receipts').upload('invoices/'+id+'.pdf', blob, {upsert:true, contentType:'application/pdf'}); return true; }
