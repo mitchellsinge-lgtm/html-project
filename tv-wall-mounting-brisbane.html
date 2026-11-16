@@ -53,6 +53,8 @@ src="https://www.facebook.com/tr?id=27592303160400799&ev=PageView&noscript=1"
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 
 <style>
+  /* img-ratio-fix */ img { height: auto; }
+
   :root {
     --bg: #ffffff;
     --text: #1a1033;
@@ -641,9 +643,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
 <section class="hero cc-hero">
   <div class="cc-bg" id="ccBg" data-start="0" aria-hidden="true">
-  <img class="active" src="photos/wall-mount/wm-1.jpg" alt="TV wall mounting with hidden cables, Brisbane" width="1050" height="1400" fetchpriority="high">
-  <img src="photos/wall-mount/wm-2.jpg" alt="TV wall mounting with hidden cables, Brisbane" width="1050" height="1400" loading="lazy">
-  <img src="photos/wall-mount/wm-3.jpg" alt="TV wall mounting with hidden cables, Brisbane" width="1050" height="788" loading="lazy">
+  <img class="active" src="photos/wall-mount/wm-1.webp" alt="TV wall mounting with hidden cables, Brisbane" width="1050" height="1400" fetchpriority="high">
+  <img src="photos/wall-mount/wm-2.webp" alt="TV wall mounting with hidden cables, Brisbane" width="1050" height="1400" loading="lazy">
+  <img src="photos/wall-mount/wm-3.webp" alt="TV wall mounting with hidden cables, Brisbane" width="1050" height="788" loading="lazy">
 </div>
     <div class="container hero-inner">
 <h1>TV wall mounting Brisbane. <span>$275, done properly.</span></h1>
@@ -730,14 +732,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <!-- Photo background behind FAQ + review -->
 <div class="cc-lower">
 <div class="cc-bg" data-start="2" aria-hidden="true">
-  <img src="photos/wall-mount/wm-4.jpg" alt="TV wall mounting with hidden cables, Brisbane" width="1050" height="1400" loading="lazy">
-  <img src="photos/wall-mount/wm-5.jpg" alt="TV wall mounting with hidden cables, Brisbane" width="1050" height="788" loading="lazy">
-  <img class="active" src="photos/wall-mount/wm-6.jpg" alt="TV wall mounting with hidden cables, Brisbane" width="1050" height="1400" loading="lazy">
+  <img src="photos/wall-mount/wm-4.webp" alt="TV wall mounting with hidden cables, Brisbane" width="1050" height="1400" loading="lazy">
+  <img src="photos/wall-mount/wm-5.webp" alt="TV wall mounting with hidden cables, Brisbane" width="1050" height="788" loading="lazy">
+  <img class="active" src="photos/wall-mount/wm-6.webp" alt="TV wall mounting with hidden cables, Brisbane" width="1050" height="1400" loading="lazy">
 </div>
 <section class="fw-review">
   <div class="container">
     <a href="https://g.page/r/CbVjKnqoixi-EAE" target="_blank" rel="noopener" class="fw-review-card">
-      <img width="1400" height="1050" src="photos/tv-mounts/frame-tv-install.jpg" alt="Samsung Frame TV wall mounted with zero visible cables in Greenslopes" class="fw-review-photo" loading="lazy">
+      <img width="1400" height="1050" src="photos/tv-mounts/frame-tv-install.webp" alt="Samsung Frame TV wall mounted with zero visible cables in Greenslopes" class="fw-review-photo" loading="lazy">
       <div class="fw-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
       <p class="fw-review-text long">&ldquo;Mitch did an absolutely fantastic job installing and setting up my Samsung Frame TV. Zero visible cables &mdash; I am so happy.&rdquo;</p>
       <div class="fw-review-name">Dom M.</div>
@@ -759,9 +761,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <h2>Recent TV installs</h2>
     <p class="fw-sub">Real jobs across Brisbane. Cabling hidden, finished clean.</p>
     <div class="fw-grid">
-      <img width="1050" height="1400" src="photos/tv-mounts/20251030_134157.jpg" alt="TV wall mounted in a built-in unit with soundbar and hidden cables, Brisbane" loading="lazy">
-      <img width="1050" height="1400" src="photos/tv-mounts/20260513_131120 - Copy.jpg" alt="TV mounted in a wall niche with hidden cables, Brisbane" loading="lazy">
-      <img width="1050" height="1400" src="photos/tv-mounts/20251010_130008.jpg" alt="TV and soundbar wall mounted on a patterned wall with no visible cables, Brisbane" loading="lazy">
+      <img width="1050" height="1400" src="photos/tv-mounts/20251030_134157.webp" alt="TV wall mounted in a built-in unit with soundbar and hidden cables, Brisbane" loading="lazy">
+      <img width="1050" height="1400" src="photos/tv-mounts/20260513_131120 - Copy.webp" alt="TV mounted in a wall niche with hidden cables, Brisbane" loading="lazy">
+      <img width="1050" height="1400" src="photos/tv-mounts/20251010_130008.webp" alt="TV and soundbar wall mounted on a patterned wall with no visible cables, Brisbane" loading="lazy">
     </div>
     <ul class="fw-list">
       <li>Bracket supplied and fitted</li>
@@ -966,6 +968,10 @@ document.addEventListener('click', function (e) {
     }, n*1800);
   });
 })();
+</script>
+<script>
+/* Image safety net: if a .webp fails to load, try the .jpg of the same name */
+document.addEventListener('error',function(e){var i=e.target;if(!i||i.tagName!=='IMG'||i.dataset.fb)return;var s=i.getAttribute('src')||'';if(/\.webp(\?|$)/i.test(s)){i.dataset.fb='1';i.src=s.replace(/\.webp(\?.*)?$/i,'.jpg');}},true);
 </script>
 </body>
 </html>

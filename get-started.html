@@ -53,6 +53,8 @@ src="https://www.facebook.com/tr?id=27592303160400799&ev=PageView&noscript=1"
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 
 <style>
+  /* img-ratio-fix */ img { height: auto; }
+
   :root {
     --bg: #ffffff;
     --text: #1a1033;
@@ -573,7 +575,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </div>
 
     <a href="https://g.page/r/CbVjKnqoixi-EAE" target="_blank" rel="noopener" class="review-card">
-      <img width="1400" height="1050" src="photos/tv-mounts/frame-tv-install.jpg" alt="Samsung Frame TV wall mounted with zero visible cables, Brisbane" class="review-photo" loading="lazy">
+      <img width="1400" height="1050" src="photos/tv-mounts/frame-tv-install.webp" alt="Samsung Frame TV wall mounted with zero visible cables, Brisbane" class="review-photo" loading="lazy">
       <div class="review-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
       <p class="review-text">"Mitch did an absolutely fantastic job installing and setting up my Samsung Frame TV. Zero visible cables &mdash; I am so happy."</p>
       <div class="review-author">
@@ -748,5 +750,9 @@ document.addEventListener('click', function (e) {
 })();
 </script>
 <script src="crm-lead.js" defer></script>
+<script>
+/* Image safety net: if a .webp fails to load, try the .jpg of the same name */
+document.addEventListener('error',function(e){var i=e.target;if(!i||i.tagName!=='IMG'||i.dataset.fb)return;var s=i.getAttribute('src')||'';if(/\.webp(\?|$)/i.test(s)){i.dataset.fb='1';i.src=s.replace(/\.webp(\?.*)?$/i,'.jpg');}},true);
+</script>
 </body>
 </html>

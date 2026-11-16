@@ -63,6 +63,8 @@ src="https://www.facebook.com/tr?id=27592303160400799&ev=PageView&noscript=1"/><
 }
 </script>
 <style>
+  /* img-ratio-fix */ img { height: auto; }
+
   :root {
     --bg:#fff; --bg-2:#faf7ff; --text:#15152a; --text-soft:#2d2d55; --muted:#64748b;
     --primary:#7c3aed; --primary-hover:#6d28d9; --accent:#a855f7;
@@ -257,9 +259,9 @@ src="https://www.facebook.com/tr?id=27592303160400799&ev=PageView&noscript=1"/><
   <div class="container">
     <h2>The <span>work</span></h2>
     <div class="gallery-row">
-      <img width="1050" height="1400" src="photos/tv-mounts/20260109_182929 - Copy.jpg" alt="[Describe photo — e.g. home theatre install]" loading="lazy">
-      <img width="1050" height="1400" src="photos/tv-mounts/20260520_175314 - Copy.jpg" alt="[Describe photo]" loading="lazy">
-      <img width="1050" height="1400" src="photos/tv-mounts/20251215_200609.jpg" alt="[Describe photo]" loading="lazy">
+      <img width="1050" height="1400" src="photos/tv-mounts/20260109_182929 - Copy.webp" alt="[Describe photo — e.g. home theatre install]" loading="lazy">
+      <img width="1050" height="1400" src="photos/tv-mounts/20260520_175314 - Copy.webp" alt="[Describe photo]" loading="lazy">
+      <img width="1050" height="1400" src="photos/tv-mounts/20251215_200609.webp" alt="[Describe photo]" loading="lazy">
     </div>
     <div class="prose" style="margin-top:2rem;">
       <p>[Describe the delivery — how the build was coordinated, cabling done during framing, control points positioned, software configured. Emphasise "one team, one point of contact".]</p>
@@ -325,5 +327,9 @@ document.addEventListener('click', function (e) {
 }, true);
 </script>
 <script src="crm-lead.js" defer></script>
+<script>
+/* Image safety net: if a .webp fails to load, try the .jpg of the same name */
+document.addEventListener('error',function(e){var i=e.target;if(!i||i.tagName!=='IMG'||i.dataset.fb)return;var s=i.getAttribute('src')||'';if(/\.webp(\?|$)/i.test(s)){i.dataset.fb='1';i.src=s.replace(/\.webp(\?.*)?$/i,'.jpg');}},true);
+</script>
 </body>
 </html>

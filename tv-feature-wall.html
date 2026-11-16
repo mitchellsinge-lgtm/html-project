@@ -53,6 +53,8 @@ src="https://www.facebook.com/tr?id=27592303160400799&ev=PageView&noscript=1"
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 
 <style>
+  /* img-ratio-fix */ img { height: auto; }
+
   :root {
     --bg: #ffffff;
     --text: #1a1033;
@@ -813,5 +815,9 @@ document.addEventListener('click', function (e) {
 })();
 </script>
 <script src="crm-lead.js" defer></script>
+<script>
+/* Image safety net: if a .webp fails to load, try the .jpg of the same name */
+document.addEventListener('error',function(e){var i=e.target;if(!i||i.tagName!=='IMG'||i.dataset.fb)return;var s=i.getAttribute('src')||'';if(/\.webp(\?|$)/i.test(s)){i.dataset.fb='1';i.src=s.replace(/\.webp(\?.*)?$/i,'.jpg');}},true);
+</script>
 </body>
 </html>
