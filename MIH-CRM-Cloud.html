@@ -362,7 +362,7 @@ table.inv-items td{padding:9px 12px;border-bottom:1px solid #eee;font-size:12px}
    MIH CRM — CLOUD (Supabase, shared workspace, Google sign-in)
    ===================================================================== */
 const CFG_KEY='mih_sb_cfg';
-const APP_VERSION='2026.11.23-51';   /* bump this when deploying; phones auto-refresh to match */
+const APP_VERSION='2026.11.23-52';   /* bump this when deploying; phones auto-refresh to match */
 const GST_DIVISOR=11;
 const CAL_SCOPE='https://www.googleapis.com/auth/calendar';
 const OAUTH_SCOPES='https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/spreadsheets';
@@ -581,9 +581,11 @@ async function loadFinancials(){
   }catch(e){ DB.financialsReady=false; }
   try{ const pr=await sb.from('parts').select('*'); if(!pr.error) DB.parts=(pr.data||[]).map(rowToPart); }catch(e){}
 }
-const rowToRem=r=>({id:r.id,title:r.title||'',note:r.note||'',remindAt:r.remind_at,jobId:r.job_id||'',notify:r.notify!==false,done:r.done===true,sent:r.sent===true,ownerId:r.owner_id,ownerName:r.owner_name});
-const remToRow=x=>({id:x.id,title:x.title,note:x.note||null,remind_at:x.remindAt,job_id:x.jobId||null,notify:!!x.notify,done:!!x.done,sent:!!x.sent,owner_id:x.ownerId,owner_name:x.ownerName});
-async function upsertRem(x){ const {error}=await sb.from('reminders').upsert(remToRow(x)); if(error) throw error; }
+const rowToRem=r=>({id:r.id,title:r.title||'',note:r.note||'',remindAt:r.remind_at,jobId:r.job_id||'',notify:r.notify!==false,done:r.done===true,sent:r.sent===true,kind:r.kind||'',ownerId:r.owner_id,ownerName:r.owner_name});
+const remToRow=x=>({id:x.id,title:x.title,note:x.note||null,remind_at:x.remindAt,job_id:x.jobId||null,notify:!!x.notify,done:!!x.done,sent:!!x.sent,kind:x.kind||null,owner_id:x.ownerId,owner_name:x.ownerName});
+async function upsertRem(x){ const row=remToRow(x); let {error}=await sb.from('reminders').upsert(row);
+  if(error&&/kind/i.test(error.message||'')){ delete row.kind; ({error}=await sb.from('reminders').upsert(row)); }
+  if(error) throw error; }
 async function upsertPart(p){
   const row=partToRow(p);
   let {error}=await sb.from('parts').upsert(row);
@@ -1149,16 +1151,18 @@ function openReminder(id,presetJobId,presetDate){
       <div class="field full"><label>Notes</label><textarea id="r_note" rows="3">${esc(x.note)}</textarea></div>
     </div>
     ${job?`<div class="hint">Linked to: <b>${esc(job.title)}</b>${job.date?' ('+fmtDate(job.date)+')':' (lead)'}</div>`:''}
+    ${x.kind==='review'?`<div class="li-item" style="margin-top:10px;font-size:13px;background:#f0f9ff;border-color:#bae6fd"><b>Message that will be sent:</b><br>${esc(reviewMsg(reviewTarget(x)))}</div>`:''}
     <label style="display:flex;align-items:center;gap:9px;cursor:pointer;font-size:13.5px;margin-top:10px"><input type="checkbox" id="r_notify" style="width:auto" ${x.notify?'checked':''}> 🔔 Send a phone notification at this time</label>`,
     [ id?{label:'Delete',cls:'danger',act:async()=>{ if(!confirm('Delete this reminder?')) return; try{ await delRow('reminders',id); }catch(e){ return toast(e.message); } DB.reminders=DB.reminders.filter(r=>r.id!==id); closeModal(); render(); }}:null,
       id&&!x.done?{label:'✓ Done',cls:'line',act:()=>setRemDone(id,true)}:null,
+      id&&x.kind==='review'?{label:'💬 Text now',cls:'btn',act:()=>textReview(id)}:null,
       {label:'Save reminder',cls:'btn',act:async()=>{
         const title=val('r_title').trim(); if(!title) return toast('What should we remind you about?');
         const at=new Date(val('r_date')+'T'+(val('r_time')||'08:00')+':00');
         if(isNaN(at)) return toast('Pick a date and time');
         const ex=id?DB.reminders.find(r=>r.id===id):null;
         const obj={id:id||uid(),title,note:val('r_note'),remindAt:at.toISOString(),jobId:x.jobId||'',notify:document.getElementById('r_notify').checked,
-          done:ex?ex.done:false,sent:(ex&&ex.remindAt===at.toISOString())?ex.sent:false,ownerId:ex?ex.ownerId:me.id,ownerName:ex?ex.ownerName:me.name};
+          done:ex?ex.done:false,sent:(ex&&ex.remindAt===at.toISOString())?ex.sent:false,kind:ex?ex.kind:'',ownerId:ex?ex.ownerId:me.id,ownerName:ex?ex.ownerName:me.name};
         try{ await upsertRem(obj); }catch(e){ return toast('Save failed: '+e.message); }
         if(ex) Object.assign(ex,obj); else DB.reminders.push(obj);
         closeModal(); render(); toast('Reminder set for '+fmtDate(remDate(obj))+' '+remTimeLabel(obj)); }} ]);
@@ -1168,13 +1172,35 @@ async function setRemDone(id,done){
   const u=Object.assign({},x,{done}); try{ await upsertRem(u); }catch(e){ return toast(e.message); }
   Object.assign(x,u); closeModal(); render(); toast(done?'Reminder done':'Reminder reopened');
 }
+/* ---- review requests: 6 pm the day after a job is marked Done ---- */
+const REVIEW_URL='https://www.massiveintegratedhomes.com.au/cctv-installation-brisbane.html';
+function reviewMsg(c){ return `Hi ${((c&&c.name)||'').trim().split(' ')[0]||'there'}, thanks for the work yesterday! If you could please give us a review, it would really help us out. Thanks, ${REVIEW_URL}`; }
+async function scheduleReviewReminder(j){
+  if(!DB.remindersReady||!j||!j.customerId) return;
+  if(DB.reminders.some(r=>r.jobId===j.id&&r.kind==='review')) return;          // one per job
+  const base=new Date((j.date||todayISO())+'T18:00:00'); base.setDate(base.getDate()+1);
+  const at=base<new Date()?new Date():base;                                       // job marked done late → due now
+  const c=custById(j.customerId)||{};
+  const x={id:uid(),title:'⭐ Ask '+(c.name||'customer')+' for a review',note:'Tap “💬 Text now” to send the review message.',remindAt:at.toISOString(),
+    jobId:j.id,notify:true,done:false,sent:false,kind:'review',ownerId:me.id,ownerName:me.name};
+  try{ await upsertRem(x); DB.reminders.push(x); toast('Review reminder set for '+fmtDate(remDate(x))+' '+remTimeLabel(x)); }catch(e){ console.warn('review reminder',e); }
+}
+function reviewTarget(x){ const j=DB.jobs.find(k=>k.id===x.jobId); return j?custById(j.customerId):null; }
+async function textReview(remId){
+  const x=DB.reminders.find(r=>r.id===remId); if(!x) return;
+  const c=reviewTarget(x); const tel=telLink(c&&c.phone);
+  if(!tel) return toast('No mobile saved for this customer — add one in Contacts');
+  location.href='sms:'+tel+'?&body='+encodeURIComponent(reviewMsg(c));
+  const u=Object.assign({},x,{done:true,sent:true}); try{ await upsertRem(u); Object.assign(x,u); }catch(e){ console.warn(e); }
+  setTimeout(()=>{ try{ closeModal(); render(); }catch(e){} },400);
+}
 function remAgendaCard(x){
   const job=x.jobId?DB.jobs.find(j=>j.id===x.jobId):null;
   return `<div class="ag-card rem" onclick="openReminder('${x.id}')">
     <div class="ag-top"><span class="ag-time">${esc(remTimeLabel(x))}</span><span class="badge" style="background:#e0f2fe;color:#075985">⏰ Reminder${x.notify?' · 🔔':''}</span></div>
     <div class="ag-title">${esc(x.title)}</div>
     ${job?`<div class="ag-cust">${esc(job.title)}</div>`:''}${x.note?`<div class="ag-cust">${esc(x.note)}</div>`:''}
-    <div class="ag-foot"><span class="owner-tag">${esc(x.ownerName||'')}</span><span onclick="event.stopPropagation()"><button class="btn ghost sm" onclick="setRemDone('${x.id}',true)">✓ Done</button></span></div>
+    <div class="ag-foot"><span class="owner-tag">${esc(x.ownerName||'')}</span><span onclick="event.stopPropagation()">${x.kind==='review'?`<button class="btn sm" onclick="textReview('${x.id}')">💬 Text now</button> `:''}<button class="btn ghost sm" onclick="setRemDone('${x.id}',true)">✓ Done</button></span></div>
   </div>`;
 }
 function remindersForJobHtml(jobId){
@@ -1396,6 +1422,7 @@ function openJob(id,presetDate){
         if(id) Object.assign(stored,obj); else DB.jobs.push(obj);
         const justCompleted = obj.status==='done' && (!ex || ex.status!=='done');
         closeModal(); render(); toast('Job saved');
+        if(justCompleted && obj.customerId) scheduleReviewReminder(obj);
         if(justCompleted && obj.customerId){ setTimeout(()=>{ if(confirm('Job marked Done. Create an invoice for this job now? (you can then email it to the customer)')) openInvoiceFromJob(obj); },60); }
       }} ]);
   updJobProfit(id||'');
