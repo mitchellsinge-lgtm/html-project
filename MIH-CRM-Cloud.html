@@ -362,7 +362,7 @@ table.inv-items td{padding:9px 12px;border-bottom:1px solid #eee;font-size:12px}
    MIH CRM — CLOUD (Supabase, shared workspace, Google sign-in)
    ===================================================================== */
 const CFG_KEY='mih_sb_cfg';
-const APP_VERSION='2026.11.13-49';   /* bump this when deploying; phones auto-refresh to match */
+const APP_VERSION='2026.11.23-51';   /* bump this when deploying; phones auto-refresh to match */
 const GST_DIVISOR=11;
 const CAL_SCOPE='https://www.googleapis.com/auth/calendar';
 const OAUTH_SCOPES='https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/spreadsheets';
@@ -890,6 +890,7 @@ function leadCard(j){
     `<button class="btn line sm" onclick="openLead('${j.id}')">Edit</button>`,
     `<button class="btn line sm" onclick="openReminder(null,'${j.id}')">⏰ Reminder</button>`,
     `<button class="btn line sm" onclick="loseLead('${j.id}')">Lost</button>`);
+  if(lost||!isNewLead(j)) acts.push(`<button class="btn line sm" style="color:var(--danger);border-color:var(--danger-soft)" onclick="deleteLead('${j.id}')">🗑 Delete</button>`);
   else acts.push(`<button class="btn ghost sm" onclick="reopenLead('${j.id}')">↺ Reopen</button>`,`<button class="btn line sm" onclick="openLead('${j.id}')">Edit</button>`);
   const docHtml=docs.length?`<div class="lc-docs">${docs.map(d=>`<a href="#" onclick="previewInvoice('${d.id}');return false">${esc(d.number)} · ${d.type==='quote'?'quote':'invoice'} ${money(invTotal(d))}</a> ${invBadge(d.status)}`).join(' &nbsp; ')}</div>`:'';
   return `<div class="${cls}">
@@ -998,6 +999,16 @@ async function loseLead(id){
   const upd=Object.assign({},j,{stage:'lost',followupDone:true,notes:stampNote(j,'Lost'+(why.trim()?': '+why.trim():''))});
   try{ await upsertJob(upd); }catch(e){ return toast('Save failed: '+e.message); }
   Object.assign(j,upd); render(); toast('Marked lost');
+}
+async function deleteLead(id){
+  const j=DB.jobs.find(x=>x.id===id); if(!j) return;
+  const docs=DB.invoices.filter(i=>i.jobId===id).length;
+  if(!confirm('Are you sure you want to delete the lead for '+leadName(j)+'?\n\nThis can\'t be undone.'+(docs?'\nIts '+docs+' quote'+(docs>1?'s':'')+'/invoice'+(docs>1?'s':'')+' will be kept.':'')+'\nThe contact stays in Contacts.')) return;
+  try{ await delRow('jobs',id); }catch(e){ return toast('Delete failed: '+e.message); }
+  DB.jobs=DB.jobs.filter(x=>x.id!==id);
+  DB.invoices.forEach(i=>{ if(i.jobId===id) i.jobId=''; });
+  if(DB.reminders) DB.reminders=DB.reminders.filter(r=>r.jobId!==id);
+  render(); toast('Lead deleted');
 }
 async function reopenLead(id){
   const j=DB.jobs.find(x=>x.id===id); if(!j) return;
@@ -1843,32 +1854,43 @@ async function invoicePdf(id,opts){
     return { b64, blob:pdf.output('blob') };
   } finally { document.body.removeChild(wrap); }
 }
-/* Text a PDF: uploads a small copy, then opens Messages with the customer's number and a
-   download link already filled in (a text link can't carry an attachment AND a number). */
-async function smsPdfLink(blob,path,c,msg,name){
-  const tel=telLink(c&&c.phone);
-  const file=new File([blob],name,{type:'application/pdf'});
-  const shareFile=async()=>{ try{ if(navigator.canShare&&navigator.canShare({files:[file]})){ await navigator.share({files:[file],title:name,text:msg}); return true; } }catch(e){ if(e&&e.name==='AbortError') return true; } return false; };
-  if(!tel){ toast('No mobile saved for this customer — pick who to send it to'); if(await shareFile()) return; }
-  let url='';
+/* Text a document as a PICTURE (phones shrink pictures to fit a text; PDFs they don't).
+   Opens the share sheet with the image attached; the customer's mobile is copied so it can be pasted into "To". */
+async function docImage(html){
+  if(!window.html2canvas) throw new Error('Image library not loaded');
+  const wrap=document.createElement('div');
+  wrap.style.cssText='position:fixed;left:-99999px;top:0;width:780px;background:#fff';
+  wrap.innerHTML=html; document.body.appendChild(wrap);
   try{
-    const up=await sb.storage.from('receipts').upload(path,blob,{upsert:true,contentType:'application/pdf'}); if(up.error) throw up.error;
-    const sg=await sb.storage.from('receipts').createSignedUrl(path,60*60*24*365); if(sg.error||!sg.data) throw (sg.error||new Error('no link'));
-    url=sg.data.signedUrl;
-  }catch(e){ console.warn('pdf link failed',e); }
-  if(tel&&url){ location.href='sms:'+tel+'?&body='+encodeURIComponent(msg+'\n\n'+url); return; }
-  if(await shareFile()) return;
+    const canvas=await html2canvas(wrap.querySelector('.inv-doc'),{scale:1.3,backgroundColor:'#ffffff',useCORS:true,logging:false});
+    const toBlob=q=>new Promise(r=>canvas.toBlob(r,'image/jpeg',q));
+    let blob=null;
+    for(const q of [0.72,0.6,0.5,0.4]){ blob=await toBlob(q); if(blob&&blob.size<=280*1024) break; }   // keep under ~280 KB
+    return blob;
+  } finally { document.body.removeChild(wrap); }
+}
+async function textImage(html,c,msg,name){
+  toast('Making picture for text…');
+  let blob; try{ blob=await docImage(html); }catch(e){ return toast('Could not make the picture: '+(e.message||'')); }
+  if(!blob) return toast('Could not make the picture');
+  const tel=telLink(c&&c.phone);
+  const file=new File([blob],name,{type:'image/jpeg'});
+  if(tel){ try{ await navigator.clipboard.writeText(c.phone.replace(/\s+/g,'')); }catch(e){} }
+  try{
+    if(navigator.canShare&&navigator.canShare({files:[file]})){
+      if(tel) toast('Number copied ('+c.phone+') — choose Messages, then paste it in “To”');
+      await navigator.share({files:[file],text:msg}); return;
+    }
+  }catch(e){ if(e&&e.name==='AbortError') return; console.warn(e); }
   const u=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=u; a.download=name; a.click(); URL.revokeObjectURL(u);
-  if(tel) setTimeout(()=>{ location.href='sms:'+tel+'?&body='+encodeURIComponent(msg); },600);
-  toast('Downloaded — attach it to the text');
+  if(tel) setTimeout(()=>{ location.href='sms:'+tel+'?&body='+encodeURIComponent(msg); },700);
+  toast('Picture saved — attach it to the text');
 }
 async function textInvoice(id){
   const i=DB.invoices.find(x=>x.id===id); if(!i) return;
   const c=custById(i.customerId)||{}; const q=i.type==='quote';
-  toast('Preparing text…');
-  let pdf; try{ pdf=await invoicePdf(id,{compact:true}); }catch(e){ return toast('PDF failed: '+(e.message||'')); }
   const msg=`Hi ${(c.name||'').split(' ')[0]||'there'}, here's your ${q?'quote':'invoice'} ${i.number} from Massive Integrated Homes — ${money(invTotal(i))} inc GST. Any questions, just reply or call ${docContact(i).phone}. Thanks!`;
-  await smsPdfLink(pdf.blob,'share/'+(q?'quote-':'invoice-')+id+'.pdf',c,msg,(q?'Quote-':'Invoice-')+i.number+'.pdf');
+  await textImage(invoiceDocHtml(id),c,msg,(q?'Quote-':'Invoice-')+i.number+'.jpg');
 }
 /* =====================================================================
    EV CHARGER CERTIFICATE OF TESTING & COMPLIANCE — made from an invoice
@@ -1976,10 +1998,10 @@ function previewCoc(id){
 function cocMsg(c){ return `Hi ${((c&&c.name)||'').split(' ')[0]||'there'}, here's the Certificate of Testing and Compliance for your EV charger installation. Please keep it with your property records. Thanks — Mitch, Massive Integrated Homes`; }
 async function cocSend(id,text){
   const i=DB.invoices.find(x=>x.id===id); if(!i||!i.coc) return; const c=custById(i.customerId)||{};
-  toast(text?'Preparing text…':'Generating certificate…');
-  let pdf; try{ pdf=await invoicePdf(id,{html:cocDocHtml(id),compact:text}); }catch(e){ return toast('PDF failed: '+(e.message||'')); }
+  if(text) return textImage(cocDocHtml(id),c,cocMsg(c),'COC-'+i.coc.number+'.jpg');
+  toast('Generating certificate…');
+  let pdf; try{ pdf=await invoicePdf(id,{html:cocDocHtml(id)}); }catch(e){ return toast('PDF failed: '+(e.message||'')); }
   const name='COC-'+i.coc.number+'.pdf';
-  if(text) return smsPdfLink(pdf.blob,'share/coc-'+id+'.pdf',c,cocMsg(c),name);
   const u=URL.createObjectURL(pdf.blob); const a=document.createElement('a'); a.href=u; a.download=name; a.click(); URL.revokeObjectURL(u);
   toast('Certificate downloaded');
 }
