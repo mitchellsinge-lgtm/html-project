@@ -253,7 +253,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   "aggregateRating": {
     "@type": "AggregateRating",
     "ratingValue": "5.0",
-    "reviewCount": "31"
+    "reviewCount": "34"
   }
 }
 </script>
@@ -300,6 +300,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 </script>
 
 <style>
+  /* img-ratio-fix */ img { height: auto; }
+
   /* =====================================================================
      COLOUR THEMES  —  edit hex values here to recolour the whole site.
      Default = LIGHT (white + purple). Dark mode is optional via toggle.
@@ -1636,6 +1638,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
         Leave us a Google review
       </a>
+      <a href="reviews.html" class="btn btn-secondary">
+        See all our reviews &rarr;
+      </a>
       <a href="https://g.page/r/CbVjKnqoixi-EAE" target="_blank" rel="noopener" class="btn btn-secondary">
         Read all reviews on Google &rarr;
       </a>
@@ -2680,5 +2685,9 @@ document.addEventListener('click', function (e) {
 })();
 </script>
 <script src="crm-lead.js" defer></script>
+<script>
+/* Image safety net: if a .webp fails to load, try the .jpg of the same name */
+document.addEventListener('error',function(e){var i=e.target;if(!i||i.tagName!=='IMG'||i.dataset.fb)return;var s=i.getAttribute('src')||'';if(/\.webp(\?|$)/i.test(s)){i.dataset.fb='1';i.src=s.replace(/\.webp(\?.*)?$/i,'.jpg');}},true);
+</script>
 </body>
 </html>
