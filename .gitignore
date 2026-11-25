@@ -1,0 +1,7 @@
+# Working files that must never go on the live website
+_tools/
+**/to be uploaded/
+Thumbs.db
+desktop.ini
+.DS_Store
+*.backup*.html
