@@ -180,6 +180,8 @@ textarea{resize:vertical;min-height:64px}
 .lead-card.due{border-left-color:var(--danger);background:#fffafa}
 .lead-card.quoted{border-left-color:var(--primary)}
 .lead-card.lost{border-left-color:#9ca3af;opacity:.8}
+.lead-card.fresh{border-left-color:#16a34a !important;background:#f0fdf4 !important;box-shadow:0 0 0 1px #bbf7d0,var(--shadow)}
+.lead-search{width:100%;margin-bottom:12px}
 .lc-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;flex-wrap:wrap}
 .lc-name{font-weight:700;font-size:15px}
 .lc-meta{color:var(--muted);font-size:12.5px;margin-top:2px}
@@ -362,7 +364,7 @@ table.inv-items td{padding:9px 12px;border-bottom:1px solid #eee;font-size:12px}
    MIH CRM — CLOUD (Supabase, shared workspace, Google sign-in)
    ===================================================================== */
 const CFG_KEY='mih_sb_cfg';
-const APP_VERSION='2026.11.23-52';   /* bump this when deploying; phones auto-refresh to match */
+const APP_VERSION='2026.11.25-53';   /* bump this when deploying; phones auto-refresh to match */
 const GST_DIVISOR=11;
 const CAL_SCOPE='https://www.googleapis.com/auth/calendar';
 const OAUTH_SCOPES='https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/spreadsheets';
@@ -861,26 +863,51 @@ function leadBannerHtml(){
   const names=d.slice(0,3).map(j=>esc(leadName(j))).join(', ')+(d.length>3?' +'+(d.length-3)+' more':'');
   return `<div class="lead-banner"><div><b>☎ ${d.length} lead${d.length>1?'s':''} to chase</b><div class="muted" style="font-size:12.5px;margin-top:2px">${names}</div></div><button class="btn sm" onclick="go('leads')">Open leads</button></div>`;
 }
-let leadTab=null;
+let leadTab=null, leadQuery='';
+/* leads moved into Open in the last 24 h — highlighted green and kept at the top */
+function freshOpen(j){ return !!(j.lastChasedAt&&!j.date&&(j.stage==='lead'||j.stage==='quoted')&&!isNewLead(j)&&(Date.now()-new Date(j.lastChasedAt))<864e5); }
+function leadMatches(j,q){
+  const c=custById(j.customerId)||{};
+  return [c.name,c.phone,(c.phone||'').replace(/\D/g,''),c.email,c.address,j.title,j.suburb,j.service,j.notes].some(f=>(f||'').toLowerCase().includes(q));
+}
 function viewLeads(){
   document.getElementById('topAction').innerHTML=filterSeg()+`<button class="btn" style="margin-left:12px" onclick="openLead()">+ New lead</button>`;
   const nw=newLeads(), open=workingLeads(), lost=lostLeads();
   if(!leadTab) leadTab=nw.length?'new':'open';
-  const tab=(k,l,n)=>`<button class="${leadTab===k?'on':''}" onclick="leadTab='${k}';viewLeads()">${l} (${n})</button>`;
+  const tab=(k,l,n)=>`<button class="${leadTab===k?'on':''}" onclick="leadTab='${k}';leadQuery='';viewLeads()">${l} (${n})</button>`;
   const seg=`<div class="seg">${tab('new','New',nw.length)}${tab('open','Open',open.length)}${tab('lost','Lost',lost.length)}</div>`;
-  const tools=`<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px">${seg}<button class="btn line sm" onclick="go('customers')">◍ Contacts</button>${alertsBtnHtml()}</div>`;
+  const tools=`<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px">${seg}<button class="btn line sm" onclick="go('customers')">◍ Contacts</button>${alertsBtnHtml()}</div>
+    <input id="leadSearch" class="lead-search" type="search" autocomplete="off" placeholder="🔍 Search all leads — name, phone, suburb, service, notes…" value="${esc(leadQuery)}" oninput="leadQuery=this.value;renderLeadList()">`;
+  document.getElementById('content').innerHTML=tools+'<div id="leadList"></div>';
+  renderLeadList();
+  const box=document.getElementById('leadSearch'); if(box&&leadQuery){ box.focus(); box.setSelectionRange(box.value.length,box.value.length); }
+}
+function renderLeadList(){
+  const el=document.getElementById('leadList'); if(!el) return;
+  const q=(leadQuery||'').trim().toLowerCase();
+  if(q){   // search across New, Open and Lost so nothing gets lost
+    const where=j=>j.stage==='lost'?'Lost':(isNewLead(j)?'New':'Open');
+    const hits=[...newLeads(),...workingLeads(),...lostLeads()].filter(j=>leadMatches(j,q)).sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
+    el.innerHTML=hits.length?`<div class="hint" style="margin-bottom:8px">${hits.length} match${hits.length===1?'':'es'} across all leads</div>`+hits.map(j=>`<div class="muted" style="font-size:11px;font-weight:700;margin:0 0 3px 4px">${where(j).toUpperCase()}</div>`+leadCard(j)).join('')
+      :emptyState('🔍','No matching leads','Nothing in New, Open or Lost matches “'+esc(leadQuery)+'”.');
+    return;
+  }
+  const nw=newLeads(), open=workingLeads(), lost=lostLeads();
   let body='';
   if(leadTab==='lost') body=lost.length?lost.map(leadCard).join(''):emptyState('☎','No lost leads','Leads you mark lost are kept here.');
   else if(leadTab==='new') body=nw.length?[...nw].sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||'')).map(leadCard).join('')
       :emptyState('☎','No new leads','New enquiries land here until you chase them the first time.');
-  else body=open.length?[...open].sort((a,b)=>{ const x=leadDue(a)?0:1, y=leadDue(b)?0:1; return x-y||(a.followupDate||'9999').localeCompare(b.followupDate||'9999'); }).map(leadCard).join('')
+  else body=open.length?[...open].sort((a,b)=>{
+        const fa=freshOpen(a)?0:1, fb=freshOpen(b)?0:1; if(fa!==fb) return fa-fb;                 // just-moved leads first
+        if(!fa) return (b.lastChasedAt||'').localeCompare(a.lastChasedAt||'');
+        const x=leadDue(a)?0:1, y=leadDue(b)?0:1; return x-y||(a.followupDate||'9999').localeCompare(b.followupDate||'9999'); }).map(leadCard).join('')
       :emptyState('☎','No open leads','Leads move here once you\'ve chased them, until they\'re booked or lost.');
-  document.getElementById('content').innerHTML=tools+body;
+  el.innerHTML=body;
 }
 function leadCard(j){
   const c=custById(j.customerId)||{}; const tel=telLink(c.phone); const lost=j.stage==='lost';
   const docs=DB.invoices.filter(i=>i.jobId===j.id);
-  const cls='lead-card'+(lost?' lost':(leadDue(j)?' due':(j.stage==='quoted'?' quoted':'')));
+  const cls='lead-card'+(lost?' lost':(freshOpen(j)?' fresh':(leadDue(j)?' due':(j.stage==='quoted'?' quoted':''))));
   const meta=[j.service,(j.suburb||c.address||''),j.leadSource&&('via '+j.leadSource),leadAge(j)&&('in '+leadAge(j))].filter(Boolean).map(esc).join(' · ');
   const acts=[];
   if(tel){ acts.push(`<a class="btn sm" href="tel:${esc(tel)}">📞 Call</a>`,`<a class="btn line sm" href="sms:${esc(tel)}">💬 Text</a>`); }
@@ -896,7 +923,7 @@ function leadCard(j){
   else acts.push(`<button class="btn ghost sm" onclick="reopenLead('${j.id}')">↺ Reopen</button>`,`<button class="btn line sm" onclick="openLead('${j.id}')">Edit</button>`);
   const docHtml=docs.length?`<div class="lc-docs">${docs.map(d=>`<a href="#" onclick="previewInvoice('${d.id}');return false">${esc(d.number)} · ${d.type==='quote'?'quote':'invoice'} ${money(invTotal(d))}</a> ${invBadge(d.status)}`).join(' &nbsp; ')}</div>`:'';
   return `<div class="${cls}">
-    <div class="lc-top"><div><div class="lc-name">${isNewLead(j)?'<span class="badge purple" style="margin-right:6px">NEW</span>':''}${esc(c.name||j.title)}</div><div class="lc-meta">${meta}</div></div>
+    <div class="lc-top"><div><div class="lc-name">${isNewLead(j)?'<span class="badge purple" style="margin-right:6px">NEW</span>':''}${freshOpen(j)?'<span class="badge green" style="margin-right:6px">JUST MOVED TO OPEN</span>':''}${esc(c.name||j.title)}</div><div class="lc-meta">${meta}</div></div>
       <div style="text-align:right">${lost?'<span class="badge gray">Lost</span>':followupLabel(j)}${(j.stage==='quoted'&&!lost)?' <span class="badge purple">Quoted</span>':''}</div></div>
     ${j.notes?`<div class="lc-msg">${esc(j.notes)}</div>`:''}${docHtml}
     <div class="lc-actions">${acts.join('')}</div>
@@ -1752,7 +1779,7 @@ async function saveInvoice(id){
   if(!id && type==='quote' && obj.jobId){
     const lj=DB.jobs.find(x=>x.id===obj.jobId);
     if(lj && !lj.date && lj.stage==='lead'){
-      const upd=Object.assign({},lj,{stage:'quoted',followupDate:addDaysISO(3),followupDone:false});
+      const upd=Object.assign({},lj,{stage:'quoted',followupDate:addDaysISO(3),followupDone:false},isNewLead(lj)?{lastChasedAt:new Date().toISOString()}:{});
       try{ await upsertJob(upd); Object.assign(lj,upd); }catch(e){ console.warn(e); }
     }
   }
