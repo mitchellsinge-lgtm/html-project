@@ -757,5 +757,16 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     });
   });
 </script>
+<script>
+document.addEventListener('click', function (e) {
+  var a = e.target.closest && e.target.closest('a[href^="tel:"], a[href^="mailto:"]');
+  if (!a) return;
+  var href = a.getAttribute('href');
+  var name = href.indexOf('tel:') === 0 ? 'phone_call_click' : 'email_click';
+  try { if (window.fbq) fbq('track', 'Contact', { content_name: name }); } catch (err) {}
+  try { if (window.gtag) gtag('event', name, { link_url: href, page_path: location.pathname }); } catch (err) {}
+  try { (window.dataLayer = window.dataLayer || []).push({ event: name, link_url: href }); } catch (err) {}
+}, true);
+</script>
 </body>
 </html>
