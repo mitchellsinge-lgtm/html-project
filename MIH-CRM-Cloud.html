@@ -127,7 +127,12 @@ tbody tr:hover{background:var(--primary-soft)}
 .modal-head h3{margin:0;font-size:17px}
 .modal-head .x{background:0;border:0;font-size:22px;color:var(--muted);cursor:pointer;line-height:1}
 .modal-body{padding:20px 22px}
-.modal-foot{padding:16px 22px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px}
+.modal-foot{padding:16px 22px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;justify-content:flex-end;gap:10px}
+@media(max-width:600px){
+  .modal-foot{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;padding:12px 14px}
+  .modal-foot .btn{width:100%;min-width:0;justify-content:center;text-align:center}
+  .modal-foot button:last-of-type:nth-of-type(odd),.modal-foot .hint{grid-column:1/-1}
+}
 .frow{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
 .field{display:flex;flex-direction:column;gap:6px}
 .field.full{grid-column:1/-1}
@@ -364,7 +369,7 @@ table.inv-items td{padding:9px 12px;border-bottom:1px solid #eee;font-size:12px}
    MIH CRM — CLOUD (Supabase, shared workspace, Google sign-in)
    ===================================================================== */
 const CFG_KEY='mih_sb_cfg';
-const APP_VERSION='2026.11.25-53';   /* bump this when deploying; phones auto-refresh to match */
+const APP_VERSION='2026.11.26-54';   /* bump this when deploying; phones auto-refresh to match */
 const GST_DIVISOR=11;
 const CAL_SCOPE='https://www.googleapis.com/auth/calendar';
 const OAUTH_SCOPES='https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/spreadsheets';
