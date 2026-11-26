@@ -529,6 +529,21 @@ src="https://www.facebook.com/tr?id=27592303160400799&ev=PageView&noscript=1"
 .mih-servicing{max-width:1100px;margin:.9rem auto;padding:0 1.25rem;text-align:center;font-size:.95rem;font-weight:600}
 </style>
 <style>.fc-page .fw-video{aspect-ratio:4/5;max-width:420px}.fc-finish{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0.8rem;margin-top:1rem}.fc-finish figure{margin:0;background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden}.fc-finish img{width:100%;height:auto;display:block}.fc-finish figcaption{padding:0.6rem 0.9rem;font-weight:700}</style>
+<style>
+.fc-carousel{position:relative;max-width:420px;margin:0 auto 1.2rem;border-radius:16px;overflow:hidden;background:#0a0a14;box-shadow:0 10px 30px rgba(0,0,0,.25);aspect-ratio:4/5;touch-action:pan-y}
+.fc-track{position:absolute;inset:0}
+.fc-slide{position:absolute;inset:0;margin:0;opacity:0;transform:scale(1.06);transition:opacity .45s ease,transform 2.6s ease-out}
+.fc-slide.is-on{opacity:1;transform:scale(1)}
+.fc-slide img{width:100%;height:100%;object-fit:cover;display:block}
+.fc-slide figcaption{position:absolute;left:12px;bottom:30px;background:rgba(10,10,20,.6);color:#fff;font-weight:700;font-size:.85rem;padding:.3rem .7rem;border-radius:999px;backdrop-filter:blur(4px)}
+.fc-bar{position:absolute;left:0;right:0;top:0;height:3px;background:rgba(255,255,255,.25)}
+.fc-progress{display:block;height:100%;width:0;background:#fff}
+.fc-dots{position:absolute;left:0;right:0;bottom:10px;display:flex;justify-content:center;gap:6px}
+.fc-dot{width:8px;height:8px;padding:0;border:0;border-radius:50%;background:rgba(255,255,255,.5);cursor:pointer;transition:width .2s}
+.fc-dot.is-on{background:#fff;width:20px;border-radius:4px}
+.fc-watch{padding:2.5rem 0;text-align:center}.fc-watch .fw-video{margin:1rem auto 0}
+@media (prefers-reduced-motion:reduce){.fc-slide{transition:opacity .2s;transform:none}}
+</style>
 </head>
 <body class="fc-page">
 <!-- Google Tag Manager (noscript) -->
@@ -587,13 +602,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <img src="photos/floating-cabinet/floating-cabinet-black.webp" alt="Black floating TV cabinet with wall-mounted TV and soundbar" width="974" height="584" loading="lazy">
 </div>
     <div class="container hero-inner">
-<div class="fw-video-wrap">
-  <div class="fw-video">
-    <video id="fwVideo" autoplay muted loop playsinline preload="auto" poster="video/floating-cabinet-poster.jpg" aria-label="Floating TV cabinets installed by Massive Integrated Homes" width="720" height="900">
-      <source src="video/floating-cabinet-muted.mp4" type="video/mp4">
-    </video>
-    <button type="button" class="fw-sound" id="fwSound" aria-pressed="false" aria-label="Play sound">&#128263;</button>
+<div class="fc-carousel" id="fcCarousel" aria-roledescription="carousel" aria-label="Floating TV cabinets we have installed">
+  <div class="fc-track">
+    <figure class="fc-slide is-on"><img src="photos/floating-cabinet/fc-slide-black.webp" alt="Black floating TV cabinet with wall-mounted TV and soundbar, installed in Brisbane" width="864" height="1080" fetchpriority="high"><figcaption>Black</figcaption></figure>
+    <figure class="fc-slide"><img src="photos/floating-cabinet/fc-slide-white.webp" alt="White floating TV cabinet with wall-mounted TV and soundbar, installed in Brisbane" width="864" height="1080" decoding="async"><figcaption>White</figcaption></figure>
+    <figure class="fc-slide"><img src="photos/floating-cabinet/fc-slide-timber.webp" alt="Timber floating TV cabinet with wall-mounted TV and soundbar on herringbone floor, Brisbane" width="864" height="1080" decoding="async"><figcaption>Timber</figcaption></figure>
   </div>
+  <div class="fc-bar"><span class="fc-progress" id="fcProgress"></span></div>
+  <div class="fc-dots"><button type="button" class="fc-dot is-on" aria-label="Show black cabinet"></button><button type="button" class="fc-dot" aria-label="Show white cabinet"></button><button type="button" class="fc-dot" aria-label="Show timber cabinet"></button></div>
 </div>
 <h1>Floating TV cabinet + wall mount. <span>One package, one team.</span></h1>
     <p class="hero-lead">From a bare wall to a floating finish. We supply the floating cabinet, mount your TV and soundbar, add recessed power and HDMI behind the TV and hide every cable &mdash; done by licensed electricians in one job. Timber, white or black. Brisbane and Logan. Free quote.</p>
@@ -733,6 +749,21 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </div>
 </section>
 </div>
+
+<section class="fc-watch">
+  <div class="container">
+    <h2>Watch one go up</h2>
+    <p class="fw-sub">A floating cabinet, TV and soundbar installed in one visit, with every cable hidden.</p>
+<div class="fw-video-wrap">
+  <div class="fw-video">
+    <video id="fwVideo" muted loop playsinline preload="none" poster="video/floating-cabinet-poster.jpg" aria-label="Floating TV cabinets installed by Massive Integrated Homes" width="720" height="900">
+      <source src="video/floating-cabinet-muted.mp4" type="video/mp4">
+    </video>
+    <button type="button" class="fw-sound" id="fwSound" aria-pressed="false" aria-label="Play sound">&#128263;</button>
+  </div>
+</div>
+  </div>
+</section>
 
 <section class="more-links">
   <div class="container">
@@ -912,6 +943,29 @@ document.addEventListener('click', function (e) {
       },5500);
     }, n*1800);
   });
+})();
+</script>
+<script>
+/* Hero photo carousel: fast auto-advance, swipe, dots. */
+(function(){
+  var c=document.getElementById('fcCarousel'); if(!c) return;
+  var s=c.querySelectorAll('.fc-slide'), d=c.querySelectorAll('.fc-dot'), p=document.getElementById('fcProgress');
+  var i=0, ms=2600, t=null, x0=null;
+  var still=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function bar(){ if(!p||still) return; p.style.transition='none'; p.style.width='0'; void p.offsetWidth; p.style.transition='width '+ms+'ms linear'; p.style.width='100%'; }
+  function go(n){ s[i].classList.remove('is-on'); d[i].classList.remove('is-on'); i=(n+s.length)%s.length; s[i].classList.add('is-on'); d[i].classList.add('is-on'); }
+  function play(){ stop(); if(still) return; bar(); t=setInterval(function(){ go(i+1); bar(); },ms); }
+  function stop(){ if(t){clearInterval(t);t=null;} }
+  for(var k=0;k<d.length;k++){(function(k){d[k].addEventListener('click',function(){go(k);play();});})(k);}
+  c.addEventListener('touchstart',function(e){x0=e.touches[0].clientX;},{passive:true});
+  c.addEventListener('touchend',function(e){ if(x0===null) return; var dx=e.changedTouches[0].clientX-x0; x0=null; if(Math.abs(dx)>40){go(i+(dx<0?1:-1));play();} },{passive:true});
+  document.addEventListener('visibilitychange',function(){ if(document.hidden) stop(); else play(); });
+  play();
+})();
+/* Bottom video only loads and plays when scrolled into view. */
+(function(){
+  var v=document.getElementById('fwVideo'); if(!v||!('IntersectionObserver' in window)) return;
+  new IntersectionObserver(function(es){ es.forEach(function(e){ if(e.isIntersecting){ if(v.preload==='none'){v.preload='auto';v.load();} var pr=v.play(); if(pr&&pr.catch) pr.catch(function(){}); } else { v.pause(); } }); },{threshold:0.35}).observe(v);
 })();
 </script>
 <script>
