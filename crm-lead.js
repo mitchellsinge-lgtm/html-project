@@ -16,7 +16,7 @@
       p_source: v('_source') || v('_source_page') || location.pathname
     };
     return fetch(URL_ + '/rest/v1/rpc/submit_lead', {
-      method: 'POST', keepalive: true,
+      method: 'POST',
       headers: { 'Content-Type': 'application/json', 'apikey': KEY, 'Authorization': 'Bearer ' + KEY },
       body: JSON.stringify(body)
     });
