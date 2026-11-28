@@ -989,7 +989,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4 14h7l-2 8 9-12h-7l2-8z"/></svg>
         Request a free quote
       </h3>
-      <form class="enquiry-form" action="https://formspree.io/f/maqagaoz" method="POST">
+      <form class="enquiry-form" action="#" method="POST">
         <input type="text" name="name" placeholder="Your name" required>
         <input type="tel" name="phone" placeholder="Phone number" required>
         <input type="email" name="email" placeholder="Email (optional)">
@@ -1092,11 +1092,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       if (status) { status.textContent = ''; status.style.color = ''; }
 
       var data = new FormData(form);
-      fetch(form.action, {
-        method: 'POST',
-        body: data,
-        headers: { 'Accept': 'application/json' }
-      }).then(function(response) {
+      (window.mihSubmitLead ? window.mihSubmitLead(form) : Promise.reject(new Error('crm'))).then(function(response) {
         if (response.ok) {
           form.reset();
           if (status) {

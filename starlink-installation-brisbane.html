@@ -635,7 +635,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <div class="quote-card">
       <h2>Get your Starlink quote</h2>
       <p class="sub">Tell us about your home &mdash; we'll come back same-day during business hours.</p>
-      <form class="quote-form enquiry-form" action="https://formspree.io/f/maqagaoz" method="POST">
+      <form class="quote-form enquiry-form" action="#" method="POST">
         <div>
           <label for="qf-name">Your name</label>
           <input id="qf-name" name="name" type="text" placeholder="First and last name" autocomplete="name" required>
@@ -811,11 +811,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       if (status) { status.textContent = ''; status.style.color = ''; }
 
       var data = new FormData(form);
-      fetch(form.action, {
-        method: 'POST',
-        body: data,
-        headers: { 'Accept': 'application/json' }
-      }).then(function(response) {
+      (window.mihSubmitLead ? window.mihSubmitLead(form) : Promise.reject(new Error('crm'))).then(function(response) {
         if (response.ok) {
           form.reset();
           if (status) {

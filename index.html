@@ -1475,7 +1475,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         Request a free quote
       </h3>
       <!-- EDIT: replace YOUR_FORMSPREE_ID below with the ID from your Formspree dashboard -->
-      <form class="hero-form enquiry-form" action="https://formspree.io/f/maqagaoz" method="POST">
+      <form class="hero-form enquiry-form" action="#" method="POST">
         <input type="text" name="name" placeholder="Your name" required>
         <input type="tel" name="phone" placeholder="Phone number" required>
         <select name="service" required>
@@ -1662,14 +1662,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </div>
 
     <div class="gallery-tabs">
-      <button class="gallery-tab is-active" data-cat="tv-mounts">TV Mounts &amp; Home Theatre<span class="count">64</span></button>
+      <button class="gallery-tab is-active" data-cat="tv-mounts">TV Mounts &amp; Home Theatre<span class="count">65</span></button>
       <button class="gallery-tab" data-cat="reception-repairs">Starlink &amp; Reception<span class="count">36</span></button>
       <button class="gallery-tab" data-cat="cctv">CCTV &amp; Alarms<span class="count">17</span></button>
-      <button class="gallery-tab" data-cat="ev-chargers">EV Chargers<span class="count">6</span></button>
+      <button class="gallery-tab" data-cat="ev-chargers">EV Chargers<span class="count">8</span></button>
     </div>
 
     <div class="gallery-pool is-active" data-cat="tv-mounts">
       <div class="gallery-grid" data-initial="24">
+        <div class="gallery-item" data-src="photos/tv-mounts/whatsapp-image-2026-11-28-at-1-12-47-pm-1.webp" data-cat="tv-mounts">
+          <img width="1050" height="1400" src="photos/tv-mounts/whatsapp-image-2026-11-28-at-1-12-47-pm-1.webp" alt="TV wall mounting and home theatre install in Brisbane" loading="lazy" decoding="async">
+        </div>
         <div class="gallery-item" data-src="photos/tv-mounts/whatsapp-image-2026-11-25-at-5-43-21-pm.webp" data-cat="tv-mounts">
           <img width="1050" height="1400" src="photos/tv-mounts/whatsapp-image-2026-11-25-at-5-43-21-pm.webp" alt="TV wall mounting and home theatre install in Brisbane" loading="lazy" decoding="async">
         </div>
@@ -2038,6 +2041,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
     <div class="gallery-pool " data-cat="ev-chargers">
       <div class="gallery-grid" data-initial="24">
+        <div class="gallery-item" data-src="photos/ev/whatsapp-image-2026-11-28-at-1-12-47-pm.webp" data-cat="ev-chargers">
+          <img width="1050" height="1400" src="photos/ev/whatsapp-image-2026-11-28-at-1-12-47-pm.webp" alt="EV charger installation in Brisbane" loading="lazy" decoding="async">
+        </div>
+        <div class="gallery-item" data-src="photos/ev/whatsapp-image-2026-11-28-at-1-12-45-pm.webp" data-cat="ev-chargers">
+          <img width="1050" height="1400" src="photos/ev/whatsapp-image-2026-11-28-at-1-12-45-pm.webp" alt="EV charger installation in Brisbane" loading="lazy" decoding="async">
+        </div>
         <div class="gallery-item" data-src="photos/ev/sevr-clean-intall-with-isolator.webp" data-cat="ev-chargers">
           <img width="1050" height="1400" src="photos/ev/sevr-clean-intall-with-isolator.webp" alt="SEVR EV charger installed with isolator by Massive Integrated Homes, Brisbane" loading="lazy" decoding="async">
         </div>
@@ -2347,7 +2356,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
       <!-- Contact form -->
       <!-- EDIT: replace YOUR_FORMSPREE_ID below with the ID from your Formspree dashboard -->
-      <form id="quote-form" class="contact-form enquiry-form fade-in" action="https://formspree.io/f/maqagaoz" method="POST" style="scroll-margin-top: 100px;">
+      <form id="quote-form" class="contact-form enquiry-form fade-in" action="#" method="POST" style="scroll-margin-top: 100px;">
         <div class="form-row">
           <div class="form-group">
             <label for="cf-name">Name</label>
@@ -2630,11 +2639,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       if (status) { status.textContent = ''; status.style.color = ''; }
 
       var data = new FormData(form);
-      fetch(form.action, {
-        method: 'POST',
-        body: data,
-        headers: { 'Accept': 'application/json' }
-      }).then(function(response) {
+      (window.mihSubmitLead ? window.mihSubmitLead(form) : Promise.reject(new Error('crm'))).then(function(response) {
         if (response.ok) {
           form.reset();
           if (status) {

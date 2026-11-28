@@ -460,7 +460,7 @@ src="https://www.facebook.com/tr?id=27592303160400799&ev=PageView&noscript=1"
       <div class="quote-card">
         <h2>Get your free quote</h2>
         <p class="quote-sub">Quick reply, same-day during business hours. No obligation.</p>
-        <form class="quote-form enquiry-form" action="https://formspree.io/f/maqagaoz" method="POST">
+        <form class="quote-form enquiry-form" action="#" method="POST">
           <div class="row">
             <div>
               <label for="qf-name">Name</label>
@@ -616,11 +616,7 @@ src="https://www.facebook.com/tr?id=27592303160400799&ev=PageView&noscript=1"
       if (status) { status.textContent = ''; status.style.color = ''; }
 
       var data = new FormData(form);
-      fetch(form.action, {
-        method: 'POST',
-        body: data,
-        headers: { 'Accept': 'application/json' }
-      }).then(function(response) {
+      (window.mihSubmitLead ? window.mihSubmitLead(form) : Promise.reject(new Error('crm'))).then(function(response) {
         if (response.ok) {
           form.reset();
           if (status) {
